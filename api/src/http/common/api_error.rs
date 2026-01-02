@@ -7,7 +7,7 @@ use plannify_driver_api_core::{
     domain::common::CoreError, infrastructure::{driver::repositories::error::DriverError, health::repositories::error::HealthError}
 };
 use serde::Serialize;
-use serde_yaml::Value;
+use serde_yaml::{Mapping, Value};
 use thiserror::Error;
 use utoipa::ToSchema;
 
@@ -136,7 +136,7 @@ impl From<DriverError> for ApiError {
             DriverError::DatabaseError => ApiError::InternalServerError,
             DriverError::DriverAlreadyExists => ApiError::Conflict { error_code: "DRIVER_ALREADY_EXISTS".to_string() },
             DriverError::EmailDomainDenylisted { domain } => {
-                let mut content = serde_yaml::Mapping::new();
+                let mut content = Mapping::new();
                 content.insert(
                     Value::String("domain".to_string()),
                     Value::String(domain)

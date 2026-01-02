@@ -1,7 +1,7 @@
-use axum::{Json, extract::State};
+use axum::extract::State;
 use plannify_driver_api_core::domain::driver::{entities::{CreateDriverRequest, CreateDriverResponse}, port::DriverService};
 
-use crate::{AppState, http::common::{api_error::{ApiError, ErrorBody}, response::Response}};
+use crate::{AppState, http::common::{api_error::{ApiError, ErrorBody}, response::Response, validator::ValidatedJson}};
 
 #[utoipa::path(
     post,
@@ -16,7 +16,7 @@ use crate::{AppState, http::common::{api_error::{ApiError, ErrorBody}, response:
 )]
 pub async fn signup(
     State(state): State<AppState>,
-    Json(request): Json<CreateDriverRequest>,
+    ValidatedJson(request): ValidatedJson<CreateDriverRequest>,
 ) -> Result<Response<CreateDriverResponse>, ApiError> {
     let driver = state.service.create_driver(request, state.config.check_content.email_domain_denylist).await?;
 

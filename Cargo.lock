@@ -109,6 +109,7 @@ dependencies = [
  "utoipa-axum",
  "utoipa-scalar",
  "uuid",
+ "validator",
 ]
 
 [[package]]
