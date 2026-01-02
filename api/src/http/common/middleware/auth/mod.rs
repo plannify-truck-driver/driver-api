@@ -1,0 +1,51 @@
+use axum::{
+    extract::FromRequestParts,
+    http::{header, request::Parts},
+};
+use axum_extra::extract::CookieJar;
+
+use crate::http::common::{api_error::ApiError, middleware::auth::entities::TokenValidator};
+pub mod entities;
+
+pub struct AuthMiddleware;
+
+impl<AuthValidator> FromRequestParts<AuthValidator> for AuthMiddleware
+where
+    AuthValidator: Send + Sync + TokenValidator,
+{
+    type Rejection = ApiError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AuthValidator,
+    ) -> Result<Self, Self::Rejection> {
+        let cookie_jar = CookieJar::from_request_parts(parts, state)
+            .await
+            .map_err(|_| ApiError::Unauthorized { error_code: "UNAUTHORIZED".to_string() })?;
+        let token: String;
+
+        // try to get token from cookies
+        let auth_cookie = cookie_jar.get("access_token");
+
+        if auth_cookie.is_none() {
+            // extract token from Authorization header
+            let auth_header = parts
+                .headers
+                .get(header::AUTHORIZATION)
+                .and_then(|auth_header| auth_header.to_str().ok())
+                .and_then(|auth_str| auth_str.strip_prefix("Bearer "))
+                .ok_or_else(|| ApiError::Unauthorized { error_code: "UNAUTHORIZED".to_string() })?
+                .to_string();
+
+            token = auth_header;
+        } else {
+            token = auth_cookie.unwrap().value().to_string();
+        }
+
+        let user_identity = state.validate_token(&token)?;
+
+        // add auth state to request
+        parts.extensions.insert(user_identity);
+        Ok(Self)
+    }
+}
