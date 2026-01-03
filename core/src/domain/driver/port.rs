@@ -1,5 +1,3 @@
-use uuid::Uuid;
-
 use crate::{
     domain::driver::entities::{CreateDriverRequest, DriverRow, LoginDriverRequest},
     infrastructure::driver::repositories::error::DriverError,
@@ -44,5 +42,5 @@ pub trait DriverService: Send + Sync {
         refresh_ttl: u64,
     ) -> impl Future<Output = Result<(String, String), DriverError>> + Send
     where
-        F: Fn(Uuid) -> Result<(String, String), DriverError> + Send + Sync;
+        F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync;
 }

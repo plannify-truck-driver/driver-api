@@ -1,6 +1,6 @@
 use axum::{extract::State, http::header::SET_COOKIE, response::AppendHeaders};
 use plannify_driver_api_core::domain::driver::{
-    entities::{CreateDriverRequest, CreateDriverResponse, LoginDriverRequest},
+    entities::{CreateDriverRequest, CreateDriverResponse, DriverRow, LoginDriverRequest},
     port::DriverService,
 };
 use plannify_driver_api_core::infrastructure::driver::repositories::error::DriverError;
@@ -42,9 +42,9 @@ pub async fn signup(
         .await?;
 
     let auth_validator = &state.auth_validator;
-    let create_tokens_fn = |driver_id: uuid::Uuid| -> Result<(String, String), DriverError> {
+    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
         auth_validator
-            .create_tokens(driver_id)
+            .create_tokens(driver)
             .map_err(|_| DriverError::DatabaseError)
     };
 
@@ -87,9 +87,9 @@ pub async fn login(
     let driver = state.service.login_driver(request).await?;
 
     let auth_validator = &state.auth_validator;
-    let create_tokens_fn = |driver_id: uuid::Uuid| -> Result<(String, String), DriverError> {
+    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
         auth_validator
-            .create_tokens(driver_id)
+            .create_tokens(driver)
             .map_err(|_| DriverError::DatabaseError)
     };
 

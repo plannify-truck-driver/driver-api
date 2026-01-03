@@ -122,9 +122,9 @@ where
         refresh_ttl: u64,
     ) -> Result<(String, String), DriverError>
     where
-        F: Fn(uuid::Uuid) -> Result<(String, String), DriverError> + Send + Sync,
+        F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync,
     {
-        let (access_token, refresh_token) = create_tokens(driver.pk_driver_id)?;
+        let (access_token, refresh_token) = create_tokens(&driver)?;
         let refresh_token_cookie = format!(
             "refresh_token={}; Path=/; Domain=.plannify.be; HttpOnly; Secure; SameSite=None; Max-Age={}",
             refresh_token, refresh_ttl

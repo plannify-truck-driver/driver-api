@@ -12,16 +12,12 @@ use tracing::info;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_scalar::{Scalar, Servable};
-use uuid::Uuid;
 
 use crate::{
     ApiError, AppState, AuthMiddleware, AuthValidator,
     config::Config,
     health_routes,
-    http::{
-        authentication::routes::authentication_routes,
-        common::middleware::auth::entities::TokenValidator, drivers::routes::driver_routes,
-    },
+    http::{authentication::routes::authentication_routes, drivers::routes::driver_routes},
 };
 
 #[derive(OpenApi)]
@@ -93,8 +89,6 @@ impl App {
             .merge(authentication_routes())
             .layer(cors)
             .split_for_parts();
-
-        auth_validator.create_tokens(Uuid::new_v4())?;
 
         // Override API documentation info
         let custom_info = ApiDoc::openapi();

@@ -1,4 +1,5 @@
 use chrono::Utc;
+use plannify_driver_api_core::domain::driver::entities::DriverRow;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -11,13 +12,36 @@ pub struct UserIdentity {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
+pub struct DriverClaims {
+    pub id: Uuid,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub verified: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AccessClaims {
+    pub sub: Uuid,
+    pub driver: DriverClaims,
+    pub exp: i64,
+    pub iat: i64,
+}
+
+impl AccessClaims {
+    pub fn is_expired(&self) -> bool {
+        self.exp < Utc::now().timestamp()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RefreshClaims {
     pub sub: Uuid,
     pub exp: i64,
     pub iat: i64,
 }
 
-impl Claims {
+impl RefreshClaims {
     pub fn is_expired(&self) -> bool {
         self.exp < Utc::now().timestamp()
     }
@@ -41,25 +65,32 @@ impl AuthValidator {
 }
 
 pub trait TokenValidator: Send + Sync {
-    fn create_tokens(&self, driver_id: Uuid) -> Result<(String, String), ApiError>;
+    fn create_tokens(&self, driver: &DriverRow) -> Result<(String, String), ApiError>;
     fn validate_token(&self, token: &str) -> Result<UserIdentity, ApiError>;
 }
 
 impl TokenValidator for AuthValidator {
-    fn create_tokens(&self, driver_id: Uuid) -> Result<(String, String), ApiError> {
+    fn create_tokens(&self, driver: &DriverRow) -> Result<(String, String), ApiError> {
         let now = Utc::now().timestamp();
 
         let access_exp = now + self.access_ttl as i64;
         let refresh_exp = now + self.refresh_ttl as i64;
 
-        let access_claims = Claims {
-            sub: driver_id,
+        let access_claims = AccessClaims {
+            sub: driver.pk_driver_id,
+            driver: DriverClaims {
+                id: driver.pk_driver_id,
+                first_name: driver.firstname.clone(),
+                last_name: driver.lastname.clone(),
+                email: driver.email.clone(),
+                verified: driver.verified_at.is_some(),
+            },
             exp: access_exp,
             iat: now,
         };
 
-        let refresh_claims = Claims {
-            sub: driver_id,
+        let refresh_claims = RefreshClaims {
+            sub: driver.pk_driver_id,
             exp: refresh_exp,
             iat: now,
         };
@@ -82,7 +113,7 @@ impl TokenValidator for AuthValidator {
     }
 
     fn validate_token(&self, token: &str) -> Result<UserIdentity, ApiError> {
-        let token_data = decode::<Claims>(
+        let token_data = decode::<AccessClaims>(
             token,
             &DecodingKey::from_secret(self.secret_key.as_bytes()),
             &Validation::new(Algorithm::HS256),
