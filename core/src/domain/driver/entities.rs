@@ -47,10 +47,18 @@ pub struct CreateDriverRequest {
     pub gender: Option<String>,
 
     #[validate(email(message = "Invalid email format"))]
-    #[validate(length(min = 1, max = 255, message = "email is required and cannot be longer than 255 characters"))]
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "email is required and cannot be longer than 255 characters"
+    ))]
     pub email: String,
 
-    #[validate(length(min = 8, max = 40, message = "password must contain at least 8 characters and at most 40 characters"))]
+    #[validate(length(
+        min = 8,
+        max = 40,
+        message = "password must contain at least 8 characters and at most 40 characters"
+    ))]
     pub password: String,
 
     #[validate(length(

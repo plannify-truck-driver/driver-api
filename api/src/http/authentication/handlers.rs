@@ -84,10 +84,7 @@ pub async fn login(
     ),
     ApiError,
 > {
-    let driver = state
-        .service
-        .login_driver(request)
-        .await?;
+    let driver = state.service.login_driver(request).await?;
 
     let auth_validator = &state.auth_validator;
     let create_tokens_fn = |driver_id: uuid::Uuid| -> Result<(String, String), DriverError> {

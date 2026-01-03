@@ -11,8 +11,8 @@ use crate::{
 };
 use argon2::{
     Algorithm, Argon2, Params, Version,
-    password_hash::{PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
     password_hash::PasswordHash,
+    password_hash::{PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use tracing::error;
 
@@ -85,9 +85,11 @@ where
         login_request: LoginDriverRequest,
     ) -> Result<DriverRow, DriverError> {
         let email = login_request.email.trim().to_lowercase();
-        let driver = self.driver_repository.get_driver_by_email(email)
-        .await
-        .map_err(|_| DriverError::InvalidCredentials)?;
+        let driver = self
+            .driver_repository
+            .get_driver_by_email(email)
+            .await
+            .map_err(|_| DriverError::InvalidCredentials)?;
 
         let params = Params::new(19 * 1024, 2, 1, None).map_err(|e| {
             error!(
@@ -102,7 +104,10 @@ where
             error!("Failed to parse password hash: {}", e);
             DriverError::Internal
         })?;
-        match argon2.verify_password(login_request.password.as_bytes(), &parsed_hash).is_ok() {
+        match argon2
+            .verify_password(login_request.password.as_bytes(), &parsed_hash)
+            .is_ok()
+        {
             true => (),
             false => return Err(DriverError::InvalidCredentials),
         }

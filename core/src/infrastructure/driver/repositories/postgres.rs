@@ -20,10 +20,7 @@ impl PostgresDriverRepository {
 }
 
 impl DriverRepository for PostgresDriverRepository {
-    async fn get_driver_by_email(
-            &self,
-            email: String,
-        ) -> Result<DriverRow, DriverError> {
+    async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {
         sqlx::query_as!(
             DriverRow,
             r#"
