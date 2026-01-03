@@ -26,8 +26,8 @@ impl Claims {
 #[derive(Clone)]
 pub struct AuthValidator {
     secret_key: String,
-    access_ttl: String,
-    refresh_ttl: String,
+    access_ttl: u64,
+    refresh_ttl: u64,
 }
 
 impl AuthValidator {
@@ -49,8 +49,8 @@ impl TokenValidator for AuthValidator {
     fn create_tokens(&self, driver_id: Uuid) -> Result<(String, String), ApiError> {
         let now = Utc::now().timestamp();
 
-        let access_exp = now + self.access_ttl.parse::<i64>().map_err(|_| ApiError::InternalServerError)?;
-        let refresh_exp = now + self.refresh_ttl.parse::<i64>().map_err(|_| ApiError::InternalServerError)?;
+        let access_exp = now + self.access_ttl as i64;
+        let refresh_exp = now + self.refresh_ttl as i64;
 
         let access_claims = Claims {
             sub: driver_id,

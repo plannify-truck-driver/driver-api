@@ -121,14 +121,10 @@
       "CreateDriverResponse": {
         "type": "object",
         "required": [
-          "message",
           "access_token"
         ],
         "properties": {
           "access_token": {
-            "type": "string"
-          },
-          "message": {
             "type": "string"
           }
         }

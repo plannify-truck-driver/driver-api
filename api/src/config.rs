@@ -86,14 +86,14 @@ pub struct JwtConfig {
         env = "JWT_ACCESS_TTL",
         name = "jwt_access_ttl"
     )]
-    pub access_ttl: String,
+    pub access_ttl: u64,
 
     #[arg(
         long = "jwt-refresh-ttl",
         env = "JWT_REFRESH_TTL",
         name = "jwt_refresh_ttl"
     )]
-    pub refresh_ttl: String,
+    pub refresh_ttl: u64,
 }
 
 #[derive(Clone, Parser, Debug, Default)]

@@ -20,7 +20,7 @@ where
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Json(value) = Json::<T>::from_request(req, state)
             .await
-            .map_err(|_| ApiError::InternalServerError)?;
+            .map_err(|e| ApiError::BadRequest { error_code: "MISSING_ATTRIBUTE".to_string(), content: Some(Value::String(e.body_text())) })?;
 
         value.validate().map_err(|err| {
             let mut content = Mapping::new();

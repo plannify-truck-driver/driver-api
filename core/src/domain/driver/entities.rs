@@ -51,6 +51,5 @@ pub struct CreateDriverRequest {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CreateDriverResponse {
-    pub message: String,
     pub access_token: String,
 }

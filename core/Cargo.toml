@@ -24,6 +24,9 @@ uuid = { version = "1.18.1", features = ["serde", "v4"] }
 thiserror = { workspace = true }
 utoipa = { version = "5.4.0", features = ["uuid", "chrono"] }
 
+# Password hashing
+argon2 = "0.5.3"
+
 # Logging
 tracing = "0.1"
 

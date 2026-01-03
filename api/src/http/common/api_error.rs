@@ -134,6 +134,7 @@ impl From<DriverError> for ApiError {
     fn from(error: DriverError) -> Self {
         match error {
             DriverError::DatabaseError => ApiError::InternalServerError,
+            DriverError::Internal => ApiError::InternalServerError,
             DriverError::DriverAlreadyExists => ApiError::Conflict { error_code: "DRIVER_ALREADY_EXISTS".to_string() },
             DriverError::EmailDomainDenylisted { domain } => {
                 let mut content = Mapping::new();
@@ -146,6 +147,7 @@ impl From<DriverError> for ApiError {
                     content: Some(Value::Mapping(content))
                 }
             },
+            DriverError::DriverNotFound => ApiError::NotFound { error_code: "DRIVER_NOT_FOUND".to_string() },
         }
     }
 }

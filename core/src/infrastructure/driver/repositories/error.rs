@@ -5,9 +5,15 @@ pub enum DriverError {
     #[error("A database error occurred")]
     DatabaseError,
 
+    #[error("An internal error occurred")]
+    Internal,
+
     #[error("Driver already exists")]
     DriverAlreadyExists,
 
     #[error("Email domain '{domain}' is denylisted")]
     EmailDomainDenylisted { domain: String },
+
+    #[error("Driver not found")]
+    DriverNotFound,
 }
