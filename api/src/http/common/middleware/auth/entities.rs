@@ -3,6 +3,8 @@ use plannify_driver_api_core::domain::driver::entities::DriverRow;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use tracing::error;
+
 use crate::{config::JwtConfig, http::common::api_error::ApiError};
 
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
@@ -100,14 +102,20 @@ impl TokenValidator for AuthValidator {
             &access_claims,
             &jsonwebtoken::EncodingKey::from_secret(self.secret_key.as_bytes()),
         )
-        .map_err(|_| ApiError::InternalServerError)?;
+        .map_err(|_| {
+            error!("Failed to create access token for user {}", driver.pk_driver_id);
+            ApiError::InternalServerError
+        })?;
 
         let refresh_token = jsonwebtoken::encode(
             &jsonwebtoken::Header::new(Algorithm::HS256),
             &refresh_claims,
             &jsonwebtoken::EncodingKey::from_secret(self.secret_key.as_bytes()),
         )
-        .map_err(|_| ApiError::InternalServerError)?;
+        .map_err(|_| {
+            error!("Failed to create refresh token for user {}", driver.pk_driver_id);
+            ApiError::InternalServerError
+        })?;
 
         Ok((access_token, refresh_token))
     }
@@ -127,6 +135,12 @@ impl TokenValidator for AuthValidator {
         if claims.is_expired() {
             return Err(ApiError::Unauthorized {
                 error_code: "TOKEN_EXPIRED".to_string(),
+            });
+        }
+
+        if !claims.driver.verified {
+            return Err(ApiError::Unauthorized {
+                error_code: "DRIVER_NOT_VERIFIED".to_string(),
             });
         }
 
