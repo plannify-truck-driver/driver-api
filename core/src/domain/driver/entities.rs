@@ -32,30 +32,30 @@ pub struct CreateDriverRequest {
     #[validate(length(
         min = 1,
         max = 255,
-        message = "Firstname is required and cannot be longer than 255 characters"
+        message = "firstname is required and cannot be longer than 255 characters"
     ))]
     pub firstname: String,
 
     #[validate(length(
         min = 1,
         max = 255,
-        message = "Lastname is required and cannot be longer than 255 characters"
+        message = "lastname is required and cannot be longer than 255 characters"
     ))]
     pub lastname: String,
 
-    #[validate(length(equal = 1, message = "Gender must be 'M', 'F' or undefined"))]
+    #[validate(length(equal = 1, message = "gender must be 'M', 'F' or undefined"))]
     pub gender: Option<String>,
 
     #[validate(email(message = "Invalid email format"))]
-    #[validate(length(max = 255, message = "Email cannot be longer than 255 characters"))]
+    #[validate(length(min = 1, max = 255, message = "email is required and cannot be longer than 255 characters"))]
     pub email: String,
 
-    #[validate(length(min = 8, message = "Password must contain at least 8 characters"))]
+    #[validate(length(min = 8, max = 40, message = "password must contain at least 8 characters and at most 40 characters"))]
     pub password: String,
 
     #[validate(length(
         equal = 2,
-        message = "Language must be a 2 characters code (ex: fr, en)"
+        message = "language must be a 2 characters code (ex: fr, en)"
     ))]
     pub language: String,
 }
@@ -63,4 +63,14 @@ pub struct CreateDriverRequest {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CreateDriverResponse {
     pub access_token: String,
+}
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct LoginDriverRequest {
+    #[validate(email(message = "Invalid email format"))]
+    #[validate(length(max = 255, message = "email cannot be longer than 255 characters"))]
+    pub email: String,
+
+    #[validate(length(min = 1, message = "password must be provided"))]
+    pub password: String,
 }

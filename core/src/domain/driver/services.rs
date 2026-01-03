@@ -2,7 +2,7 @@ use crate::{
     Service,
     domain::{
         driver::{
-            entities::{CreateDriverRequest, DriverRow},
+            entities::{CreateDriverRequest, DriverRow, LoginDriverRequest},
             port::{DriverRepository, DriverService},
         },
         health::port::HealthRepository,
@@ -11,7 +11,8 @@ use crate::{
 };
 use argon2::{
     Algorithm, Argon2, Params, Version,
-    password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
+    password_hash::{PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+    password_hash::PasswordHash,
 };
 use tracing::error;
 
@@ -77,6 +78,36 @@ where
         create_request.password = password_hash.to_string();
 
         self.driver_repository.create_driver(create_request).await
+    }
+
+    async fn login_driver(
+        &self,
+        login_request: LoginDriverRequest,
+    ) -> Result<DriverRow, DriverError> {
+        let email = login_request.email.trim().to_lowercase();
+        let driver = self.driver_repository.get_driver_by_email(email)
+        .await
+        .map_err(|_| DriverError::InvalidCredentials)?;
+
+        let params = Params::new(19 * 1024, 2, 1, None).map_err(|e| {
+            error!(
+                "Failed to create Argon2 params for refresh token hashing: {}",
+                e
+            );
+            DriverError::Internal
+        })?; // 19 MiB, 2 itérations, 1 thread
+        let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
+
+        let parsed_hash = PasswordHash::new(&driver.password_hash).map_err(|e| {
+            error!("Failed to parse password hash: {}", e);
+            DriverError::Internal
+        })?;
+        match argon2.verify_password(login_request.password.as_bytes(), &parsed_hash).is_ok() {
+            true => (),
+            false => return Err(DriverError::InvalidCredentials),
+        }
+
+        Ok(driver)
     }
 
     async fn generate_tokens<F>(

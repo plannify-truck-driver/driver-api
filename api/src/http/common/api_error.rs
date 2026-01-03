@@ -146,6 +146,9 @@ impl From<DriverError> for ApiError {
         match error {
             DriverError::DatabaseError => ApiError::InternalServerError,
             DriverError::Internal => ApiError::InternalServerError,
+            DriverError::InvalidCredentials => ApiError::Unauthorized {
+                error_code: "INVALID_CREDENTIALS".to_string(),
+            },
             DriverError::DriverAlreadyExists => ApiError::Conflict {
                 error_code: "DRIVER_ALREADY_EXISTS".to_string(),
             },

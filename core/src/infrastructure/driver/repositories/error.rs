@@ -8,6 +8,9 @@ pub enum DriverError {
     #[error("An internal error occurred")]
     Internal,
 
+    #[error("Invalid credentials")]
+    InvalidCredentials,
+
     #[error("Driver already exists")]
     DriverAlreadyExists,
 

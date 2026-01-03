@@ -1,12 +1,17 @@
 use uuid::Uuid;
 
 use crate::{
-    domain::driver::entities::{CreateDriverRequest, DriverRow},
+    domain::driver::entities::{CreateDriverRequest, DriverRow, LoginDriverRequest},
     infrastructure::driver::repositories::error::DriverError,
 };
 use std::future::Future;
 
 pub trait DriverRepository: Send + Sync {
+    fn get_driver_by_email(
+        &self,
+        email: String,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
     fn create_driver(
         &self,
         create_request: CreateDriverRequest,
@@ -25,6 +30,11 @@ pub trait DriverService: Send + Sync {
         &self,
         create_request: CreateDriverRequest,
         email_list_deny: Vec<String>,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
+    fn login_driver(
+        &self,
+        login_request: LoginDriverRequest,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 
     fn generate_tokens<F>(
