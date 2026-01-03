@@ -1,6 +1,6 @@
 use api::{ApiError, app::App};
-use tracing_subscriber::EnvFilter;
 use dotenv::dotenv;
+use tracing_subscriber::EnvFilter;
 
 use api::config::Config;
 use clap::Parser;

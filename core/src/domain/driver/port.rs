@@ -1,6 +1,9 @@
 use uuid::Uuid;
 
-use crate::{domain::driver::entities::{CreateDriverRequest, DriverRow}, infrastructure::driver::repositories::error::DriverError};
+use crate::{
+    domain::driver::entities::{CreateDriverRequest, DriverRow},
+    infrastructure::driver::repositories::error::DriverError,
+};
 use std::future::Future;
 
 pub trait DriverRepository: Send + Sync {

@@ -87,12 +87,16 @@ impl TokenValidator for AuthValidator {
             &DecodingKey::from_secret(self.secret_key.as_bytes()),
             &Validation::new(Algorithm::HS256),
         )
-        .map_err(|_| ApiError::Unauthorized { error_code: "UNAUTHORIZED".to_string() })?;
+        .map_err(|_| ApiError::Unauthorized {
+            error_code: "UNAUTHORIZED".to_string(),
+        })?;
 
         let claims = token_data.claims;
 
         if claims.is_expired() {
-            return Err(ApiError::Unauthorized { error_code: "TOKEN_EXPIRED".to_string() });
+            return Err(ApiError::Unauthorized {
+                error_code: "TOKEN_EXPIRED".to_string(),
+            });
         }
 
         Ok(UserIdentity {

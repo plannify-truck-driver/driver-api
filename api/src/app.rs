@@ -1,16 +1,27 @@
-use axum::{http::{HeaderValue, Method, header::{AUTHORIZATION, CONTENT_TYPE}}, middleware::from_extractor_with_state};
-use tower_http::cors::CorsLayer;
+use axum::{
+    http::{
+        HeaderValue, Method,
+        header::{AUTHORIZATION, CONTENT_TYPE},
+    },
+    middleware::from_extractor_with_state,
+};
 use plannify_driver_api_core::{application::create_repositories, domain::common::CoreError};
 use sqlx::postgres::PgConnectOptions;
+use tower_http::cors::CorsLayer;
+use tracing::info;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_scalar::{Scalar, Servable};
-use tracing::info;
 use uuid::Uuid;
 
 use crate::{
-    ApiError, AppState, AuthMiddleware, AuthValidator, config::Config, health_routes,
-    http::{authentication::routes::authentication_routes, common::middleware::auth::entities::TokenValidator, drivers::routes::driver_routes},
+    ApiError, AppState, AuthMiddleware, AuthValidator,
+    config::Config,
+    health_routes,
+    http::{
+        authentication::routes::authentication_routes,
+        common::middleware::auth::entities::TokenValidator, drivers::routes::driver_routes,
+    },
 };
 
 #[derive(OpenApi)]
@@ -46,7 +57,8 @@ impl App {
         .into();
         state.config = config.clone();
 
-        let cors_origins = config.common
+        let cors_origins = config
+            .common
             .origins
             .iter()
             .map(|origin| {
@@ -106,7 +118,7 @@ impl App {
         let health_router = axum::Router::new()
             .merge(health_routes())
             .with_state(state.clone());
-        
+
         Ok(Self {
             config,
             state,
@@ -135,7 +147,10 @@ impl App {
                 msg: format!("Failed to bind API server: {}", api_addr),
             })?;
 
-        info!("Starting driver API server ({}) and health server ({})", api_addr, health_addr);
+        info!(
+            "Starting driver API server ({}) and health server ({})",
+            api_addr, health_addr
+        );
 
         // Run both servers concurrently
         tokio::try_join!(

@@ -1,6 +1,12 @@
 use sqlx::PgPool;
 
-use crate::{domain::driver::{entities::{CreateDriverRequest, DriverRow}, port::DriverRepository}, infrastructure::driver::repositories::error::DriverError};
+use crate::{
+    domain::driver::{
+        entities::{CreateDriverRequest, DriverRow},
+        port::DriverRepository,
+    },
+    infrastructure::driver::repositories::error::DriverError,
+};
 
 #[derive(Clone)]
 pub struct PostgresDriverRepository {
@@ -37,10 +43,7 @@ impl DriverRepository for PostgresDriverRepository {
         .map_err(|_| DriverError::DriverAlreadyExists)
     }
 
-    async fn update_driver(
-        &self,
-        driver: DriverRow,
-    ) -> Result<DriverRow, DriverError> {
+    async fn update_driver(&self, driver: DriverRow) -> Result<DriverRow, DriverError> {
         sqlx::query_as!(
             DriverRow,
             r#"

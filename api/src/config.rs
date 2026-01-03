@@ -113,11 +113,7 @@ pub struct CommonConfig {
     )]
     pub health_port: u16,
 
-    #[arg(
-        long = "cors-origins",
-        env = "CORS_ORIGINS",
-        value_delimiter = ','
-    )]
+    #[arg(long = "cors-origins", env = "CORS_ORIGINS", value_delimiter = ',')]
     pub origins: Vec<String>,
 }
 

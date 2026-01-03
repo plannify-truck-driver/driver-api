@@ -4,7 +4,10 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use plannify_driver_api_core::{
-    domain::common::CoreError, infrastructure::{driver::repositories::error::DriverError, health::repositories::error::HealthError}
+    domain::common::CoreError,
+    infrastructure::{
+        driver::repositories::error::DriverError, health::repositories::error::HealthError,
+    },
 };
 use serde::Serialize;
 use serde_yaml::{Mapping, Value};
@@ -33,7 +36,10 @@ pub enum ApiError {
     NotFound { error_code: String },
 
     #[error("Bad request")]
-    BadRequest { error_code: String, content: Option<Value> },
+    BadRequest {
+        error_code: String,
+        content: Option<Value>,
+    },
 
     #[error("Conflict")]
     Conflict { error_code: String },
@@ -85,7 +91,10 @@ impl Into<ErrorBody> for ApiError {
                 content: None,
                 status: status,
             },
-            ApiError::BadRequest { error_code, content } => ErrorBody {
+            ApiError::BadRequest {
+                error_code,
+                content,
+            } => ErrorBody {
                 message: message,
                 error_code: error_code,
                 content: content,
@@ -117,7 +126,9 @@ impl From<CoreError> for ApiError {
     fn from(error: CoreError) -> Self {
         match error {
             CoreError::ServiceUnavailable(message) => ApiError::ServiceUnavailable { msg: message },
-            CoreError::CorsBindingError { message } => ApiError::StartupError { msg: format!("CORS binding error: {}", message) },
+            CoreError::CorsBindingError { message } => ApiError::StartupError {
+                msg: format!("CORS binding error: {}", message),
+            },
         }
     }
 }
@@ -135,19 +146,20 @@ impl From<DriverError> for ApiError {
         match error {
             DriverError::DatabaseError => ApiError::InternalServerError,
             DriverError::Internal => ApiError::InternalServerError,
-            DriverError::DriverAlreadyExists => ApiError::Conflict { error_code: "DRIVER_ALREADY_EXISTS".to_string() },
+            DriverError::DriverAlreadyExists => ApiError::Conflict {
+                error_code: "DRIVER_ALREADY_EXISTS".to_string(),
+            },
             DriverError::EmailDomainDenylisted { domain } => {
                 let mut content = Mapping::new();
-                content.insert(
-                    Value::String("domain".to_string()),
-                    Value::String(domain)
-                );
-                ApiError::BadRequest { 
-                    error_code: "EMAIL_DOMAIN_DENYLISTED".to_string(), 
-                    content: Some(Value::Mapping(content))
+                content.insert(Value::String("domain".to_string()), Value::String(domain));
+                ApiError::BadRequest {
+                    error_code: "EMAIL_DOMAIN_DENYLISTED".to_string(),
+                    content: Some(Value::Mapping(content)),
                 }
+            }
+            DriverError::DriverNotFound => ApiError::NotFound {
+                error_code: "DRIVER_NOT_FOUND".to_string(),
             },
-            DriverError::DriverNotFound => ApiError::NotFound { error_code: "DRIVER_NOT_FOUND".to_string() },
         }
     }
 }

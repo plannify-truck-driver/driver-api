@@ -13,17 +13,28 @@ pub struct AppState {
 impl AppState {
     /// Create a new AppState with the given service
     pub fn new(service: DriverService, config: Config, auth_validator: AuthValidator) -> Self {
-        Self { service, config, auth_validator }
+        Self {
+            service,
+            config,
+            auth_validator,
+        }
     }
 }
 
 impl From<DriverRepositories> for AppState {
     fn from(repositories: DriverRepositories) -> Self {
-        let service = DriverService::new(repositories.health_repository, repositories.driver_repository);
+        let service = DriverService::new(
+            repositories.health_repository,
+            repositories.driver_repository,
+        );
         let config = Config::default();
         let jwt_config = &config.jwt;
         let auth_validator = AuthValidator::new(jwt_config);
-        
-        AppState { service, config: Config::default(), auth_validator }
+
+        AppState {
+            service,
+            config: Config::default(),
+            auth_validator,
+        }
     }
 }

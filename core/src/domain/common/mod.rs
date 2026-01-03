@@ -8,5 +8,5 @@ pub enum CoreError {
     ServiceUnavailable(String),
 
     #[error("Unable to bind CORS origins: {message}")]
-    CorsBindingError { message: String }
+    CorsBindingError { message: String },
 }

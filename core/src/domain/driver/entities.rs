@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::prelude::FromRow;
 use utoipa::ToSchema;
 use uuid::Uuid;
-use serde_json::Value;
 use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -29,23 +29,34 @@ pub struct DriverRow {
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct CreateDriverRequest {
-    #[validate(length(min = 1, max = 255, message = "Firstname is required and cannot be longer than 255 characters"))]
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "Firstname is required and cannot be longer than 255 characters"
+    ))]
     pub firstname: String,
-    
-    #[validate(length(min = 1, max = 255, message = "Lastname is required and cannot be longer than 255 characters"))]
+
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "Lastname is required and cannot be longer than 255 characters"
+    ))]
     pub lastname: String,
-    
+
     #[validate(length(equal = 1, message = "Gender must be 'M', 'F' or undefined"))]
     pub gender: Option<String>,
-    
+
     #[validate(email(message = "Invalid email format"))]
     #[validate(length(max = 255, message = "Email cannot be longer than 255 characters"))]
     pub email: String,
-    
+
     #[validate(length(min = 8, message = "Password must contain at least 8 characters"))]
     pub password: String,
-    
-    #[validate(length(equal = 2, message = "Language must be a 2 characters code (ex: fr, en)"))]
+
+    #[validate(length(
+        equal = 2,
+        message = "Language must be a 2 characters code (ex: fr, en)"
+    ))]
     pub language: String,
 }
 

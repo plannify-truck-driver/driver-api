@@ -21,7 +21,9 @@ where
     ) -> Result<Self, Self::Rejection> {
         let cookie_jar = CookieJar::from_request_parts(parts, state)
             .await
-            .map_err(|_| ApiError::Unauthorized { error_code: "UNAUTHORIZED".to_string() })?;
+            .map_err(|_| ApiError::Unauthorized {
+                error_code: "UNAUTHORIZED".to_string(),
+            })?;
         let token: String;
 
         // try to get token from cookies
@@ -34,7 +36,9 @@ where
                 .get(header::AUTHORIZATION)
                 .and_then(|auth_header| auth_header.to_str().ok())
                 .and_then(|auth_str| auth_str.strip_prefix("Bearer "))
-                .ok_or_else(|| ApiError::Unauthorized { error_code: "UNAUTHORIZED".to_string() })?
+                .ok_or_else(|| ApiError::Unauthorized {
+                    error_code: "UNAUTHORIZED".to_string(),
+                })?
                 .to_string();
 
             token = auth_header;

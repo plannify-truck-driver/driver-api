@@ -1,6 +1,9 @@
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 
-use crate::{PostgresHealthRepository, Service, domain::common::CoreError, infrastructure::driver::repositories::postgres::PostgresDriverRepository};
+use crate::{
+    PostgresHealthRepository, Service, domain::common::CoreError,
+    infrastructure::driver::repositories::postgres::PostgresDriverRepository,
+};
 
 pub type DriverService = Service<PostgresHealthRepository, PostgresDriverRepository>;
 
@@ -22,7 +25,10 @@ pub async fn create_repositories(
     let health_repository = PostgresHealthRepository::new(pg_pool.clone());
     let driver_repository = PostgresDriverRepository::new(pg_pool.clone());
 
-    Ok(DriverRepositories { health_repository, driver_repository })
+    Ok(DriverRepositories {
+        health_repository,
+        driver_repository,
+    })
 }
 
 impl Into<DriverService> for DriverRepositories {
