@@ -102,7 +102,7 @@ pub async fn login(
 
     Ok((
         AppendHeaders(headers),
-        Response::created(CreateDriverResponse {
+        Response::ok(CreateDriverResponse {
             access_token: access_token,
         }),
     ))

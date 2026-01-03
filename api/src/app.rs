@@ -3,7 +3,7 @@ use axum::{
         HeaderValue, Method,
         header::{AUTHORIZATION, CONTENT_TYPE},
     },
-    middleware::from_extractor_with_state,
+    middleware::{from_extractor_with_state, from_fn},
 };
 use plannify_driver_api_core::{application::create_repositories, domain::common::CoreError};
 use sqlx::postgres::PgConnectOptions;
@@ -17,7 +17,10 @@ use crate::{
     ApiError, AppState, AuthMiddleware, AuthValidator,
     config::Config,
     health_routes,
-    http::{authentication::routes::authentication_routes, drivers::routes::driver_routes},
+    http::{
+        authentication::routes::authentication_routes,
+        common::middleware::tracing::tracing_middleware, drivers::routes::driver_routes,
+    },
 };
 
 #[derive(OpenApi)]
@@ -100,7 +103,8 @@ impl App {
 
         let app_router = app_router
             .with_state(state.clone())
-            .merge(Scalar::with_url("/doc", api));
+            .merge(Scalar::with_url("/doc", api))
+            .layer(from_fn(tracing_middleware));
 
         // Write OpenAPI spec to file in development environment
         if matches!(config.environment, crate::config::Environment::Development) {
@@ -111,7 +115,8 @@ impl App {
 
         let health_router = axum::Router::new()
             .merge(health_routes())
-            .with_state(state.clone());
+            .with_state(state.clone())
+            .layer(from_fn(tracing_middleware));
 
         Ok(Self {
             config,

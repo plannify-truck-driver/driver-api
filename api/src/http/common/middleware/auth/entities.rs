@@ -103,7 +103,10 @@ impl TokenValidator for AuthValidator {
             &jsonwebtoken::EncodingKey::from_secret(self.secret_key.as_bytes()),
         )
         .map_err(|_| {
-            error!("Failed to create access token for user {}", driver.pk_driver_id);
+            error!(
+                "Failed to create access token for user {}",
+                driver.pk_driver_id
+            );
             ApiError::InternalServerError
         })?;
 
@@ -113,7 +116,10 @@ impl TokenValidator for AuthValidator {
             &jsonwebtoken::EncodingKey::from_secret(self.secret_key.as_bytes()),
         )
         .map_err(|_| {
-            error!("Failed to create refresh token for user {}", driver.pk_driver_id);
+            error!(
+                "Failed to create refresh token for user {}",
+                driver.pk_driver_id
+            );
             ApiError::InternalServerError
         })?;
 
