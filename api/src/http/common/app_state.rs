@@ -26,6 +26,7 @@ impl From<DriverRepositories> for AppState {
         let service = DriverService::new(
             repositories.health_repository,
             repositories.driver_repository,
+            repositories.workday_repository,
         );
         let config = Config::default();
         let jwt_config = &config.jwt;

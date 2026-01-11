@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+pub mod entities;
 pub mod services;
 
 #[derive(Error, Debug, Clone)]

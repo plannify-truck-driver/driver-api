@@ -19,17 +19,24 @@ use crate::{
     health_routes,
     http::{
         authentication::routes::authentication_routes,
-        common::middleware::tracing::tracing_middleware, drivers::routes::driver_routes,
+        common::middleware::tracing::tracing_middleware, driver::routes::driver_routes, workday::routes::workday_routes,
     },
 };
 
 #[derive(OpenApi)]
-#[openapi(info(
-    title = "Plannify Driver openapi",
-    contact(name = "contact@plannify.be"),
-    description = "API documentation for the Plannify Driver API",
-    version = "0.1.0"
-))]
+#[openapi(
+    info(
+        title = "Plannify Driver openapi",
+        contact(name = "contact@plannify.be"),
+        description = "API documentation for the Plannify Driver API",
+        version = "0.1.0"
+    ),
+    servers(
+        (url = "http://localhost:3000", description = "Local development server"),
+        (url = "https://api.plannify.be/driver", description = "Production server")
+    ),
+    modifiers(&SecurityAddon)
+)]
 struct ApiDoc;
 pub struct App {
     config: Config,
@@ -86,6 +93,7 @@ impl App {
 
         let (app_router, mut api) = OpenApiRouter::<AppState>::new()
             .merge(driver_routes())
+            .merge(workday_routes())
             .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
                 auth_validator.clone(),
             ))
@@ -175,5 +183,24 @@ impl AppBuilder for App {
     async fn with_state(mut self, state: AppState) -> Result<App, ApiError> {
         self.state = state;
         Ok(self)
+    }
+}
+
+struct SecurityAddon;
+
+impl utoipa::Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "bearer_auth",
+                utoipa::openapi::security::SecurityScheme::Http(
+                    utoipa::openapi::security::HttpBuilder::new()
+                        .scheme(utoipa::openapi::security::HttpAuthScheme::Bearer)
+                        .bearer_format("JWT")
+                        .description(Some("JWT Bearer token"))
+                        .build(),
+                ),
+            )
+        }
     }
 }

@@ -7,6 +7,7 @@ use plannify_driver_api_core::{
     domain::common::CoreError,
     infrastructure::{
         driver::repositories::error::DriverError, health::repositories::error::HealthError,
+        workday::repositories::error::WorkdayError,
     },
 };
 use serde::Serialize;
@@ -163,6 +164,14 @@ impl From<DriverError> for ApiError {
             DriverError::DriverNotFound => ApiError::NotFound {
                 error_code: "DRIVER_NOT_FOUND".to_string(),
             },
+        }
+    }
+}
+
+impl From<WorkdayError> for ApiError {
+    fn from(error: WorkdayError) -> Self {
+        match error {
+            WorkdayError::DatabaseError => ApiError::InternalServerError,
         }
     }
 }

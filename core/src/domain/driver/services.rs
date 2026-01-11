@@ -6,6 +6,7 @@ use crate::{
             port::{DriverRepository, DriverService},
         },
         health::port::HealthRepository,
+        workday::port::WorkdayRepository,
     },
     infrastructure::driver::repositories::error::DriverError,
 };
@@ -16,10 +17,11 @@ use argon2::{
 };
 use tracing::error;
 
-impl<H, D> DriverService for Service<H, D>
+impl<H, D, W> DriverService for Service<H, D, W>
 where
     H: HealthRepository,
     D: DriverRepository,
+    W: WorkdayRepository,
 {
     fn to_title_case(name: String) -> String {
         name.trim()

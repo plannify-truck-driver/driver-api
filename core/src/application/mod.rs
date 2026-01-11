@@ -1,16 +1,22 @@
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 
 use crate::{
-    PostgresHealthRepository, Service, domain::common::CoreError,
-    infrastructure::driver::repositories::postgres::PostgresDriverRepository,
+    PostgresHealthRepository, Service,
+    domain::common::CoreError,
+    infrastructure::{
+        driver::repositories::postgres::PostgresDriverRepository,
+        workday::repositories::postgres::PostgresWorkdayRepository,
+    },
 };
 
-pub type DriverService = Service<PostgresHealthRepository, PostgresDriverRepository>;
+pub type DriverService =
+    Service<PostgresHealthRepository, PostgresDriverRepository, PostgresWorkdayRepository>;
 
 #[derive(Clone)]
 pub struct DriverRepositories {
     pub health_repository: PostgresHealthRepository,
     pub driver_repository: PostgresDriverRepository,
+    pub workday_repository: PostgresWorkdayRepository,
 }
 
 pub async fn create_repositories(
@@ -24,15 +30,21 @@ pub async fn create_repositories(
 
     let health_repository = PostgresHealthRepository::new(pg_pool.clone());
     let driver_repository = PostgresDriverRepository::new(pg_pool.clone());
+    let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
 
     Ok(DriverRepositories {
         health_repository,
         driver_repository,
+        workday_repository,
     })
 }
 
 impl Into<DriverService> for DriverRepositories {
     fn into(self) -> DriverService {
-        Service::new(self.health_repository, self.driver_repository)
+        Service::new(
+            self.health_repository,
+            self.driver_repository,
+            self.workday_repository,
+        )
     }
 }

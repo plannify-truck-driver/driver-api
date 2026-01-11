@@ -19,6 +19,7 @@ sqlx = { version = "0.8.6", features = [
     "runtime-tokio",
     "uuid",
     "chrono",
+    "bigdecimal",
 ] }
 uuid = { version = "1.18.1", features = ["serde", "v4"] }
 thiserror = { workspace = true }
