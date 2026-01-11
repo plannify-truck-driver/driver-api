@@ -63,6 +63,8 @@ where
     }
 
     async fn delete_workday(&self, driver_id: Uuid, date: NaiveDate) -> Result<(), WorkdayError> {
-        self.workday_repository.delete_workday(driver_id, date).await
+        self.workday_repository
+            .delete_workday(driver_id, date)
+            .await
     }
 }

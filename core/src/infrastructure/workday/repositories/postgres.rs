@@ -138,7 +138,7 @@ impl WorkdayRepository for PostgresWorkdayRepository {
         })
     }
 
-    async fn delete_workday(&self, driver_id: Uuid,date: NaiveDate) -> Result<(), WorkdayError> {
+    async fn delete_workday(&self, driver_id: Uuid, date: NaiveDate) -> Result<(), WorkdayError> {
         sqlx::query!(
             r#"
             DELETE FROM workdays

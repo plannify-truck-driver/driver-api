@@ -1,9 +1,17 @@
-use axum::{Extension, extract::{Query, State}};
-use plannify_driver_api_core::domain::workday::{entities::{GetWorkdaysByMonthParams, Workday}, port::WorkdayService};
+use axum::{
+    Extension,
+    extract::{Query, State},
+};
+use plannify_driver_api_core::domain::workday::{
+    entities::{GetWorkdaysByMonthParams, Workday},
+    port::WorkdayService,
+};
 
 use crate::{
     ApiError, AppState,
-    http::common::{api_error::ErrorBody, middleware::auth::entities::UserIdentity, response::Response},
+    http::common::{
+        api_error::ErrorBody, middleware::auth::entities::UserIdentity, response::Response,
+    },
 };
 
 #[utoipa::path(
@@ -24,7 +32,10 @@ pub async fn get_all_month(
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
 ) -> Result<Response<Vec<Workday>>, ApiError> {
-    let workdays = state.service.get_workdays_by_month(user_identity.user_id, query.month, query.year).await?;
+    let workdays = state
+        .service
+        .get_workdays_by_month(user_identity.user_id, query.month, query.year)
+        .await?;
     let response_workdays: Vec<Workday> = workdays.iter().map(|w| w.to_workday()).collect();
 
     Ok(Response::ok(response_workdays))
