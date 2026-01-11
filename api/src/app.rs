@@ -19,8 +19,7 @@ use crate::{
     health_routes,
     http::{
         authentication::routes::authentication_routes,
-        common::middleware::tracing::tracing_middleware,
-        workday::routes::workday_routes,
+        common::middleware::tracing::tracing_middleware, workday::routes::workday_routes,
     },
 };
 

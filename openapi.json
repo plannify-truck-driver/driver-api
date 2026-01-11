@@ -115,6 +115,51 @@
         "security": []
       }
     },
+    "/workdays": {
+      "post": {
+        "tags": [
+          "workdays"
+        ],
+        "operationId": "create_workday",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkdayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Workday created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workday"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/workdays/month": {
       "get": {
         "tags": [
@@ -216,6 +261,36 @@
         ],
         "properties": {
           "access_token": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateWorkdayRequest": {
+        "type": "object",
+        "required": [
+          "date",
+          "start_time",
+          "rest_time",
+          "overnight_rest"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_time": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "overnight_rest": {
+            "type": "boolean"
+          },
+          "rest_time": {
+            "type": "string"
+          },
+          "start_time": {
             "type": "string"
           }
         }

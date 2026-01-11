@@ -103,6 +103,13 @@ impl WorkdayRepository for PostgresWorkdayRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|e| {
+            if e.as_database_error()
+                .and_then(|db_err| db_err.code().map(|code| code == "23505"))
+                .unwrap_or(false)
+            {
+                return WorkdayError::WorkdayAlreadyExists;
+            }
+
             error!("Failed to create workday: {:?}", e);
             WorkdayError::DatabaseError
         })
