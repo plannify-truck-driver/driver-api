@@ -39,6 +39,7 @@ impl WorkdayRow {
 }
 
 #[derive(Deserialize, Validate, IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct GetWorkdaysByMonthParams {
     #[validate(range(min = 1, max = 12, message = "month must be between 1 and 12"))]
     pub month: i32,
