@@ -19,6 +19,7 @@ use crate::{
     post,
     path = "/authentication/signup",
     tag = "authentication",
+    security(),
     request_body = CreateDriverRequest,
     responses(
         (status = 201, description = "Driver signed up successfully", body = CreateDriverResponse),
@@ -67,6 +68,7 @@ pub async fn signup(
     post,
     path = "/authentication/login",
     tag = "authentication",
+    security(),
     request_body = LoginDriverRequest,
     responses(
         (status = 200, description = "Driver logged in successfully", body = CreateDriverResponse),

@@ -60,7 +60,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/authentication/signup": {
@@ -110,7 +111,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/workdays/month": {
