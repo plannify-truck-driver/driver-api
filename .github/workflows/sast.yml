@@ -1,0 +1,25 @@
+name: SAST
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  sast-detection:
+    name: SAST Analysis
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run SAST Analysis
+        run: semgrep ci --config=auto --code --no-suppress-errors --json --json-output=sast-report.json
+
+      - name: Upload SAST Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: sast-report
+          path: sast-report.json
