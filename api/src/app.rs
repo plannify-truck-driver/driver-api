@@ -2,8 +2,7 @@ use axum::{
     http::{
         HeaderValue, Method,
         header::{AUTHORIZATION, CONTENT_TYPE},
-    },
-    middleware::{from_extractor_with_state, from_fn},
+    }, middleware::{from_extractor_with_state, from_fn}
 };
 use plannify_driver_api_core::{application::create_repositories, domain::common::CoreError};
 use sqlx::postgres::PgConnectOptions;
@@ -91,12 +90,15 @@ impl App {
         let auth_validator = AuthValidator::new(&config.clone().jwt);
         state.auth_validator = auth_validator.clone();
 
+        let router = OpenApiRouter::<AppState>::new()
+                .merge(workday_routes())
+                .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
+                    auth_validator.clone(),
+                ))
+                .merge(authentication_routes());
+
         let (app_router, mut api) = OpenApiRouter::<AppState>::new()
-            .merge(workday_routes())
-            .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
-                auth_validator.clone(),
-            ))
-            .merge(authentication_routes())
+            .nest("/driver", router)
             .layer(cors)
             .split_for_parts();
 
