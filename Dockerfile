@@ -53,4 +53,3 @@ WORKDIR /usr/local/src/user
 EXPOSE 3000
 
 ENTRYPOINT ["api"]
-CMD ["run"]
