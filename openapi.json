@@ -116,6 +116,79 @@
       }
     },
     "/workdays": {
+      "get": {
+        "tags": [
+          "workdays"
+        ],
+        "operationId": "get_all_period",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Period workdays retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_Workday"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "workdays"
@@ -329,6 +402,59 @@
           },
           "password": {
             "type": "string"
+          }
+        }
+      },
+      "PaginatedResponse_Workday": {
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "start_time",
+                "rest_time",
+                "overnight_rest"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "end_time": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "overnight_rest": {
+                  "type": "boolean"
+                },
+                "rest_time": {
+                  "type": "string"
+                },
+                "start_time": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           }
         }
       },

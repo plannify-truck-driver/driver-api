@@ -48,6 +48,28 @@ pub struct GetWorkdaysByMonthParams {
     pub year: i32,
 }
 
+#[derive(Deserialize, Validate, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct GetWorkdaysByPeriodParams {
+    #[validate(custom(
+        function = "validate_date",
+        message = "date must be between 1900 and 2100"
+    ))]
+    pub from: NaiveDate,
+
+    #[validate(custom(
+        function = "validate_date",
+        message = "date must be between 1900 and 2100"
+    ))]
+    pub to: NaiveDate,
+
+    #[validate(range(min = 1, message = "page must be at least 1"))]
+    pub page: u32,
+
+    #[validate(range(min = 1, max = 100, message = "limit must be between 1 and 100"))]
+    pub limit: u32,
+}
+
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct CreateWorkdayRequest {
     #[validate(custom(

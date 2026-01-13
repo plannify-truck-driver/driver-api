@@ -56,7 +56,27 @@ impl WorkdayRepository for PostgresWorkdayRepository {
         driver_id: Uuid,
         start_date: NaiveDate,
         end_date: NaiveDate,
+        page: u32,
+        limit: u32,
     ) -> Result<(Vec<WorkdayRow>, u32), WorkdayError> {
+        let total_count_record = sqlx::query!(
+            r#"
+            SELECT COUNT(*) as count
+            FROM workdays
+            WHERE date BETWEEN $1 AND $2
+            AND fk_driver_id = $3
+            "#,
+            start_date,
+            end_date,
+            driver_id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to count workdays by period: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
         let workdays = sqlx::query_as!(
             WorkdayRow,
             r#"
@@ -65,10 +85,13 @@ impl WorkdayRepository for PostgresWorkdayRepository {
             WHERE date BETWEEN $1 AND $2
             AND fk_driver_id = $3
             ORDER BY date ASC
+            LIMIT $4 OFFSET $5
             "#,
             start_date,
             end_date,
             driver_id,
+            limit as i64,
+            ((page - 1) * limit) as i64,
         )
         .fetch_all(&self.pool)
         .await
@@ -77,8 +100,7 @@ impl WorkdayRepository for PostgresWorkdayRepository {
             WorkdayError::DatabaseError
         })?;
 
-        let total_count = workdays.len() as u32;
-        Ok((workdays, total_count))
+        Ok((workdays, total_count_record.count.unwrap_or(0) as u32))
     }
 
     async fn create_workday(

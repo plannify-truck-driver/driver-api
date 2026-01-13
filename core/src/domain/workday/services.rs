@@ -36,9 +36,11 @@ where
         driver_id: Uuid,
         start_date: NaiveDate,
         end_date: NaiveDate,
+        page: u32,
+        limit: u32,
     ) -> Result<(Vec<WorkdayRow>, u32), WorkdayError> {
         self.workday_repository
-            .get_workdays_by_period(driver_id, start_date, end_date)
+            .get_workdays_by_period(driver_id, start_date, end_date, page, limit)
             .await
     }
 

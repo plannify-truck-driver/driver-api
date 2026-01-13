@@ -21,6 +21,8 @@ pub trait WorkdayRepository: Send + Sync {
         driver_id: Uuid,
         start_date: NaiveDate,
         end_date: NaiveDate,
+        page: u32,
+        limit: u32,
     ) -> impl Future<Output = Result<(Vec<WorkdayRow>, u32), WorkdayError>> + Send;
 
     fn create_workday(
@@ -55,6 +57,8 @@ pub trait WorkdayService: Send + Sync {
         driver_id: Uuid,
         start_date: NaiveDate,
         end_date: NaiveDate,
+        page: u32,
+        limit: u32,
     ) -> impl Future<Output = Result<(Vec<WorkdayRow>, u32), WorkdayError>> + Send;
 
     fn create_workday(
