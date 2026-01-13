@@ -16,7 +16,7 @@ pub struct Workday {
     pub overnight_rest: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 pub struct WorkdayRow {
     pub date: NaiveDate,
     pub start_time: NaiveTime,
