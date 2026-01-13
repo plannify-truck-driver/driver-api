@@ -197,4 +197,50 @@ impl WorkdayRepository for PostgresWorkdayRepository {
 
         Ok(())
     }
+
+    async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
+        let records = sqlx::query!(
+            r#"
+            SELECT EXTRACT(YEAR FROM date)::INTEGER as year
+            FROM workdays
+            WHERE fk_driver_id = $1
+            GROUP BY year
+            "#,
+            driver_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get workday documents: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(records.into_iter().filter_map(|r| r.year).collect())
+    }
+
+    async fn get_workday_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<Vec<i32>, WorkdayError> {
+        let records = sqlx::query!(
+            r#"
+            SELECT EXTRACT(MONTH FROM date)::INTEGER as month
+            FROM workdays
+            WHERE fk_driver_id = $1
+            AND EXTRACT(YEAR FROM date)::INTEGER = $2
+            GROUP BY month
+            "#,
+            driver_id,
+            year
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get workday documents by year: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(records.into_iter().filter_map(|r| r.month).collect())
+    }
 }

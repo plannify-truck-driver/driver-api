@@ -69,4 +69,20 @@ where
             .delete_workday(driver_id, date)
             .await
     }
+
+    async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
+        self.workday_repository
+            .get_workday_documents(driver_id)
+            .await
+    }
+
+    async fn get_workday_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<Vec<i32>, WorkdayError> {
+        self.workday_repository
+            .get_workday_documents_by_year(driver_id, year)
+            .await
+    }
 }

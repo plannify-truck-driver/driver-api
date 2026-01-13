@@ -120,6 +120,7 @@
         "tags": [
           "workdays"
         ],
+        "description": "Retrieve workdays for a specific period with pagination",
         "operationId": "get_all_period",
         "parameters": [
           {
@@ -193,6 +194,7 @@
         "tags": [
           "workdays"
         ],
+        "description": "Update an existing workday",
         "operationId": "update_workday",
         "requestBody": {
           "content": {
@@ -236,6 +238,7 @@
         "tags": [
           "workdays"
         ],
+        "description": "Create a new workday",
         "operationId": "create_workday",
         "requestBody": {
           "content": {
@@ -276,11 +279,104 @@
         ]
       }
     },
+    "/workdays/documents/year": {
+      "get": {
+        "tags": [
+          "workdays/documents"
+        ],
+        "description": "Retrieve years with workday documents",
+        "operationId": "get_workday_documents",
+        "responses": {
+          "200": {
+            "description": "Workday document years retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/workdays/documents/{year}": {
+      "get": {
+        "tags": [
+          "workdays/documents"
+        ],
+        "description": "Retrieve months with workday documents for a specific year",
+        "operationId": "get_workday_documents_by_year",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "description": "The year of the workday documents to retrieve",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workday document months retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/workdays/month": {
       "get": {
         "tags": [
           "workdays"
         ],
+        "description": "Retrieve workdays for a specific month and year",
         "operationId": "get_all_month",
         "parameters": [
           {
@@ -339,6 +435,7 @@
         "tags": [
           "workdays"
         ],
+        "description": "Delete a workday by date",
         "operationId": "delete_workday",
         "parameters": [
           {

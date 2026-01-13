@@ -25,6 +25,7 @@ use crate::{
     get,
     path = "/workdays/month",
     tag = "workdays",
+    description = "Retrieve workdays for a specific month and year",
     params(GetWorkdaysByMonthParams),
     security(
         ("bearer_auth" = [])
@@ -52,6 +53,7 @@ pub async fn get_all_month(
     get,
     path = "/workdays",
     tag = "workdays",
+    description = "Retrieve workdays for a specific period with pagination",
     params(GetWorkdaysByPeriodParams),
     security(
         ("bearer_auth" = [])
@@ -90,6 +92,7 @@ pub async fn get_all_period(
     post,
     path = "/workdays",
     tag = "workdays",
+    description = "Create a new workday",
     request_body = CreateWorkdayRequest,
     security(
         ("bearer_auth" = [])
@@ -116,6 +119,7 @@ pub async fn create_workday(
     put,
     path = "/workdays",
     tag = "workdays",
+    description = "Update an existing workday",
     request_body = UpdateWorkdayRequest,
     security(
         ("bearer_auth" = [])
@@ -142,6 +146,7 @@ pub async fn update_workday(
     delete,
     path = "/workdays/{date}",
     tag = "workdays",
+    description = "Delete a workday by date",
     params(
         ("date" = NaiveDate, Path, description = "The date of the workday to delete")
     ),
@@ -164,4 +169,58 @@ pub async fn delete_workday(
         .await?;
 
     Ok(Response::ok(()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/workdays/documents/year",
+    tag = "workdays/documents",
+    description = "Retrieve years with workday documents",
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Workday document years retrieved successfully", body = Vec<i32>),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_workday_documents(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<Vec<i32>>, ApiError> {
+    let documents = state
+        .service
+        .get_workday_documents(user_identity.user_id)
+        .await?;
+
+    Ok(Response::ok(documents))
+}
+
+#[utoipa::path(
+    get,
+    path = "/workdays/documents/{year}",
+    tag = "workdays/documents",
+    description = "Retrieve months with workday documents for a specific year",
+    params(
+        ("year" = i32, Path, description = "The year of the workday documents to retrieve")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Workday document months retrieved successfully", body = Vec<i32>),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_workday_documents_by_year(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+    Path(year): Path<i32>,
+) -> Result<Response<Vec<i32>>, ApiError> {
+    let documents = state
+        .service
+        .get_workday_documents_by_year(user_identity.user_id, year)
+        .await?;
+
+    Ok(Response::ok(documents))
 }

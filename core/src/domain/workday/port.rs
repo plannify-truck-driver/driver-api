@@ -42,6 +42,17 @@ pub trait WorkdayRepository: Send + Sync {
         driver_id: Uuid,
         date: NaiveDate,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn get_workday_documents(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
+
+    fn get_workday_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
 }
 
 pub trait WorkdayService: Send + Sync {
@@ -78,4 +89,15 @@ pub trait WorkdayService: Send + Sync {
         driver_id: Uuid,
         date: NaiveDate,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn get_workday_documents(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
+
+    fn get_workday_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
 }
