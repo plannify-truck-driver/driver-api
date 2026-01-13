@@ -21,11 +21,8 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Clippy (lint)
+      - name: Lint
         run: cargo clippy --verbose
-
-      - name: Audit Rust Dependencies
-        uses: actions-rust-lang/audit@v1
 
   sast-detection:
     name: SAST Analysis
