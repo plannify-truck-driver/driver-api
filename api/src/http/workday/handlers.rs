@@ -1,7 +1,8 @@
 use axum::{Extension, extract::State};
 use plannify_driver_api_core::domain::workday::{
     entities::{
-        CreateWorkdayRequest, GetWorkdaysByMonthParams, GetWorkdaysByPeriodParams, Workday,
+        CreateWorkdayRequest, GetWorkdaysByMonthParams, GetWorkdaysByPeriodParams,
+        UpdateWorkdayRequest, Workday,
     },
     port::WorkdayService,
 };
@@ -105,4 +106,30 @@ pub async fn create_workday(
         .await?;
 
     Ok(Response::created(workday.to_workday()))
+}
+
+#[utoipa::path(
+    put,
+    path = "/workdays",
+    tag = "workdays",
+    request_body = UpdateWorkdayRequest,
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Workday updated successfully", body = Workday),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn update_workday(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+    ValidatedJson(request): ValidatedJson<UpdateWorkdayRequest>,
+) -> Result<Response<Workday>, ApiError> {
+    let workday = state
+        .service
+        .update_workday(user_identity.user_id, request)
+        .await?;
+
+    Ok(Response::ok(workday.to_workday()))
 }

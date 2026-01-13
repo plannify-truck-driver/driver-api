@@ -99,19 +99,19 @@ pub struct UpdateWorkdayRequest {
         function = "validate_date",
         message = "date must be between 1900 and 2100"
     ))]
-    pub date: Option<NaiveDate>,
+    pub date: NaiveDate,
 
     #[validate(custom(
         function = "validate_time",
         message = "start_time must be a valid time"
     ))]
-    pub start_time: Option<NaiveTime>,
+    pub start_time: NaiveTime,
 
     #[validate(custom(function = "validate_time", message = "end_time must be a valid time"))]
     pub end_time: Option<NaiveTime>,
 
     #[validate(custom(function = "validate_time", message = "rest_time must be a valid time"))]
-    pub rest_time: Option<NaiveTime>,
+    pub rest_time: NaiveTime,
 
-    pub overnight_rest: Option<bool>,
+    pub overnight_rest: bool,
 }

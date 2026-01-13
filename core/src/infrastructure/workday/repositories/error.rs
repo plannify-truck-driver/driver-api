@@ -7,4 +7,7 @@ pub enum WorkdayError {
 
     #[error("Workday already exists for the given date")]
     WorkdayAlreadyExists,
+
+    #[error("Workday not found")]
+    WorkdayNotFound,
 }

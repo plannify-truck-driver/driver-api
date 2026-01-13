@@ -146,12 +146,11 @@ impl WorkdayRepository for PostgresWorkdayRepository {
             WorkdayRow,
             r#"
             UPDATE workdays
-            SET date = $1, start_time = $2, end_time = $3, rest_time = $4, overnight_rest = $5
-            WHERE date = $6
-            AND fk_driver_id = $7
+            SET start_time = $1, end_time = $2, rest_time = $3, overnight_rest = $4
+            WHERE date = $5
+            AND fk_driver_id = $6
             RETURNING *
             "#,
-            update_workday_request.date,
             update_workday_request.start_time,
             update_workday_request.end_time,
             update_workday_request.rest_time,
@@ -162,6 +161,10 @@ impl WorkdayRepository for PostgresWorkdayRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|e| {
+            if matches!(e, sqlx::Error::RowNotFound) {
+                return WorkdayError::WorkdayNotFound;
+            }
+
             error!("Failed to update workday: {:?}", e);
             WorkdayError::DatabaseError
         })

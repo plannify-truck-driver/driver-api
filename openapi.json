@@ -189,6 +189,49 @@
           }
         ]
       },
+      "put": {
+        "tags": [
+          "workdays"
+        ],
+        "operationId": "update_workday",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkdayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Workday updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workday"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "workdays"
@@ -455,6 +498,36 @@
             "type": "integer",
             "format": "int32",
             "minimum": 0
+          }
+        }
+      },
+      "UpdateWorkdayRequest": {
+        "type": "object",
+        "required": [
+          "date",
+          "start_time",
+          "rest_time",
+          "overnight_rest"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_time": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "overnight_rest": {
+            "type": "boolean"
+          },
+          "rest_time": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string"
           }
         }
       },

@@ -175,6 +175,9 @@ impl From<WorkdayError> for ApiError {
             WorkdayError::WorkdayAlreadyExists => ApiError::Conflict {
                 error_code: "WORKDAY_ALREADY_EXISTS".to_string(),
             },
+            WorkdayError::WorkdayNotFound => ApiError::NotFound {
+                error_code: "WORKDAY_NOT_FOUND".to_string(),
+            },
         }
     }
 }
