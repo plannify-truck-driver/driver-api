@@ -12,6 +12,14 @@ Up the docker compose from [Common services](https://github.com/plannify-truck-d
 
 ## Usage
 
+### Running the API
+
 ```bash
 RUST_LOG=info cargo run --bin api
+```
+
+### Testing
+
+```bash
+cargo test
 ```
