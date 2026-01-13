@@ -1,0 +1,63 @@
+name: security
+
+on:
+  push:
+    branches:
+      - "*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint-detection:
+    name: Rust Linting and Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rustup update ${{ inputs.toolchain }} && rustup default ${{ inputs.toolchain }}
+
+      - name: Clippy (lint)
+        run: cargo clippy --verbose
+
+      - name: Audit Rust Dependencies
+        uses: actions-rust-lang/audit@v1
+
+  sast-detection:
+    name: SAST Analysis
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run SAST Analysis
+        run: semgrep ci --config=auto --code --no-suppress-errors --json --json-output=sast-report.json
+
+      - name: Upload SAST Report
+        uses: actions/upload-artifact@v6
+        with:
+          name: sast-report
+          path: sast-report.json
+
+  secret-detection:
+    name: Secret Analysis
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/gitleaks/gitleaks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Secret Analysis
+        run: gitleaks dir --no-banner --verbose --redact=100 --report-format=json --report-path report.json --log-level=info --exit-code=0 .
+
+      - name: Upload Secret Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: secret-report
+          path: report.json
