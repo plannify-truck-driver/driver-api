@@ -1,0 +1,133 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE drivers\n            SET firstname = $1,\n                lastname = $2,\n                gender = $3,\n                email = $4,\n                password_hash = $5,\n                phone_number = $6,\n                is_searchable = $7,\n                allow_request_professional_agreement = $8,\n                language = $9,\n                rest_json = $10,\n                mail_preferences = $11,\n                verified_at = $12,\n                last_login_at = $13,\n                deactivated_at = $14,\n                refresh_token_hash = $15\n            WHERE pk_driver_id = $16\n            RETURNING *\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pk_driver_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "firstname",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "lastname",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "gender",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "phone_number",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "is_searchable",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "allow_request_professional_agreement",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "language",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "rest_json",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "mail_preferences",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "verified_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "last_login_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 15,
+        "name": "deactivated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "refresh_token_hash",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Varchar",
+        "Bool",
+        "Bool",
+        "Varchar",
+        "Jsonb",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "59f32eace6e0ae3c382a8eb278c1322c165327070e45eb9ae177e36a270c5be2"
+}

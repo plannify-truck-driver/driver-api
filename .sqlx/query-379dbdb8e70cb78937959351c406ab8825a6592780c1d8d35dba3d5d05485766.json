@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT EXTRACT(YEAR FROM date)::INTEGER as year\n            FROM workdays\n            WHERE fk_driver_id = $1\n            GROUP BY year\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "year",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "379dbdb8e70cb78937959351c406ab8825a6592780c1d8d35dba3d5d05485766"
+}
