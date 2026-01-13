@@ -5,7 +5,7 @@ This repository provides the Driver API, which allows truck drivers to manage th
 ## Prerequisites
 
 ```bash
-cp .env.example .env
+cp .env.template .env
 ```
 
 Up the docker compose from [Common services](https://github.com/plannify-truck-driver/common-services)
