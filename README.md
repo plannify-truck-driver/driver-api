@@ -8,6 +8,8 @@ This repository provides the Driver API, which allows truck drivers to manage th
 cp .env.example .env
 ```
 
+Up the docker compose from [Common services](https://github.com/plannify-truck-driver/common-services)
+
 ## Usage
 
 ```bash
