@@ -1,4 +1,4 @@
-use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use sqlx::postgres::PgPoolOptions;
 
 use crate::{
     PostgresHealthRepository, Service,
@@ -19,12 +19,10 @@ pub struct DriverRepositories {
     pub workday_repository: PostgresWorkdayRepository,
 }
 
-pub async fn create_repositories(
-    pg_connection_options: PgConnectOptions,
-) -> Result<DriverRepositories, CoreError> {
+pub async fn create_repositories(database_url: &String) -> Result<DriverRepositories, CoreError> {
     let pg_pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect_with(pg_connection_options)
+        .connect(&database_url)
         .await
         .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
 

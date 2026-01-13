@@ -2,10 +2,10 @@ use axum::{
     http::{
         HeaderValue, Method,
         header::{AUTHORIZATION, CONTENT_TYPE},
-    }, middleware::{from_extractor_with_state, from_fn}
+    },
+    middleware::{from_extractor_with_state, from_fn},
 };
 use plannify_driver_api_core::{application::create_repositories, domain::common::CoreError};
-use sqlx::postgres::PgConnectOptions;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use utoipa::OpenApi;
@@ -47,19 +47,12 @@ pub struct App {
 
 impl App {
     pub async fn new(config: Config) -> Result<Self, ApiError> {
-        let mut state: AppState = create_repositories(
-            PgConnectOptions::new()
-                .host(&config.database.host)
-                .port(config.database.port)
-                .username(&config.database.user)
-                .password(&config.database.password)
-                .database(&config.database.db_name),
-        )
-        .await
-        .map_err(|e| ApiError::StartupError {
-            msg: format!("Failed to create repositories: {}", e),
-        })?
-        .into();
+        let mut state: AppState = create_repositories(&config.database_url)
+            .await
+            .map_err(|e| ApiError::StartupError {
+                msg: format!("Failed to create repositories: {}", e),
+            })?
+            .into();
         state.config = config.clone();
 
         let cors_origins = config
@@ -91,11 +84,11 @@ impl App {
         state.auth_validator = auth_validator.clone();
 
         let router = OpenApiRouter::<AppState>::new()
-                .merge(workday_routes())
-                .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
-                    auth_validator.clone(),
-                ))
-                .merge(authentication_routes());
+            .merge(workday_routes())
+            .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
+                auth_validator.clone(),
+            ))
+            .merge(authentication_routes());
 
         let (app_router, mut api) = OpenApiRouter::<AppState>::new()
             .nest("/driver", router)

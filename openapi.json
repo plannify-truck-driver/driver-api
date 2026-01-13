@@ -13,7 +13,7 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/authentication/login": {
+    "/driver/authentication/login": {
       "post": {
         "tags": [
           "authentication"
@@ -64,7 +64,7 @@
         "security": []
       }
     },
-    "/authentication/signup": {
+    "/driver/authentication/signup": {
       "post": {
         "tags": [
           "authentication"
@@ -115,7 +115,7 @@
         "security": []
       }
     },
-    "/workdays": {
+    "/driver/workdays": {
       "get": {
         "tags": [
           "workdays"
@@ -279,7 +279,7 @@
         ]
       }
     },
-    "/workdays/documents/year": {
+    "/driver/workdays/documents/year": {
       "get": {
         "tags": [
           "workdays/documents"
@@ -319,7 +319,7 @@
         ]
       }
     },
-    "/workdays/documents/{year}": {
+    "/driver/workdays/documents/{year}": {
       "get": {
         "tags": [
           "workdays/documents"
@@ -371,7 +371,7 @@
         ]
       }
     },
-    "/workdays/month": {
+    "/driver/workdays/month": {
       "get": {
         "tags": [
           "workdays"
@@ -430,7 +430,7 @@
         ]
       }
     },
-    "/workdays/{date}": {
+    "/driver/workdays/{date}": {
       "delete": {
         "tags": [
           "workdays"
