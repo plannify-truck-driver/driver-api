@@ -105,7 +105,7 @@ impl App {
 
         let app_router = app_router
             .with_state(state.clone())
-            .merge(Scalar::with_url("/doc", api))
+            .merge(Scalar::with_url("/driver/doc", api))
             .layer(from_fn(tracing_middleware));
 
         // Write OpenAPI spec to file in development environment
