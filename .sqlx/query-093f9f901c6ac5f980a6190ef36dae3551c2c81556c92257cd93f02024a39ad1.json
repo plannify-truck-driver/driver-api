@@ -1,0 +1,57 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO workdays (date, fk_driver_id, start_time, end_time, rest_time, overnight_rest)\n            VALUES ($1, $2, $3, $4, $5, $6)\n            RETURNING *\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 1,
+        "name": "fk_driver_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "start_time",
+        "type_info": "Time"
+      },
+      {
+        "ordinal": 3,
+        "name": "end_time",
+        "type_info": "Time"
+      },
+      {
+        "ordinal": 4,
+        "name": "rest_time",
+        "type_info": "Time"
+      },
+      {
+        "ordinal": 5,
+        "name": "overnight_rest",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Uuid",
+        "Time",
+        "Time",
+        "Time",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "093f9f901c6ac5f980a6190ef36dae3551c2c81556c92257cd93f02024a39ad1"
+}

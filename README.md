@@ -23,3 +23,11 @@ RUST_LOG=info cargo run --bin api
 ```bash
 cargo test
 ```
+
+## Development
+
+Before making a pull request, please ensure to generate the sqlx files for any database changes:
+
+```bash
+cargo sqlx prepare --workspace
+```

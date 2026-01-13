@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT EXTRACT(MONTH FROM date)::INTEGER as month\n            FROM workdays\n            WHERE fk_driver_id = $1\n            AND EXTRACT(YEAR FROM date)::INTEGER = $2\n            GROUP BY month\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "month",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "68b44e0f45df03f5be22b13edd9ebb3c275dc3c344de78a1fa4bd281027859aa"
+}

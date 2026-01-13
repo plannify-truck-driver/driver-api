@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT *\n            FROM workdays\n            WHERE date BETWEEN $1 AND $2\n            AND fk_driver_id = $3\n            ORDER BY date ASC\n            LIMIT $4 OFFSET $5\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 1,
+        "name": "fk_driver_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "start_time",
+        "type_info": "Time"
+      },
+      {
+        "ordinal": 3,
+        "name": "end_time",
+        "type_info": "Time"
+      },
+      {
+        "ordinal": 4,
+        "name": "rest_time",
+        "type_info": "Time"
+      },
+      {
+        "ordinal": 5,
+        "name": "overnight_rest",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date",
+        "Uuid",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "c6e019882371d3b5025b90aaa25c52ea16b58ad5d07203b92d5dcc8d64c1e996"
+}
