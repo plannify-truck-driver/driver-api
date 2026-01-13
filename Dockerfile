@@ -5,6 +5,7 @@ WORKDIR /usr/local/src/user
 COPY Cargo.toml Cargo.lock ./
 COPY api/Cargo.toml ./api/
 COPY core/Cargo.toml ./core/
+COPY .sqlx ./sqlx
 
 RUN \
     mkdir -p api/src core/src && \
@@ -14,6 +15,7 @@ RUN \
 
 COPY api api
 COPY core core
+COPY .sqlx .sqlx
 
 RUN \
     touch api/src/main.rs && \
