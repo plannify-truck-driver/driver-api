@@ -12,7 +12,6 @@ RUN \
     touch core/src/lib.rs && \
     cargo build --release
 
-COPY migrations migrations
 COPY api api
 COPY core core
 
@@ -46,7 +45,6 @@ USER plannify-user
 FROM runtime AS api
 
 COPY --from=rust-build /usr/local/src/user/target/release/api /usr/local/bin/
-COPY --from=rust-build /usr/local/src/user/migrations /usr/local/src/user/migrations
 
 WORKDIR /usr/local/src/user
 
