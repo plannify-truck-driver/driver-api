@@ -171,7 +171,7 @@ impl WorkdayRepository for PostgresWorkdayRepository {
     }
 
     async fn delete_workday(&self, driver_id: Uuid, date: NaiveDate) -> Result<(), WorkdayError> {
-        sqlx::query!(
+        let result = sqlx::query!(
             r#"
             DELETE FROM workdays
             WHERE date = $1
@@ -183,9 +183,18 @@ impl WorkdayRepository for PostgresWorkdayRepository {
         .execute(&self.pool)
         .await
         .map_err(|e| {
+            if matches!(e, sqlx::Error::RowNotFound) {
+                return WorkdayError::WorkdayNotFound;
+            }
+
             error!("Failed to delete workday: {:?}", e);
             WorkdayError::DatabaseError
         })?;
+
+        if result.rows_affected() == 0 {
+            return Err(WorkdayError::WorkdayNotFound);
+        }
+
         Ok(())
     }
 }

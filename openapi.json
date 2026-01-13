@@ -333,6 +333,46 @@
           }
         ]
       }
+    },
+    "/workdays/{date}": {
+      "delete": {
+        "tags": [
+          "workdays"
+        ],
+        "operationId": "delete_workday",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "The date of the workday to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workday deleted successfully"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
     }
   },
   "components": {

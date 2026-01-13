@@ -1,4 +1,8 @@
-use axum::{Extension, extract::State};
+use axum::{
+    Extension,
+    extract::{Path, State},
+};
+use chrono::NaiveDate;
 use plannify_driver_api_core::domain::workday::{
     entities::{
         CreateWorkdayRequest, GetWorkdaysByMonthParams, GetWorkdaysByPeriodParams,
@@ -132,4 +136,32 @@ pub async fn update_workday(
         .await?;
 
     Ok(Response::ok(workday.to_workday()))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/workdays/{date}",
+    tag = "workdays",
+    params(
+        ("date" = NaiveDate, Path, description = "The date of the workday to delete")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Workday deleted successfully"),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn delete_workday(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+    Path(date): Path<NaiveDate>,
+) -> Result<Response<()>, ApiError> {
+    state
+        .service
+        .delete_workday(user_identity.user_id, date)
+        .await?;
+
+    Ok(Response::ok(()))
 }
