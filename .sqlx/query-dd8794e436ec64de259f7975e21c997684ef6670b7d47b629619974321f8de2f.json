@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT COUNT(*) as count\n            FROM workdays\n            WHERE date BETWEEN $1 AND $2\n            AND fk_driver_id = $3\n            AND date NOT IN (\n                SELECT workday_date FROM workday_garbage\n                WHERE fk_driver_id = $3\n            )\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "dd8794e436ec64de259f7975e21c997684ef6670b7d47b629619974321f8de2f"
+}

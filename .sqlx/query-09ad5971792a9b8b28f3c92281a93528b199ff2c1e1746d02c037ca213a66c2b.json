@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM workday_garbage\n            WHERE workday_date = $1\n            AND fk_driver_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "09ad5971792a9b8b28f3c92281a93528b199ff2c1e1746d02c037ca213a66c2b"
+}
