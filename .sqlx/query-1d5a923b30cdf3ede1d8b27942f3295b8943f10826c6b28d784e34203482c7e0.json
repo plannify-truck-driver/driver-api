@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT *\n            FROM workdays\n            WHERE EXTRACT(MONTH FROM date)::INTEGER = $1\n            AND EXTRACT(YEAR FROM date)::INTEGER = $2\n            AND fk_driver_id = $3\n            ORDER BY date ASC\n            ",
+  "query": "\n            SELECT *\n            FROM workdays\n            WHERE EXTRACT(MONTH FROM date)::INTEGER = $1\n            AND EXTRACT(YEAR FROM date)::INTEGER = $2\n            AND fk_driver_id = $3\n            AND date NOT IN (\n                SELECT workday_date FROM workday_garbage\n                WHERE fk_driver_id = $3\n            )\n            ORDER BY date ASC\n            ",
   "describe": {
     "columns": [
       {
@@ -50,5 +50,5 @@
       false
     ]
   },
-  "hash": "bd6a2da31e763bb278eba4b8bbf8d516bbadfd4aeefd26cce45f4f462b90434f"
+  "hash": "1d5a923b30cdf3ede1d8b27942f3295b8943f10826c6b28d784e34203482c7e0"
 }

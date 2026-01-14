@@ -10,4 +10,10 @@ pub enum WorkdayError {
 
     #[error("Workday not found")]
     WorkdayNotFound,
+
+    #[error("Workday garbage already exists for the given date")]
+    WorkdayGarbageAlreadyExists,
+
+    #[error("Workday garbage not found")]
+    WorkdayGarbageNotFound,
 }

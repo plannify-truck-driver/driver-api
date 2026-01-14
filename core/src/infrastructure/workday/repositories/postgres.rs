@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::{
-        entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayRow},
+        entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow},
         port::WorkdayRepository,
     },
     infrastructure::workday::repositories::error::WorkdayError,
@@ -37,6 +37,10 @@ impl WorkdayRepository for PostgresWorkdayRepository {
             WHERE EXTRACT(MONTH FROM date)::INTEGER = $1
             AND EXTRACT(YEAR FROM date)::INTEGER = $2
             AND fk_driver_id = $3
+            AND date NOT IN (
+                SELECT workday_date FROM workday_garbage
+                WHERE fk_driver_id = $3
+            )
             ORDER BY date ASC
             "#,
             month,
@@ -65,6 +69,10 @@ impl WorkdayRepository for PostgresWorkdayRepository {
             FROM workdays
             WHERE date BETWEEN $1 AND $2
             AND fk_driver_id = $3
+            AND date NOT IN (
+                SELECT workday_date FROM workday_garbage
+                WHERE fk_driver_id = $3
+            )
             "#,
             start_date,
             end_date,
@@ -84,6 +92,10 @@ impl WorkdayRepository for PostgresWorkdayRepository {
             FROM workdays
             WHERE date BETWEEN $1 AND $2
             AND fk_driver_id = $3
+            AND date NOT IN (
+                SELECT workday_date FROM workday_garbage
+                WHERE fk_driver_id = $3
+            )
             ORDER BY date ASC
             LIMIT $4 OFFSET $5
             "#,
@@ -193,6 +205,87 @@ impl WorkdayRepository for PostgresWorkdayRepository {
 
         if result.rows_affected() == 0 {
             return Err(WorkdayError::WorkdayNotFound);
+        }
+
+        Ok(())
+    }
+
+    async fn get_workdays_garbage(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+        sqlx::query_as!(
+            WorkdayGarbageRow,
+            r#"
+            SELECT *
+            FROM workday_garbage
+            WHERE fk_driver_id = $1
+            ORDER BY workday_date ASC
+            "#,
+            driver_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get workdays garbage: {:?}", e);
+            WorkdayError::DatabaseError
+        })
+    }
+
+    async fn create_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+        scheduled_deletion_date: NaiveDate,
+    ) -> Result<WorkdayGarbageRow, WorkdayError> {
+        sqlx::query_as!(
+            WorkdayGarbageRow,
+            r#"
+            INSERT INTO workday_garbage (workday_date, fk_driver_id, created_at, scheduled_deletion_date)
+            VALUES ($1, $2, NOW(), $3)
+            RETURNING *
+            "#,
+            date,
+            driver_id,
+            scheduled_deletion_date,
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            if e.as_database_error()
+                .and_then(|db_err| db_err.code().map(|code| code == "23505"))
+                .unwrap_or(false)
+            {
+                return WorkdayError::WorkdayGarbageAlreadyExists;
+            }
+            error!("Failed to create workday garbage: {:?}", e);
+            WorkdayError::DatabaseError
+        })
+    }
+
+    async fn delete_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> Result<(), WorkdayError> {
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM workday_garbage
+            WHERE workday_date = $1
+            AND fk_driver_id = $2
+            "#,
+            date,
+            driver_id
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to delete workday garbage: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(WorkdayError::WorkdayGarbageNotFound);
         }
 
         Ok(())

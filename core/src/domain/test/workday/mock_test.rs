@@ -536,4 +536,162 @@ mod tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_get_workdays_garbage_success() -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+
+        // Add dataset
+        service
+            .workday_repository
+            .create_workday(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: Some(
+                        chrono::NaiveTime::parse_from_str("17:00:00", "%H:%M:%S").unwrap(),
+                    ),
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await?;
+        service
+            .workday_repository
+            .create_workday(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-02", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: Some(
+                        chrono::NaiveTime::parse_from_str("17:00:00", "%H:%M:%S").unwrap(),
+                    ),
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await?;
+        service
+            .workday_repository
+            .create_workday(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: Some(
+                        chrono::NaiveTime::parse_from_str("17:00:00", "%H:%M:%S").unwrap(),
+                    ),
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await?;
+        service
+            .workday_repository
+            .create_workday_garbage(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+                chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                chrono::NaiveDate::parse_from_str("2026-02-01", "%Y-%m-%d").unwrap(),
+            )
+            .await?;
+        service
+            .workday_repository
+            .create_workday_garbage(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
+                chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                chrono::NaiveDate::parse_from_str("2026-02-01", "%Y-%m-%d").unwrap(),
+            )
+            .await?;
+
+        // Test the get_workdays_garbage method
+        let workdays = service
+            .get_workdays_garbage(Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap())
+            .await
+            .expect("get_workdays_garbage returned an error");
+
+        assert_eq!(workdays.len(), 1, "Expected one workday in the list");
+
+        assert_eq!(
+            workdays[0].workday_date.day(),
+            1,
+            "Expected workday day to be 1"
+        );
+        assert_eq!(
+            workdays[0].workday_date.month(),
+            1,
+            "Expected workday month to be January"
+        );
+        assert_eq!(
+            workdays[0].workday_date.year(),
+            2026,
+            "Expected workday year to be 2026"
+        );
+        assert_eq!(
+            workdays[0].fk_driver_id,
+            Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+            "Expected workday driver ID to match"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_workdays_garbage_empty() -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+
+        // Test the get_workdays_garbage method
+        let workdays = service
+            .get_workdays_garbage(Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap())
+            .await
+            .expect("get_workdays_garbage returned an error");
+
+        assert_eq!(workdays.len(), 0, "Expected zero workdays in the list");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_create_workday_garbage_success() -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+
+        // Add dataset
+        service
+            .workday_repository
+            .create_workday(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: Some(
+                        chrono::NaiveTime::parse_from_str("17:00:00", "%H:%M:%S").unwrap(),
+                    ),
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await
+            .expect("create_workday returned an error");
+
+        let workday = service
+            .create_workday_garbage(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+                chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+            )
+            .await
+            .expect("create_workday_garbage returned an error");
+
+        assert_eq!(
+            workday.fk_driver_id,
+            Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+            "Expected workday driver ID to match"
+        );
+        assert_eq!(
+            workday.workday_date,
+            chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+            "Expected workday date to match"
+        );
+
+        Ok(())
+    }
 }

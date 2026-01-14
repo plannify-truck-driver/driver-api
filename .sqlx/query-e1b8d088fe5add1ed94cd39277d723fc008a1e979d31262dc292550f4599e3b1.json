@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO workday_garbage (workday_date, fk_driver_id, created_at, scheduled_deletion_date)\n            VALUES ($1, $2, NOW(), $3)\n            RETURNING *\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "workday_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 1,
+        "name": "fk_driver_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "scheduled_deletion_date",
+        "type_info": "Date"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e1b8d088fe5add1ed94cd39277d723fc008a1e979d31262dc292550f4599e3b1"
+}

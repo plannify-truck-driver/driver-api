@@ -7,7 +7,9 @@ use chrono::{Datelike, NaiveDate};
 use uuid::Uuid;
 
 use crate::{
-    domain::workday::entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayRow},
+    domain::workday::entities::{
+        CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow,
+    },
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
@@ -41,6 +43,24 @@ pub trait WorkdayRepository: Send + Sync {
     ) -> impl Future<Output = Result<WorkdayRow, WorkdayError>> + Send;
 
     fn delete_workday(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn get_workdays_garbage(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<WorkdayGarbageRow>, WorkdayError>> + Send;
+
+    fn create_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+        scheduled_deletion_date: NaiveDate,
+    ) -> impl Future<Output = Result<WorkdayGarbageRow, WorkdayError>> + Send;
+
+    fn delete_workday_garbage(
         &self,
         driver_id: Uuid,
         date: NaiveDate,
@@ -93,6 +113,23 @@ pub trait WorkdayService: Send + Sync {
         date: NaiveDate,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 
+    fn get_workdays_garbage(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<WorkdayGarbageRow>, WorkdayError>> + Send;
+
+    fn create_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> impl Future<Output = Result<WorkdayGarbageRow, WorkdayError>> + Send;
+
+    fn delete_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
     fn get_workday_documents(
         &self,
         driver_id: Uuid,
@@ -108,12 +145,14 @@ pub trait WorkdayService: Send + Sync {
 #[derive(Clone)]
 pub struct MockWorkdayRepository {
     workdays: Arc<Mutex<Vec<WorkdayRow>>>,
+    workdays_garbage: Arc<Mutex<Vec<WorkdayGarbageRow>>>,
 }
 
 impl MockWorkdayRepository {
     pub fn new() -> Self {
         Self {
             workdays: Arc::new(Mutex::new(Vec::new())),
+            workdays_garbage: Arc::new(Mutex::new(Vec::new())),
         }
     }
 }
@@ -219,6 +258,69 @@ impl WorkdayRepository for MockWorkdayRepository {
         workdays.retain(|w| !(w.fk_driver_id == driver_id && w.date == date));
 
         if workdays.len() < initial_len {
+            Ok(())
+        } else {
+            Err(WorkdayError::WorkdayNotFound)
+        }
+    }
+
+    async fn get_workdays_garbage(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+        let workdays_garbage = self.workdays_garbage.lock().unwrap();
+        let result: Vec<WorkdayGarbageRow> = workdays_garbage
+            .iter()
+            .filter(|w| w.fk_driver_id == driver_id)
+            .cloned()
+            .collect();
+        Ok(result)
+    }
+
+    async fn create_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+        scheduled_deletion_date: NaiveDate,
+    ) -> Result<WorkdayGarbageRow, WorkdayError> {
+        let workdays = self.workdays.lock().unwrap();
+        let mut workdays_garbage = self.workdays_garbage.lock().unwrap();
+
+        if !workdays
+            .iter()
+            .any(|w| w.fk_driver_id == driver_id && w.date == date)
+        {
+            return Err(WorkdayError::WorkdayNotFound);
+        }
+
+        if workdays_garbage
+            .iter()
+            .any(|w| w.fk_driver_id == driver_id && w.workday_date == date)
+        {
+            return Err(WorkdayError::WorkdayGarbageAlreadyExists);
+        }
+
+        let new_garbage = WorkdayGarbageRow {
+            workday_date: date,
+            fk_driver_id: driver_id,
+            created_at: chrono::Utc::now(),
+            scheduled_deletion_date,
+        };
+        workdays_garbage.push(new_garbage.clone());
+        Ok(new_garbage)
+    }
+
+    async fn delete_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> Result<(), WorkdayError> {
+        let mut workdays_garbage = self.workdays_garbage.lock().unwrap();
+        let initial_len = workdays_garbage.len();
+
+        workdays_garbage.retain(|w| !(w.fk_driver_id == driver_id && w.workday_date == date));
+
+        if workdays_garbage.len() < initial_len {
             Ok(())
         } else {
             Err(WorkdayError::WorkdayNotFound)
