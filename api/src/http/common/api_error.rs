@@ -178,6 +178,12 @@ impl From<WorkdayError> for ApiError {
             WorkdayError::WorkdayNotFound => ApiError::NotFound {
                 error_code: "WORKDAY_NOT_FOUND".to_string(),
             },
+            WorkdayError::WorkdayGarbageAlreadyExists => ApiError::Conflict {
+                error_code: "WORKDAY_GARBAGE_ALREADY_EXISTS".to_string(),
+            },
+            WorkdayError::WorkdayGarbageNotFound => ApiError::NotFound {
+                error_code: "WORKDAY_GARBAGE_NOT_FOUND".to_string(),
+            },
         }
     }
 }

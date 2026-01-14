@@ -1,4 +1,4 @@
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use utoipa::{IntoParams, ToSchema};
@@ -114,4 +114,29 @@ pub struct UpdateWorkdayRequest {
     pub rest_time: NaiveTime,
 
     pub overnight_rest: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+pub struct WorkdayGarbageRow {
+    pub workday_date: NaiveDate,
+    pub fk_driver_id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub scheduled_deletion_date: NaiveDate,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct WorkdayGarbage {
+    pub workday_date: NaiveDate,
+    pub created_at: DateTime<Utc>,
+    pub scheduled_deletion_date: NaiveDate,
+}
+
+impl WorkdayGarbageRow {
+    pub fn to_workday_garbage(&self) -> WorkdayGarbage {
+        WorkdayGarbage {
+            workday_date: self.workday_date,
+            created_at: self.created_at,
+            scheduled_deletion_date: self.scheduled_deletion_date,
+        }
+    }
 }

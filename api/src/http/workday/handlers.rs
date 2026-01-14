@@ -6,7 +6,7 @@ use chrono::NaiveDate;
 use plannify_driver_api_core::domain::workday::{
     entities::{
         CreateWorkdayRequest, GetWorkdaysByMonthParams, GetWorkdaysByPeriodParams,
-        UpdateWorkdayRequest, Workday,
+        UpdateWorkdayRequest, Workday, WorkdayGarbage,
     },
     port::WorkdayService,
 };
@@ -99,6 +99,7 @@ pub async fn get_all_period(
     ),
     responses(
         (status = 201, description = "Workday created successfully", body = Workday),
+        (status = 409, description = "Workday already exists", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -126,6 +127,7 @@ pub async fn create_workday(
     ),
     responses(
         (status = 200, description = "Workday updated successfully", body = Workday),
+        (status = 404, description = "Workday not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -155,6 +157,7 @@ pub async fn update_workday(
     ),
     responses(
         (status = 200, description = "Workday deleted successfully"),
+        (status = 404, description = "Workday not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -165,7 +168,64 @@ pub async fn delete_workday(
 ) -> Result<Response<()>, ApiError> {
     state
         .service
-        .delete_workday(user_identity.user_id, date)
+        .create_workday_garbage(user_identity.user_id, date)
+        .await?;
+
+    Ok(Response::ok(()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/workdays/garbage",
+    tag = "workdays/garbage",
+    description = "Retrieve all workdays garbage",
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Workdays garbage retrieved successfully", body = Vec<WorkdayGarbage>),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_all_workday_garbage(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<Vec<WorkdayGarbage>>, ApiError> {
+    let workdays = state
+        .service
+        .get_workdays_garbage(user_identity.user_id)
+        .await?;
+    let response_workdays: Vec<WorkdayGarbage> =
+        workdays.iter().map(|w| w.to_workday_garbage()).collect();
+
+    Ok(Response::ok(response_workdays))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/workdays/garbage/{date}",
+    tag = "workdays/garbage",
+    description = "Delete a workday garbage and restore the workday",
+    params(
+        ("date" = NaiveDate, Path, description = "The date of the workday garbage to delete")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Workday garbage deleted successfully"),
+        (status = 404, description = "Workday garbage not found", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn delete_workday_garbage(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+    Path(date): Path<NaiveDate>,
+) -> Result<Response<()>, ApiError> {
+    state
+        .service
+        .delete_workday_garbage(user_identity.user_id, date)
         .await?;
 
     Ok(Response::ok(()))

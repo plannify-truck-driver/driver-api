@@ -217,6 +217,16 @@
               }
             }
           },
+          "404": {
+            "description": "Workday not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal server error",
             "content": {
@@ -257,6 +267,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Workday"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Workday already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -371,6 +391,96 @@
         ]
       }
     },
+    "/driver/workdays/garbage": {
+      "get": {
+        "tags": [
+          "workdays/garbage"
+        ],
+        "description": "Retrieve all workdays garbage",
+        "operationId": "get_all_workday_garbage",
+        "responses": {
+          "200": {
+            "description": "Workdays garbage retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkdayGarbage"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/driver/workdays/garbage/{date}": {
+      "delete": {
+        "tags": [
+          "workdays/garbage"
+        ],
+        "description": "Delete a workday garbage and restore the workday",
+        "operationId": "delete_workday_garbage",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "The date of the workday garbage to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workday garbage deleted successfully"
+          },
+          "404": {
+            "description": "Workday garbage not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/driver/workdays/month": {
       "get": {
         "tags": [
@@ -452,6 +562,16 @@
         "responses": {
           "200": {
             "description": "Workday deleted successfully"
+          },
+          "404": {
+            "description": "Workday not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "500": {
             "description": "Internal server error",
@@ -695,6 +815,28 @@
           },
           "start_time": {
             "type": "string"
+          }
+        }
+      },
+      "WorkdayGarbage": {
+        "type": "object",
+        "required": [
+          "workday_date",
+          "created_at",
+          "scheduled_deletion_date"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scheduled_deletion_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "workday_date": {
+            "type": "string",
+            "format": "date"
           }
         }
       }

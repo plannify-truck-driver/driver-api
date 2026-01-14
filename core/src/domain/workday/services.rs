@@ -7,7 +7,7 @@ use crate::{
         driver::port::DriverRepository,
         health::port::HealthRepository,
         workday::{
-            entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayRow},
+            entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow},
             port::{WorkdayRepository, WorkdayService},
         },
     },
@@ -67,6 +67,37 @@ where
     async fn delete_workday(&self, driver_id: Uuid, date: NaiveDate) -> Result<(), WorkdayError> {
         self.workday_repository
             .delete_workday(driver_id, date)
+            .await
+    }
+
+    async fn get_workdays_garbage(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+        self.workday_repository
+            .get_workdays_garbage(driver_id)
+            .await
+    }
+
+    async fn create_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> Result<WorkdayGarbageRow, WorkdayError> {
+        let scheduled_deletion_date =
+            chrono::Utc::now().naive_utc().date() + chrono::Duration::days(30);
+        self.workday_repository
+            .create_workday_garbage(driver_id, date, scheduled_deletion_date)
+            .await
+    }
+
+    async fn delete_workday_garbage(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> Result<(), WorkdayError> {
+        self.workday_repository
+            .delete_workday_garbage(driver_id, date)
             .await
     }
 
