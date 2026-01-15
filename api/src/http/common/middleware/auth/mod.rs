@@ -32,7 +32,7 @@ where
             auth_cookie.value().to_string()
         } else {
             // extract token from Authorization header
-            let auth_header = parts
+            parts
                 .headers
                 .get(header::AUTHORIZATION)
                 .and_then(|auth_header| auth_header.to_str().ok())
@@ -40,9 +40,7 @@ where
                 .ok_or_else(|| ApiError::Unauthorized {
                     error_code: "UNAUTHORIZED".to_string(),
                 })?
-                .to_string();
-
-            auth_header
+                .to_string()
         };
 
         let user_identity = state.validate_token(&token)?;
