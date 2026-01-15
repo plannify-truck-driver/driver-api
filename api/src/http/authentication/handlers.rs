@@ -59,7 +59,7 @@ pub async fn signup(
     Ok((
         AppendHeaders(headers),
         Response::created(CreateDriverResponse {
-            access_token: access_token,
+            access_token,
         }),
     ))
 }
@@ -105,7 +105,7 @@ pub async fn login(
     Ok((
         AppendHeaders(headers),
         Response::ok(CreateDriverResponse {
-            access_token: access_token,
+            access_token,
         }),
     ))
 }

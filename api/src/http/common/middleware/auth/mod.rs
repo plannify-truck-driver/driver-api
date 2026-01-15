@@ -24,12 +24,13 @@ where
             .map_err(|_| ApiError::Unauthorized {
                 error_code: "UNAUTHORIZED".to_string(),
             })?;
-        let token: String;
 
         // try to get token from cookies
         let auth_cookie = cookie_jar.get("access_token");
 
-        if auth_cookie.is_none() {
+        let token = if let Some(auth_cookie) = auth_cookie {
+            auth_cookie.value().to_string()
+        } else {
             // extract token from Authorization header
             let auth_header = parts
                 .headers
@@ -41,10 +42,8 @@ where
                 })?
                 .to_string();
 
-            token = auth_header;
-        } else {
-            token = auth_cookie.unwrap().value().to_string();
-        }
+            auth_header
+        };
 
         let user_identity = state.validate_token(&token)?;
 

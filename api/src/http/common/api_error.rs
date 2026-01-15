@@ -51,7 +51,7 @@ impl ApiError {
         match self {
             ApiError::StartupError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
             ApiError::ServiceUnavailable { .. } => StatusCode::SERVICE_UNAVAILABLE,
-            ApiError::InternalServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             ApiError::Unauthorized { .. } => StatusCode::UNAUTHORIZED,
             ApiError::Forbidden { .. } => StatusCode::FORBIDDEN,
             ApiError::NotFound { .. } => StatusCode::NOT_FOUND,
@@ -69,49 +69,49 @@ pub struct ErrorBody {
     pub status: u16,
 }
 
-impl Into<ErrorBody> for ApiError {
-    fn into(self) -> ErrorBody {
-        let status = self.status_code().as_u16();
-        let message = self.to_string();
-        match self {
+impl From<ApiError> for ErrorBody {
+    fn from(val: ApiError) -> Self {
+        let status = val.status_code().as_u16();
+        let message = val.to_string();
+        match val {
             ApiError::Unauthorized { error_code } => ErrorBody {
-                message: message,
-                error_code: error_code,
+                message,
+                error_code,
                 content: None,
-                status: status,
+                status,
             },
             ApiError::Forbidden { error_code } => ErrorBody {
-                message: message,
-                error_code: error_code,
+                message,
+                error_code,
                 content: None,
-                status: status,
+                status,
             },
             ApiError::NotFound { error_code } => ErrorBody {
-                message: message,
-                error_code: error_code,
+                message,
+                error_code,
                 content: None,
-                status: status,
+                status,
             },
             ApiError::BadRequest {
                 error_code,
                 content,
             } => ErrorBody {
-                message: message,
-                error_code: error_code,
-                content: content,
-                status: status,
+                message,
+                error_code,
+                content,
+                status,
             },
             ApiError::Conflict { error_code } => ErrorBody {
-                message: message,
-                error_code: error_code,
+                message,
+                error_code,
                 content: None,
-                status: status,
+                status,
             },
             _ => ErrorBody {
-                message: message,
+                message,
                 error_code: String::new(),
                 content: None,
-                status: status,
+                status,
             },
         }
     }
