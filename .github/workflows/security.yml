@@ -93,6 +93,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Pull migration image
+        run: docker pull ghcr.io/plannify-truck-driver/common-services:0.1.2
+
       - name: Apply database migrations
         run: |
           docker run --rm \
