@@ -82,6 +82,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Apply database migrations
+        uses: docker://ghcr.io/plannify-truck-driver/common-services:latest
+        env:
+          DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
+
+      - name: Seed test dataset
+        run: |
+          PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
