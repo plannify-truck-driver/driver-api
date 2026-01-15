@@ -103,11 +103,11 @@ jobs:
 
       - name: Pull and run migrations
         run: |
-          docker pull ghcr.io/plannify-truck-driver/common-services:0.1.3
+          docker pull ghcr.io/plannify-truck-driver/common-services:0.1.4
           docker run --rm \
             --network host \
             -e DATABASE_URL=${{ env.DATABASE_URL }} \
-            ghcr.io/plannify-truck-driver/common-services:0.1.3
+            ghcr.io/plannify-truck-driver/common-services:0.1.4
 
       - name: Seed test dataset
         run: |
