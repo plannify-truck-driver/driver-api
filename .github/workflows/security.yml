@@ -94,9 +94,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Apply database migrations
-        uses: docker://ghcr.io/plannify-truck-driver/common-services:latest
-        env:
-          DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
+        run: |
+          docker run --rm \
+            --network host \
+            -e DATABASE_URL=postgres://plannify_user:plannify_password@localhost:5432/plannify_db \
+            ghcr.io/plannify-truck-driver/common-services:latest
 
       - name: Seed test dataset
         run: |
