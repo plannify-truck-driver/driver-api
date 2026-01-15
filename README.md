@@ -20,7 +20,10 @@ RUST_LOG=info cargo run --bin api
 
 ### Testing
 
+There are unit and integration tests available. The integration tests require the common services to be running and a dataset to be seeded.
+
 ```bash
+PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
 cargo test
 ```
 
