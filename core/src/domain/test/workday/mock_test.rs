@@ -395,8 +395,8 @@ mod tests {
             chrono::NaiveTime::parse_from_str("00:45:00", "%H:%M:%S").unwrap(),
             "Expected rest_time to be updated"
         );
-        assert_eq!(
-            workdays.0[0].overnight_rest, true,
+        assert!(
+            workdays.0[0].overnight_rest,
             "Expected overnight_rest to be updated"
         );
 
