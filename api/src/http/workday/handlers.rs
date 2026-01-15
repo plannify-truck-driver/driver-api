@@ -35,7 +35,7 @@ use crate::{
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
-pub async fn get_all_month(
+pub async fn get_all_workdays_month(
     ValidatedQuery(query): ValidatedQuery<GetWorkdaysByMonthParams>,
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,

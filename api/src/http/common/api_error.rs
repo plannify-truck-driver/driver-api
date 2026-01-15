@@ -10,7 +10,7 @@ use plannify_driver_api_core::{
         workday::repositories::error::WorkdayError,
     },
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_yaml::{Mapping, Value};
 use thiserror::Error;
 use utoipa::ToSchema;
@@ -61,7 +61,7 @@ impl ApiError {
     }
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ErrorBody {
     pub message: String,
     pub error_code: String,

@@ -19,6 +19,11 @@ impl AppState {
             auth_validator,
         }
     }
+
+    /// Shutdown the underlying database pool
+    pub async fn shutdown(&self) {
+        self.service.shutdown_pool().await
+    }
 }
 
 impl From<DriverRepositories> for AppState {

@@ -47,3 +47,5 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 [dev-dependencies]
 axum-test = "18.3.0"
 test-context = "0.5.4"
+reqwest = { version = "0.13", features = ["json"] }
+base64 = "0.22"

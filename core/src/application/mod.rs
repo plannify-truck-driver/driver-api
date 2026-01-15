@@ -1,4 +1,4 @@
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{PgPool, postgres::PgPoolOptions};
 
 use crate::{
     PostgresHealthRepository, Service,
@@ -14,6 +14,7 @@ pub type DriverService =
 
 #[derive(Clone)]
 pub struct DriverRepositories {
+    pool: PgPool,
     pub health_repository: PostgresHealthRepository,
     pub driver_repository: PostgresDriverRepository,
     pub workday_repository: PostgresWorkdayRepository,
@@ -31,6 +32,7 @@ pub async fn create_repositories(database_url: &String) -> Result<DriverReposito
     let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
 
     Ok(DriverRepositories {
+        pool: pg_pool,
         health_repository,
         driver_repository,
         workday_repository,
@@ -44,5 +46,19 @@ impl Into<DriverService> for DriverRepositories {
             self.driver_repository,
             self.workday_repository,
         )
+    }
+}
+
+impl DriverRepositories {
+    /// Shutdown the underlying database pool
+    pub async fn shutdown_pool(&self) {
+        let _ = &self.pool.close().await;
+    }
+}
+
+impl DriverService {
+    /// Shutdown the underlying database pool
+    pub async fn shutdown_pool(&self) {
+        self.health_repository.pool.close().await;
     }
 }
