@@ -5,6 +5,10 @@ on:
     branches:
       - "*"
 
+permissions:
+  contents: read
+  packages: read
+
 env:
   CARGO_TERM_COLOR: always
 
