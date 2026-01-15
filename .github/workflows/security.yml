@@ -98,7 +98,7 @@ jobs:
           docker run --rm \
             --network host \
             -e DATABASE_URL=postgres://plannify_user:plannify_password@localhost:5432/plannify_db \
-            ghcr.io/plannify-truck-driver/common-services:latest
+            ghcr.io/plannify-truck-driver/common-services:0.1.2
 
       - name: Seed test dataset
         run: |
