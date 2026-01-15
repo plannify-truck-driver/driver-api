@@ -23,7 +23,7 @@ pub struct DriverRepositories {
 pub async fn create_repositories(database_url: &String) -> Result<DriverRepositories, CoreError> {
     let pg_pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect(&database_url)
+        .connect(database_url)
         .await
         .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
 
@@ -39,12 +39,12 @@ pub async fn create_repositories(database_url: &String) -> Result<DriverReposito
     })
 }
 
-impl Into<DriverService> for DriverRepositories {
-    fn into(self) -> DriverService {
+impl From<DriverRepositories> for DriverService {
+    fn from(val: DriverRepositories) -> Self {
         Service::new(
-            self.health_repository,
-            self.driver_repository,
-            self.workday_repository,
+            val.health_repository,
+            val.driver_repository,
+            val.workday_repository,
         )
     }
 }

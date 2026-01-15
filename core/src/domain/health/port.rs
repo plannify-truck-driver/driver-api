@@ -18,6 +18,12 @@ impl MockHealthRepository {
     }
 }
 
+impl Default for MockHealthRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HealthRepository for MockHealthRepository {
     async fn ping(&self) -> IsHealthy {
         IsHealthy::new(true)

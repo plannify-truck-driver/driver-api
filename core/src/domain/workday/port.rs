@@ -157,6 +157,12 @@ impl MockWorkdayRepository {
     }
 }
 
+impl Default for MockWorkdayRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WorkdayRepository for MockWorkdayRepository {
     async fn get_workdays_by_month(
         &self,
@@ -332,7 +338,7 @@ impl WorkdayRepository for MockWorkdayRepository {
         let documents: Vec<i32> = workdays
             .iter()
             .filter(|w| w.fk_driver_id == driver_id)
-            .map(|w| w.date.year() as i32) // Example logic
+            .map(|w| w.date.year()) // Example logic
             .collect();
         Ok(documents)
     }
