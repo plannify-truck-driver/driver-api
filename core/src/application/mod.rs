@@ -20,7 +20,7 @@ pub struct DriverRepositories {
     pub workday_repository: PostgresWorkdayRepository,
 }
 
-pub async fn create_repositories(database_url: &String) -> Result<DriverRepositories, CoreError> {
+pub async fn create_repositories(database_url: &str) -> Result<DriverRepositories, CoreError> {
     let pg_pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(database_url)
