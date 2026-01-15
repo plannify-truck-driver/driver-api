@@ -83,6 +83,9 @@ jobs:
         ports:
           - 5432:5432
 
+    env:
+      DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
+
     steps:
       - uses: actions/checkout@v4
 
@@ -108,8 +111,8 @@ jobs:
 
       - name: Seed test dataset
         run: |
-          PGPASSWORD=${{ secrets.TEST_DB_PASSWORD || 'test_password_change_me' }} \
-            psql -h localhost -U test_user -d test_db -f config/test-dataset.sql
+          PGPASSWORD=plannify_password \
+            psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
