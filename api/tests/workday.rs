@@ -1,6 +1,6 @@
 use api::http::common::{api_error::ErrorBody, response::PaginatedResponse};
 use axum::http::StatusCode;
-use plannify_driver_api_core::domain::workday::entities::Workday;
+use plannify_driver_api_core::domain::workday::{entities::Workday, port::WorkdayRepository};
 use serde_json::json;
 use test_context::test_context;
 
@@ -329,6 +329,15 @@ async fn test_create_workday_success(ctx: &mut context::TestContext) {
         overnight_rest: false,
     };
     verify_workday_content(body, expected_workday);
+
+    ctx.repositories
+        .workday_repository
+        .delete_workday(
+            ctx.authenticated_user_id,
+            chrono::NaiveDate::from_ymd_opt(2027, 3, 1).unwrap(),
+        )
+        .await
+        .unwrap();
 }
 
 #[test_context(context::TestContext)]
@@ -645,6 +654,15 @@ async fn test_delete_workday_success(ctx: &mut context::TestContext) {
         .await;
 
     res.assert_status(StatusCode::OK);
+
+    ctx.repositories
+        .workday_repository
+        .delete_workday_garbage(
+            ctx.authenticated_user_id,
+            chrono::NaiveDate::from_ymd_opt(2027, 1, 2).unwrap(),
+        )
+        .await
+        .unwrap();
 }
 
 #[test_context(context::TestContext)]
