@@ -1,6 +1,6 @@
 use api::http::common::{api_error::ErrorBody, response::PaginatedResponse};
 use axum::http::StatusCode;
-use plannify_driver_api_core::domain::workday::{entities::Workday, port::WorkdayRepository};
+use plannify_driver_api_core::domain::workday::{entities::{Workday, WorkdayGarbage}, port::WorkdayRepository};
 use serde_json::json;
 use test_context::test_context;
 
@@ -691,4 +691,35 @@ async fn test_delete_workday_duplicate(ctx: &mut context::TestContext) {
 
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "WORKDAY_GARBAGE_ALREADY_EXISTS");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+async fn test_get_all_workday_garbage_unauthorized(ctx: &mut context::TestContext) {
+    let res = ctx
+        .unauthenticated_router
+        .get("/driver/workdays/garbage")
+        .await;
+
+    res.assert_status(StatusCode::UNAUTHORIZED);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "UNAUTHORIZED");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
+    let res = ctx
+        .authenticated_router
+        .get("/driver/workdays/garbage")
+        .await;
+
+    res.assert_status(StatusCode::OK);
+
+    let body: Vec<WorkdayGarbage> = res.json();
+    assert_eq!(body.len(), 1, "there should be exactly one workday garbage");
+    assert_eq!(body[0].workday_date, chrono::NaiveDate::from_ymd_opt(2026, 1, 15).unwrap());
+    assert_eq!(body[0].created_at, chrono::NaiveDateTime::new(chrono::NaiveDate::from_ymd_opt(2026, 2, 10).unwrap(), chrono::NaiveTime::from_hms_opt(11, 30, 0).unwrap()).and_utc());
+    assert_eq!(body[0].scheduled_deletion_date, chrono::NaiveDate::from_ymd_opt(2026, 3, 11).unwrap());
 }
