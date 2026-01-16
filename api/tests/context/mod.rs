@@ -55,7 +55,8 @@ impl AsyncTestContext for TestContext {
             .expect("Failed to set state");
 
         // Generate fallback user ID (will be overridden by actual Keycloak user ID if available)
-        let fallback_user_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174000").expect("Invalid UUID");
+        let fallback_user_id =
+            Uuid::parse_str("123e4567-e89b-12d3-a456-426614174000").expect("Invalid UUID");
 
         let test_token = generate_mock_token(&fallback_user_id);
 
@@ -90,7 +91,9 @@ impl TestContext {
     /// Note: When using real Keycloak, you'd need to create additional test users
     pub async fn create_authenticated_router_with_different_user(&self) -> TestServer {
         // Try to get token for a different user, or use mock token
-        let test_token = generate_mock_token(&Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").expect("Invalid UUID"));
+        let test_token = generate_mock_token(
+            &Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").expect("Invalid UUID"),
+        );
 
         let mut router = TestServer::new(self.app.app_router()).unwrap();
         router.add_header(

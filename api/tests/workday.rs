@@ -1,8 +1,8 @@
 use api::http::common::{api_error::ErrorBody, response::PaginatedResponse};
 use axum::http::StatusCode;
 use plannify_driver_api_core::domain::workday::entities::Workday;
-use test_context::test_context;
 use serde_json::json;
+use test_context::test_context;
 
 pub mod context;
 pub mod helpers;
@@ -54,10 +54,7 @@ async fn test_get_all_workdays_month_success(ctx: &mut context::TestContext) {
         overnight_rest: true,
     };
     let workday_json1 = &body[0];
-    verify_workday_content(
-        *workday_json1,
-        expected_workday1,
-    );
+    verify_workday_content(*workday_json1, expected_workday1);
 
     let expected_workday2 = Workday {
         date: chrono::NaiveDate::from_ymd_opt(2026, 1, 31).unwrap(),
@@ -67,19 +64,13 @@ async fn test_get_all_workdays_month_success(ctx: &mut context::TestContext) {
         overnight_rest: false,
     };
     let workday_json2 = &body[1];
-    verify_workday_content(
-        *workday_json2,
-        expected_workday2,
-    );
+    verify_workday_content(*workday_json2, expected_workday2);
 }
 
 #[test_context(context::TestContext)]
 #[tokio::test]
 async fn test_get_all_workdays_month_with_no_parameters(ctx: &mut context::TestContext) {
-    let res1 = ctx
-        .authenticated_router
-        .get("/driver/workdays/month")
-        .await;
+    let res1 = ctx.authenticated_router.get("/driver/workdays/month").await;
 
     res1.assert_status(StatusCode::BAD_REQUEST);
 
@@ -178,7 +169,11 @@ async fn test_get_all_workdays_period_success(ctx: &mut context::TestContext) {
     let body: PaginatedResponse<Workday> = res.json();
     assert_eq!(body.page, 1, "page number should be 1");
     assert_eq!(body.total, 3, "total workdays should be 3");
-    assert_eq!(body.data.len(), 3, "response array must contain exactly three workdays");
+    assert_eq!(
+        body.data.len(),
+        3,
+        "response array must contain exactly three workdays"
+    );
 
     let expected_workday1 = Workday {
         date: chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
@@ -188,10 +183,7 @@ async fn test_get_all_workdays_period_success(ctx: &mut context::TestContext) {
         overnight_rest: true,
     };
     let workday_json1 = &body.data[0];
-    verify_workday_content(
-        *workday_json1,
-        expected_workday1,
-    );
+    verify_workday_content(*workday_json1, expected_workday1);
 
     let expected_workday2 = Workday {
         date: chrono::NaiveDate::from_ymd_opt(2026, 1, 31).unwrap(),
@@ -201,10 +193,7 @@ async fn test_get_all_workdays_period_success(ctx: &mut context::TestContext) {
         overnight_rest: false,
     };
     let workday_json2 = &body.data[1];
-    verify_workday_content(
-        *workday_json2,
-        expected_workday2,
-    );
+    verify_workday_content(*workday_json2, expected_workday2);
 
     let expected_workday3 = Workday {
         date: chrono::NaiveDate::from_ymd_opt(2026, 2, 1).unwrap(),
@@ -214,19 +203,13 @@ async fn test_get_all_workdays_period_success(ctx: &mut context::TestContext) {
         overnight_rest: false,
     };
     let workday_json3 = &body.data[2];
-    verify_workday_content(
-        *workday_json3,
-        expected_workday3,
-    );
+    verify_workday_content(*workday_json3, expected_workday3);
 }
 
 #[test_context(context::TestContext)]
 #[tokio::test]
 async fn test_get_all_workdays_period_with_no_parameters(ctx: &mut context::TestContext) {
-    let res1 = ctx
-        .authenticated_router
-        .get("/driver/workdays")
-        .await;
+    let res1 = ctx.authenticated_router.get("/driver/workdays").await;
 
     res1.assert_status(StatusCode::BAD_REQUEST);
 
@@ -337,7 +320,7 @@ async fn test_create_workday_success(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::CREATED);
 
     let body: Workday = res.json();
-    
+
     let expected_workday = Workday {
         date: chrono::NaiveDate::from_ymd_opt(2027, 3, 1).unwrap(),
         start_time: chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
@@ -345,10 +328,7 @@ async fn test_create_workday_success(ctx: &mut context::TestContext) {
         rest_time: chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
         overnight_rest: false,
     };
-    verify_workday_content(
-        body,
-        expected_workday,
-    );
+    verify_workday_content(body, expected_workday);
 }
 
 #[test_context(context::TestContext)]
