@@ -121,7 +121,7 @@
           "workdays"
         ],
         "description": "Retrieve workdays for a specific period with pagination",
-        "operationId": "get_all_period",
+        "operationId": "get_all_workdays_period",
         "parameters": [
           {
             "name": "from",

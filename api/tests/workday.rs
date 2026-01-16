@@ -621,3 +621,56 @@ async fn test_update_workday_wrong_body(ctx: &mut context::TestContext) {
     let body5: ErrorBody = res5.json();
     assert_eq!(body5.error_code, "MISSING_ATTRIBUTE");
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+async fn test_delete_workday_unauthorized(ctx: &mut context::TestContext) {
+    let res = ctx
+        .unauthenticated_router
+        .delete("/driver/workdays/2027-01-02")
+        .await;
+
+    res.assert_status(StatusCode::UNAUTHORIZED);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "UNAUTHORIZED");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+async fn test_delete_workday_success(ctx: &mut context::TestContext) {
+    let res = ctx
+        .authenticated_router
+        .delete("/driver/workdays/2027-01-02")
+        .await;
+
+    res.assert_status(StatusCode::OK);
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+async fn test_delete_workday_not_found(ctx: &mut context::TestContext) {
+    let res = ctx
+        .authenticated_router
+        .delete("/driver/workdays/2028-01-01")
+        .await;
+
+    res.assert_status(StatusCode::NOT_FOUND);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "WORKDAY_NOT_FOUND");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+async fn test_delete_workday_duplicate(ctx: &mut context::TestContext) {
+    let res = ctx
+        .authenticated_router
+        .delete("/driver/workdays/2026-01-15")
+        .await;
+
+    res.assert_status(StatusCode::CONFLICT);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "WORKDAY_GARBAGE_ALREADY_EXISTS");
+}
