@@ -326,7 +326,7 @@ async fn test_create_workday_success(ctx: &mut context::TestContext) {
         .authenticated_router
         .post("/driver/workdays")
         .json(&json!({
-            "date": "2026-01-02",
+            "date": "2027-03-01",
             "start_time": "08:00:00",
             "end_time": null,
             "rest_time": "00:00:00",
@@ -339,7 +339,7 @@ async fn test_create_workday_success(ctx: &mut context::TestContext) {
     let body: Workday = res.json();
     
     let expected_workday = Workday {
-        date: chrono::NaiveDate::from_ymd_opt(2026, 1, 2).unwrap(),
+        date: chrono::NaiveDate::from_ymd_opt(2027, 3, 1).unwrap(),
         start_time: chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
         end_time: None,
         rest_time: chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
