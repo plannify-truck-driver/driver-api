@@ -63,7 +63,7 @@ pub async fn get_all_workdays_month(
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
-pub async fn get_all_period(
+pub async fn get_all_workdays_period(
     ValidatedQuery(query): ValidatedQuery<GetWorkdaysByPeriodParams>,
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,

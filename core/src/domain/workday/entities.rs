@@ -7,7 +7,7 @@ use validator::Validate;
 
 use crate::domain::common::entities::{validate_date, validate_time};
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, ToSchema)]
 pub struct Workday {
     pub date: NaiveDate,
     pub start_time: NaiveTime,
