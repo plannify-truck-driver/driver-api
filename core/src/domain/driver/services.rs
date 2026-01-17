@@ -52,7 +52,7 @@ where
         create_request.lastname = Self::to_title_case(create_request.lastname);
         create_request.email = create_request.email.trim().to_lowercase();
 
-        let email_domain = create_request.email.split('@').last().unwrap_or("");
+        let email_domain = create_request.email.split('@').next_back().unwrap_or("");
 
         if email_list_deny.contains(&email_domain.to_string()) {
             error!(

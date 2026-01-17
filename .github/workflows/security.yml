@@ -1,73 +1,136 @@
-name: security
+name: Security
 
 on:
   push:
     branches:
       - "*"
 
+permissions:
+  contents: read
+  packages: read
+
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
-  lint-detection:
-    name: Rust Linting and Audit
+  lint:
+    name: Lint (Clippy)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          components: clippy
 
-      - name: Lint
-        run: cargo clippy --verbose
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
-  sast-detection:
-    name: SAST Analysis
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  sast:
+    name: SAST (Semgrep)
     runs-on: ubuntu-latest
     container:
       image: semgrep/semgrep
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Run SAST Analysis
-        run: semgrep ci --config=auto --code --no-suppress-errors --json
+      - name: Run Semgrep
+        run: semgrep ci --config=auto --code --no-suppress-errors
 
-  secret-detection:
-    name: Secret Analysis
+  secrets:
+    name: Secret Scanning (Gitleaks)
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/gitleaks/gitleaks
+      image: ghcr.io/gitleaks/gitleaks:latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Run Secret Analysis
-        run: gitleaks dir --no-banner --verbose --redact=100 --report-format=json --report-path report.json --log-level=info --exit-code=0 .
-
-      - name: Upload Secret Report
-        uses: actions/upload-artifact@v6
-        with:
-          name: secret-report
-          path: report.json
+      - name: Run Gitleaks
+        run: gitleaks detect --no-banner --verbose --redact
 
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs:
-      - lint-detection
-      - sast-detection
-      - secret-detection
+    needs: [lint, sast, secrets]
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: plannify_user
+          POSTGRES_PASSWORD: plannify_password
+          POSTGRES_DB: plannify_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
+      SQLX_OFFLINE: true
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          fetch-depth: 0
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Pull and run migrations
+        run: |
+          docker pull ghcr.io/plannify-truck-driver/common-services:0.1.4
+          docker run --rm \
+            --network host \
+            -e DATABASE_URL=${{ env.DATABASE_URL }} \
+            ghcr.io/plannify-truck-driver/common-services:0.1.4
+
+      - name: Seed test dataset
+        run: |
+          PGPASSWORD=plannify_password \
+            psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Test
-        run: cargo test --verbose
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Run tests
+        run: cargo test --verbose --all-features
+
+      - name: Run doc tests
+        run: cargo test --doc

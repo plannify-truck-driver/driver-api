@@ -61,6 +61,12 @@ impl MockDriverRepository {
     }
 }
 
+impl Default for MockDriverRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DriverRepository for MockDriverRepository {
     async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {
         let drivers = self.drivers.lock().unwrap();

@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use chrono::{Datelike, NaiveDate};
+use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use uuid::Uuid;
 
 use crate::{
@@ -58,6 +58,7 @@ pub trait WorkdayRepository: Send + Sync {
         driver_id: Uuid,
         date: NaiveDate,
         scheduled_deletion_date: NaiveDate,
+        created_at: Option<DateTime<Utc>>,
     ) -> impl Future<Output = Result<WorkdayGarbageRow, WorkdayError>> + Send;
 
     fn delete_workday_garbage(
@@ -154,6 +155,12 @@ impl MockWorkdayRepository {
             workdays: Arc::new(Mutex::new(Vec::new())),
             workdays_garbage: Arc::new(Mutex::new(Vec::new())),
         }
+    }
+}
+
+impl Default for MockWorkdayRepository {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -282,6 +289,7 @@ impl WorkdayRepository for MockWorkdayRepository {
         driver_id: Uuid,
         date: NaiveDate,
         scheduled_deletion_date: NaiveDate,
+        created_at: Option<DateTime<Utc>>,
     ) -> Result<WorkdayGarbageRow, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
         let mut workdays_garbage = self.workdays_garbage.lock().unwrap();
@@ -303,7 +311,7 @@ impl WorkdayRepository for MockWorkdayRepository {
         let new_garbage = WorkdayGarbageRow {
             workday_date: date,
             fk_driver_id: driver_id,
-            created_at: chrono::Utc::now(),
+            created_at: created_at.unwrap_or_else(Utc::now),
             scheduled_deletion_date,
         };
         workdays_garbage.push(new_garbage.clone());
@@ -332,7 +340,7 @@ impl WorkdayRepository for MockWorkdayRepository {
         let documents: Vec<i32> = workdays
             .iter()
             .filter(|w| w.fk_driver_id == driver_id)
-            .map(|w| w.date.year() as i32) // Example logic
+            .map(|w| w.date.year()) // Example logic
             .collect();
         Ok(documents)
     }

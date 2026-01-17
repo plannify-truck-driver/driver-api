@@ -19,7 +19,7 @@ serde_yaml = "0.9"
 validator = { version = "0.20", features = ["derive"] }
 
 # Database
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "uuid"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "uuid", "macros"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.18", features = ["serde", "v4"] }
 
@@ -47,3 +47,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 [dev-dependencies]
 axum-test = "18.3.0"
 test-context = "0.5.4"
+reqwest = { version = "0.13", features = ["json"] }
+base64 = "0.22"
+serial_test = "3.0"

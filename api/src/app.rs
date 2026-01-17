@@ -162,6 +162,10 @@ impl App {
 
         Ok(())
     }
+
+    pub async fn shutdown(&self) {
+        self.state.shutdown().await;
+    }
 }
 
 pub trait AppBuilder {
