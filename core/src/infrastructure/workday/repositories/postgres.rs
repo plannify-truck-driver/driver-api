@@ -304,6 +304,10 @@ impl WorkdayRepository for PostgresWorkdayRepository {
             SELECT EXTRACT(YEAR FROM date)::INTEGER as year
             FROM workdays
             WHERE fk_driver_id = $1
+            AND date NOT IN (
+                SELECT workday_date FROM workday_garbage
+                WHERE fk_driver_id = $1
+            )
             GROUP BY year
             "#,
             driver_id
@@ -329,6 +333,10 @@ impl WorkdayRepository for PostgresWorkdayRepository {
             FROM workdays
             WHERE fk_driver_id = $1
             AND EXTRACT(YEAR FROM date)::INTEGER = $2
+            AND date NOT IN (
+                SELECT workday_date FROM workday_garbage
+                WHERE fk_driver_id = $1
+            )
             GROUP BY month
             "#,
             driver_id,

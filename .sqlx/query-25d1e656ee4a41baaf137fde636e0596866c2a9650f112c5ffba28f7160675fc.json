@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT EXTRACT(YEAR FROM date)::INTEGER as year\n            FROM workdays\n            WHERE fk_driver_id = $1\n            AND date NOT IN (\n                SELECT workday_date FROM workday_garbage\n                WHERE fk_driver_id = $1\n            )\n            GROUP BY year\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "year",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "25d1e656ee4a41baaf137fde636e0596866c2a9650f112c5ffba28f7160675fc"
+}
