@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::PgPool;
 use tracing::error;
 use uuid::Uuid;
@@ -237,16 +237,18 @@ impl WorkdayRepository for PostgresWorkdayRepository {
         driver_id: Uuid,
         date: NaiveDate,
         scheduled_deletion_date: NaiveDate,
+        created_at: Option<DateTime<Utc>>,
     ) -> Result<WorkdayGarbageRow, WorkdayError> {
         sqlx::query_as!(
             WorkdayGarbageRow,
             r#"
             INSERT INTO workday_garbage (workday_date, fk_driver_id, created_at, scheduled_deletion_date)
-            VALUES ($1, $2, NOW(), $3)
+            VALUES ($1, $2, $3, $4)
             RETURNING *
             "#,
             date,
             driver_id,
+            created_at.unwrap_or_else(Utc::now),
             scheduled_deletion_date,
         )
         .fetch_one(&self.pool)

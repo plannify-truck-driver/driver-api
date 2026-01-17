@@ -805,26 +805,22 @@ async fn test_delete_workday_garbage_success(ctx: &mut context::TestContext) {
 
     res.assert_status(StatusCode::OK);
 
-    // delete_workday_garbage only removes the garbage, the workday remains in the table
-    // To restore the original state, we need to put the workday back in the garbage
-    // The workday already exists (it was not deleted), we just need to recreate the garbage
-    sqlx::query!(
-        r#"
-        INSERT INTO workday_garbage (workday_date, fk_driver_id, created_at, scheduled_deletion_date)
-        VALUES ($1, $2, $3, $4)
-        "#,
-        chrono::NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
-        ctx.authenticated_user_id,
-        chrono::NaiveDateTime::new(
-            chrono::NaiveDate::from_ymd_opt(2026, 2, 10).unwrap(),
-            chrono::NaiveTime::from_hms_opt(11, 30, 0).unwrap()
+    ctx.repositories
+        .workday_repository
+        .create_workday_garbage(
+            ctx.authenticated_user_id,
+            chrono::NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(2026, 3, 11).unwrap(),
+            Some(
+                chrono::NaiveDateTime::new(
+                    chrono::NaiveDate::from_ymd_opt(2026, 2, 10).unwrap(),
+                    chrono::NaiveTime::from_hms_opt(11, 30, 0).unwrap(),
+                )
+                .and_utc(),
+            ),
         )
-        .and_utc(),
-        chrono::NaiveDate::from_ymd_opt(2026, 3, 11).unwrap(),
-    )
-    .execute(&ctx.repositories.pool)
-    .await
-    .unwrap();
+        .await
+        .unwrap();
 }
 
 #[test_context(context::TestContext)]
