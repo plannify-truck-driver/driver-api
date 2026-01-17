@@ -14,7 +14,7 @@ pub type DriverService =
 
 #[derive(Clone)]
 pub struct DriverRepositories {
-    pool: PgPool,
+    pub pool: PgPool,
     pub health_repository: PostgresHealthRepository,
     pub driver_repository: PostgresDriverRepository,
     pub workday_repository: PostgresWorkdayRepository,

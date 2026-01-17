@@ -1,10 +1,11 @@
 use api::http::common::{api_error::ErrorBody, response::PaginatedResponse};
 use axum::http::StatusCode;
 use plannify_driver_api_core::domain::workday::{
-    entities::{Workday, WorkdayGarbage},
+    entities::{UpdateWorkdayRequest, Workday, WorkdayGarbage},
     port::WorkdayRepository,
 };
 use serde_json::json;
+use serial_test::serial;
 use test_context::test_context;
 
 pub mod context;
@@ -20,6 +21,7 @@ fn verify_workday_content(workday: Workday, expected_workday: Workday) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workdays_month_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
@@ -34,6 +36,7 @@ async fn test_get_all_workdays_month_unauthorized(ctx: &mut context::TestContext
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workdays_month_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -72,6 +75,7 @@ async fn test_get_all_workdays_month_success(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workdays_month_with_no_parameters(ctx: &mut context::TestContext) {
     let res1 = ctx.authenticated_router.get("/driver/workdays/month").await;
 
@@ -103,6 +107,7 @@ async fn test_get_all_workdays_month_with_no_parameters(ctx: &mut context::TestC
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workdays_month_with_wrong_parameters(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
@@ -147,6 +152,7 @@ async fn test_get_all_workdays_month_with_wrong_parameters(ctx: &mut context::Te
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workdays_period_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
@@ -161,6 +167,7 @@ async fn test_get_all_workdays_period_unauthorized(ctx: &mut context::TestContex
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workdays_period_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -211,6 +218,7 @@ async fn test_get_all_workdays_period_success(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workdays_period_with_no_parameters(ctx: &mut context::TestContext) {
     let res1 = ctx.authenticated_router.get("/driver/workdays").await;
 
@@ -242,6 +250,7 @@ async fn test_get_all_workdays_period_with_no_parameters(ctx: &mut context::Test
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workdays_period_with_wrong_parameters(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
@@ -286,6 +295,7 @@ async fn test_get_all_workdays_period_with_wrong_parameters(ctx: &mut context::T
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_create_workday_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
@@ -307,6 +317,7 @@ async fn test_create_workday_unauthorized(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_create_workday_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -345,6 +356,7 @@ async fn test_create_workday_success(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_create_workday_duplicate(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -366,6 +378,7 @@ async fn test_create_workday_duplicate(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_create_workday_wrong_body(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
@@ -455,6 +468,7 @@ async fn test_create_workday_wrong_body(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_create_workday_duplicate_garbage(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -476,6 +490,7 @@ async fn test_create_workday_duplicate_garbage(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_update_workday_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
@@ -497,6 +512,7 @@ async fn test_update_workday_unauthorized(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_update_workday_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -522,10 +538,26 @@ async fn test_update_workday_success(ctx: &mut context::TestContext) {
         overnight_rest: false,
     };
     verify_workday_content(body, expected_workday);
+
+    ctx.repositories
+        .workday_repository
+        .update_workday(
+            ctx.authenticated_user_id,
+            UpdateWorkdayRequest {
+                date: chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
+                start_time: chrono::NaiveTime::from_hms_opt(8, 14, 0).unwrap(),
+                end_time: Some(chrono::NaiveTime::from_hms_opt(13, 31, 0).unwrap()),
+                rest_time: chrono::NaiveTime::from_hms_opt(1, 45, 0).unwrap(),
+                overnight_rest: true,
+            },
+        )
+        .await
+        .unwrap();
 }
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_update_workday_not_found(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -547,6 +579,7 @@ async fn test_update_workday_not_found(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_update_workday_wrong_body(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
@@ -636,6 +669,7 @@ async fn test_update_workday_wrong_body(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_delete_workday_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
@@ -650,6 +684,7 @@ async fn test_delete_workday_unauthorized(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_delete_workday_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -670,6 +705,7 @@ async fn test_delete_workday_success(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_delete_workday_not_found(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -684,6 +720,7 @@ async fn test_delete_workday_not_found(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_delete_workday_duplicate(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -698,6 +735,7 @@ async fn test_delete_workday_duplicate(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workday_garbage_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
@@ -712,6 +750,7 @@ async fn test_get_all_workday_garbage_unauthorized(ctx: &mut context::TestContex
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -742,6 +781,7 @@ async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_delete_workday_garbage_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
@@ -756,6 +796,7 @@ async fn test_delete_workday_garbage_unauthorized(ctx: &mut context::TestContext
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_delete_workday_garbage_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
@@ -764,18 +805,31 @@ async fn test_delete_workday_garbage_success(ctx: &mut context::TestContext) {
 
     res.assert_status(StatusCode::OK);
 
-    ctx.repositories
-        .workday_repository
-        .delete_workday(
-            ctx.authenticated_user_id,
-            chrono::NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
+    // delete_workday_garbage only removes the garbage, the workday remains in the table
+    // To restore the original state, we need to put the workday back in the garbage
+    // The workday already exists (it was not deleted), we just need to recreate the garbage
+    sqlx::query!(
+        r#"
+        INSERT INTO workday_garbage (workday_date, fk_driver_id, created_at, scheduled_deletion_date)
+        VALUES ($1, $2, $3, $4)
+        "#,
+        chrono::NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
+        ctx.authenticated_user_id,
+        chrono::NaiveDateTime::new(
+            chrono::NaiveDate::from_ymd_opt(2026, 2, 10).unwrap(),
+            chrono::NaiveTime::from_hms_opt(11, 30, 0).unwrap()
         )
-        .await
-        .unwrap();
+        .and_utc(),
+        chrono::NaiveDate::from_ymd_opt(2026, 3, 11).unwrap(),
+    )
+    .execute(&ctx.repositories.pool)
+    .await
+    .unwrap();
 }
 
 #[test_context(context::TestContext)]
 #[tokio::test]
+#[serial]
 async fn test_delete_workday_garbage_not_found(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
