@@ -60,8 +60,8 @@ impl AuthValidator {
     pub fn new(jwt_config: &JwtConfig) -> Self {
         Self {
             secret_key: jwt_config.secret_key.clone(),
-            access_ttl: jwt_config.access_ttl.clone(),
-            refresh_ttl: jwt_config.refresh_ttl.clone(),
+            access_ttl: jwt_config.access_ttl,
+            refresh_ttl: jwt_config.refresh_ttl,
         }
     }
 }

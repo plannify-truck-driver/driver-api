@@ -4,7 +4,7 @@ use crate::domain::health::{entities::IsHealthy, port::HealthRepository};
 
 #[derive(Clone)]
 pub struct PostgresHealthRepository {
-    pool: PgPool,
+    pub(crate) pool: PgPool,
 }
 
 impl PostgresHealthRepository {

@@ -395,8 +395,8 @@ mod tests {
             chrono::NaiveTime::parse_from_str("00:45:00", "%H:%M:%S").unwrap(),
             "Expected rest_time to be updated"
         );
-        assert_eq!(
-            workdays.0[0].overnight_rest, true,
+        assert!(
+            workdays.0[0].overnight_rest,
             "Expected overnight_rest to be updated"
         );
 
@@ -593,6 +593,7 @@ mod tests {
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-02-01", "%Y-%m-%d").unwrap(),
+                None,
             )
             .await?;
         service
@@ -601,6 +602,7 @@ mod tests {
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-02-01", "%Y-%m-%d").unwrap(),
+                None,
             )
             .await?;
 

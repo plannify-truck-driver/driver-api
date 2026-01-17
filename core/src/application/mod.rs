@@ -1,4 +1,4 @@
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{PgPool, postgres::PgPoolOptions};
 
 use crate::{
     PostgresHealthRepository, Service,
@@ -14,15 +14,16 @@ pub type DriverService =
 
 #[derive(Clone)]
 pub struct DriverRepositories {
+    pub pool: PgPool,
     pub health_repository: PostgresHealthRepository,
     pub driver_repository: PostgresDriverRepository,
     pub workday_repository: PostgresWorkdayRepository,
 }
 
-pub async fn create_repositories(database_url: &String) -> Result<DriverRepositories, CoreError> {
+pub async fn create_repositories(database_url: &str) -> Result<DriverRepositories, CoreError> {
     let pg_pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect(&database_url)
+        .connect(database_url)
         .await
         .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
 
@@ -31,18 +32,33 @@ pub async fn create_repositories(database_url: &String) -> Result<DriverReposito
     let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
 
     Ok(DriverRepositories {
+        pool: pg_pool,
         health_repository,
         driver_repository,
         workday_repository,
     })
 }
 
-impl Into<DriverService> for DriverRepositories {
-    fn into(self) -> DriverService {
+impl From<DriverRepositories> for DriverService {
+    fn from(val: DriverRepositories) -> Self {
         Service::new(
-            self.health_repository,
-            self.driver_repository,
-            self.workday_repository,
+            val.health_repository,
+            val.driver_repository,
+            val.workday_repository,
         )
+    }
+}
+
+impl DriverRepositories {
+    /// Shutdown the underlying database pool
+    pub async fn shutdown_pool(&self) {
+        let _ = &self.pool.close().await;
+    }
+}
+
+impl DriverService {
+    /// Shutdown the underlying database pool
+    pub async fn shutdown_pool(&self) {
+        self.health_repository.pool.close().await;
     }
 }

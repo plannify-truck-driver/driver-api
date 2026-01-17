@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO workday_garbage (workday_date, fk_driver_id, created_at, scheduled_deletion_date)\n            VALUES ($1, $2, NOW(), $3)\n            RETURNING *\n            ",
+  "query": "\n            INSERT INTO workday_garbage (workday_date, fk_driver_id, created_at, scheduled_deletion_date)\n            VALUES ($1, $2, $3, $4)\n            RETURNING *\n            ",
   "describe": {
     "columns": [
       {
@@ -28,6 +28,7 @@
       "Left": [
         "Date",
         "Uuid",
+        "Timestamptz",
         "Date"
       ]
     },
@@ -38,5 +39,5 @@
       false
     ]
   },
-  "hash": "e1b8d088fe5add1ed94cd39277d723fc008a1e979d31262dc292550f4599e3b1"
+  "hash": "e497cfcb587a5512a787ed40649df7cdd92a32e2aa639483c20add3bc6bb1c7f"
 }

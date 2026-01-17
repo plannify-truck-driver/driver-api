@@ -87,7 +87,7 @@ where
         let scheduled_deletion_date =
             chrono::Utc::now().naive_utc().date() + chrono::Duration::days(30);
         self.workday_repository
-            .create_workday_garbage(driver_id, date, scheduled_deletion_date)
+            .create_workday_garbage(driver_id, date, scheduled_deletion_date, None)
             .await
     }
 
