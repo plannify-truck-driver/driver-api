@@ -223,15 +223,16 @@ where
                     });
                 }
             } else {
-                let expected_end =
+                let expected_start =
                     rest_periods_service[index - 1].end + chrono::Duration::seconds(1);
-                if rest_periods_service[index].start != expected_end {
+                if rest_periods_service[index].start != expected_start {
                     return Err(DriverError::InvalidRestPeriod {
                         details: format!(
-                            "Rest period at index {} starts at {} but previous period ends at {}.",
+                            "Rest period at index {} starts at {} but previous period ends at {}, need one second gap. The correct start time must be {}.",
                             index,
                             rest_periods_service[index].start,
-                            rest_periods_service[index - 1].end
+                            rest_periods_service[index - 1].end,
+                            expected_start
                         ),
                     });
                 }

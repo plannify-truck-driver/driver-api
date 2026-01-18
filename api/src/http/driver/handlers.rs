@@ -87,5 +87,5 @@ pub async fn delete_rest_periods(
         .delete_driver_rest_periods(user_identity.user_id)
         .await?;
 
-    Ok(Response::created(()))
+    Ok(Response::ok(()))
 }
