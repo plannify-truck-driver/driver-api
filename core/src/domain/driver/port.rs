@@ -1,5 +1,10 @@
+use uuid::Uuid;
+
 use crate::{
-    domain::driver::entities::{CreateDriverRequest, DriverRow, LoginDriverRequest},
+    domain::driver::entities::{
+        CreateDriverRequest, DriverLimitationRow, DriverRow, DriverSuspensionRow,
+        LoginDriverRequest,
+    },
     infrastructure::driver::repositories::error::DriverError,
 };
 use std::{
@@ -8,6 +13,8 @@ use std::{
 };
 
 pub trait DriverRepository: Send + Sync {
+    fn get_number_of_drivers(&self) -> impl Future<Output = Result<i64, DriverError>> + Send;
+
     fn get_driver_by_email(
         &self,
         email: String,
@@ -22,6 +29,40 @@ pub trait DriverRepository: Send + Sync {
         &self,
         driver: DriverRow,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
+    fn delete_driver(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn get_actual_driver_limitation(
+        &self,
+    ) -> impl Future<Output = Result<Option<DriverLimitationRow>, DriverError>> + Send;
+
+    fn create_driver_limitation(
+        &self,
+        limitation: DriverLimitationRow,
+    ) -> impl Future<Output = Result<DriverLimitationRow, DriverError>> + Send;
+
+    fn delete_driver_limitation(
+        &self,
+        limitation_id: i32,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn get_current_driver_suspension(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Option<DriverSuspensionRow>, DriverError>> + Send;
+
+    fn create_driver_suspension(
+        &self,
+        suspension: DriverSuspensionRow,
+    ) -> impl Future<Output = Result<DriverSuspensionRow, DriverError>> + Send;
+
+    fn delete_driver_suspension(
+        &self,
+        suspension_id: i32,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
 }
 
 pub trait DriverService: Send + Sync {
@@ -51,12 +92,16 @@ pub trait DriverService: Send + Sync {
 #[derive(Clone)]
 pub struct MockDriverRepository {
     drivers: Arc<Mutex<Vec<DriverRow>>>,
+    limitations: Arc<Mutex<Option<DriverLimitationRow>>>,
+    suspensions: Arc<Mutex<Vec<DriverSuspensionRow>>>,
 }
 
 impl MockDriverRepository {
     pub fn new() -> Self {
         Self {
             drivers: Arc::new(Mutex::new(Vec::new())),
+            limitations: Arc::new(Mutex::new(None)),
+            suspensions: Arc::new(Mutex::new(Vec::new())),
         }
     }
 }
@@ -68,6 +113,11 @@ impl Default for MockDriverRepository {
 }
 
 impl DriverRepository for MockDriverRepository {
+    async fn get_number_of_drivers(&self) -> Result<i64, DriverError> {
+        let drivers = self.drivers.lock().unwrap();
+        Ok(drivers.len() as i64)
+    }
+
     async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {
         let drivers = self.drivers.lock().unwrap();
 
@@ -122,5 +172,77 @@ impl DriverRepository for MockDriverRepository {
         }
 
         Err(DriverError::DriverNotFound)
+    }
+
+    async fn delete_driver(&self, driver_id: Uuid) -> Result<(), DriverError> {
+        let mut drivers = self.drivers.lock().unwrap();
+        let initial_len = drivers.len();
+
+        drivers.retain(|d| d.pk_driver_id != driver_id);
+        if drivers.len() == initial_len {
+            return Err(DriverError::DriverNotFound);
+        }
+
+        Ok(())
+    }
+
+    async fn get_actual_driver_limitation(
+        &self,
+    ) -> Result<Option<DriverLimitationRow>, DriverError> {
+        let limitations = self.limitations.lock().unwrap();
+        Ok(limitations.clone())
+    }
+
+    async fn create_driver_limitation(
+        &self,
+        limitation: DriverLimitationRow,
+    ) -> Result<DriverLimitationRow, DriverError> {
+        let mut limitations = self.limitations.lock().unwrap();
+        *limitations = Some(limitation.clone());
+        Ok(limitation)
+    }
+
+    async fn delete_driver_limitation(&self, limitation_id: i32) -> Result<(), DriverError> {
+        let mut limitations = self.limitations.lock().unwrap();
+        if let Some(limitation) = &*limitations
+            && limitation.pk_maximum_entity_limit_id == limitation_id
+        {
+            *limitations = None;
+            return Ok(());
+        }
+        Err(DriverError::DriverLimitationNotFound)
+    }
+
+    async fn get_current_driver_suspension(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Option<DriverSuspensionRow>, DriverError> {
+        let suspensions = self.suspensions.lock().unwrap();
+        let suspension = suspensions.iter().find(|s| {
+            s.fk_driver_id == driver_id
+                && s.start_at <= chrono::Utc::now()
+                && (s.end_at.is_none() || s.end_at.unwrap() >= chrono::Utc::now())
+        });
+        Ok(suspension.cloned())
+    }
+
+    async fn create_driver_suspension(
+        &self,
+        suspension: DriverSuspensionRow,
+    ) -> Result<DriverSuspensionRow, DriverError> {
+        let mut suspensions = self.suspensions.lock().unwrap();
+        suspensions.push(suspension.clone());
+        Ok(suspension)
+    }
+
+    async fn delete_driver_suspension(&self, suspension_id: i32) -> Result<(), DriverError> {
+        let mut suspensions = self.suspensions.lock().unwrap();
+        let initial_len = suspensions.len();
+        suspensions.retain(|s| s.pk_driver_suspension_id != suspension_id);
+        if suspensions.len() == initial_len {
+            return Err(DriverError::DriverSuspensionNotFound);
+        }
+
+        Ok(())
     }
 }

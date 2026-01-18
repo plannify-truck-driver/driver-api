@@ -102,10 +102,10 @@ impl TokenValidator for AuthValidator {
             &access_claims,
             &jsonwebtoken::EncodingKey::from_secret(self.secret_key.as_bytes()),
         )
-        .map_err(|_| {
+        .map_err(|e| {
             error!(
-                "Failed to create access token for user {}",
-                driver.pk_driver_id
+                "Failed to create access token for user {}: {:?}",
+                driver.pk_driver_id, e
             );
             ApiError::InternalServerError
         })?;
@@ -115,10 +115,10 @@ impl TokenValidator for AuthValidator {
             &refresh_claims,
             &jsonwebtoken::EncodingKey::from_secret(self.secret_key.as_bytes()),
         )
-        .map_err(|_| {
+        .map_err(|e| {
             error!(
-                "Failed to create refresh token for user {}",
-                driver.pk_driver_id
+                "Failed to create refresh token for user {}: {:?}",
+                driver.pk_driver_id, e
             );
             ApiError::InternalServerError
         })?;
@@ -132,8 +132,11 @@ impl TokenValidator for AuthValidator {
             &DecodingKey::from_secret(self.secret_key.as_bytes()),
             &Validation::new(Algorithm::HS256),
         )
-        .map_err(|_| ApiError::Unauthorized {
-            error_code: "UNAUTHORIZED".to_string(),
+        .map_err(|e| {
+            error!("Failed to decode token: {:?}", e);
+            ApiError::Unauthorized {
+                error_code: "UNAUTHORIZED".to_string(),
+            }
         })?;
 
         let claims = token_data.claims;

@@ -46,7 +46,7 @@ pub async fn signup(
     let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
         auth_validator
             .create_tokens(driver)
-            .map_err(|_| DriverError::DatabaseError)
+            .map_err(|_| DriverError::Internal)
     };
 
     let (access_token, refresh_token_cookie) = state
@@ -90,7 +90,7 @@ pub async fn login(
     let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
         auth_validator
             .create_tokens(driver)
-            .map_err(|_| DriverError::DatabaseError)
+            .map_err(|_| DriverError::Internal)
     };
 
     let (access_token, refresh_token_cookie) = state

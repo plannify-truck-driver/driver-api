@@ -2,11 +2,14 @@ use sqlx::PgPool;
 
 use crate::{
     domain::driver::{
-        entities::{CreateDriverRequest, DriverRow},
+        entities::{
+            CreateDriverRequest, DriverLimitationRow, DriverRow, DriverSuspensionRow, EntityType,
+        },
         port::DriverRepository,
     },
     infrastructure::driver::repositories::error::DriverError,
 };
+use tracing::error;
 
 #[derive(Clone)]
 pub struct PostgresDriverRepository {
@@ -20,6 +23,22 @@ impl PostgresDriverRepository {
 }
 
 impl DriverRepository for PostgresDriverRepository {
+    async fn get_number_of_drivers(&self) -> Result<i64, DriverError> {
+        sqlx::query!(
+            r#"
+            SELECT COUNT(*) as "count!"
+            FROM drivers
+            "#
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map(|row| row.count)
+        .map_err(|e| {
+            error!("Failed to get number of drivers: {:?}", e);
+            DriverError::DatabaseError
+        })
+    }
+
     async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {
         sqlx::query_as!(
             DriverRow,
@@ -101,5 +120,187 @@ impl DriverRepository for PostgresDriverRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|_| DriverError::DriverNotFound)
+    }
+
+    async fn delete_driver(&self, driver_id: uuid::Uuid) -> Result<(), DriverError> {
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM drivers
+            WHERE pk_driver_id = $1
+            "#,
+            driver_id,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            let db_err = e.as_database_error();
+
+            if db_err
+                .and_then(|db_err| db_err.code().map(|code| code == "23503"))
+                .unwrap_or(false)
+            {
+                DriverError::DriverNotFound
+            } else {
+                error!("Failed to delete driver {}: {:?}", driver_id, e);
+                DriverError::DatabaseError
+            }
+        })?;
+
+        if result.rows_affected() == 0 {
+            Err(DriverError::DriverNotFound)
+        } else {
+            Ok(())
+        }
+    }
+
+    async fn get_actual_driver_limitation(
+        &self,
+    ) -> Result<Option<DriverLimitationRow>, DriverError> {
+        error!("Fetching actual driver limitation");
+
+        sqlx::query_as!(
+            DriverLimitationRow,
+            r#"
+            SELECT pk_maximum_entity_limit_id, entity_type as "entity_type: _", maximum_limit, fk_created_employee_id, start_at, end_at, created_at
+            FROM maximum_entity_limits
+            WHERE entity_type::text = 'DRIVER'
+            AND start_at <= $1
+            AND (end_at IS NULL OR end_at > $1)
+            ORDER BY start_at DESC
+            LIMIT 1
+            "#,
+            chrono::Utc::now(),
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get actual driver limitation: {:?}", e);
+            DriverError::DatabaseError
+        })
+    }
+
+    async fn create_driver_limitation(
+        &self,
+        limitation: DriverLimitationRow,
+    ) -> Result<DriverLimitationRow, DriverError> {
+        error!("Creating driver limitation");
+
+        sqlx::query_as!(
+            DriverLimitationRow,
+            r#"
+            INSERT INTO maximum_entity_limits (entity_type, maximum_limit, fk_created_employee_id, start_at, end_at, created_at)
+            VALUES ($1::entity_type, $2, $3, $4, $5, $6)
+            RETURNING pk_maximum_entity_limit_id, entity_type as "entity_type: EntityType", maximum_limit, fk_created_employee_id, start_at, end_at, created_at
+            "#,
+            limitation.entity_type as EntityType,
+            limitation.maximum_limit,
+            limitation.fk_created_employee_id,
+            limitation.start_at,
+            limitation.end_at,
+            limitation.created_at,
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            eprintln!("Error creating driver limitation: {:?}", e);
+            error!("Failed to create driver limitation: {:?}", e);
+            DriverError::DatabaseError
+        })
+    }
+
+    async fn delete_driver_limitation(&self, limitation_id: i32) -> Result<(), DriverError> {
+        error!("Deleting driver limitation");
+
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM maximum_entity_limits
+            WHERE pk_maximum_entity_limit_id = $1
+            "#,
+            limitation_id,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|_| DriverError::DatabaseError)?;
+
+        if result.rows_affected() == 0 {
+            Err(DriverError::DriverLimitationNotFound)
+        } else {
+            Ok(())
+        }
+    }
+
+    async fn get_current_driver_suspension(
+        &self,
+        driver_id: uuid::Uuid,
+    ) -> Result<Option<DriverSuspensionRow>, DriverError> {
+        sqlx::query_as!(
+            DriverSuspensionRow,
+            r#"
+            SELECT pk_driver_suspension_id, fk_driver_id, fk_created_employee_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at
+            FROM driver_suspensions
+            WHERE fk_driver_id = $1
+            AND start_at <= $2
+            AND (end_at IS NULL OR end_at > $2)
+            LIMIT 1
+            "#,
+            driver_id,
+            chrono::Utc::now(),
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get current driver suspension: {:?}", e);
+            DriverError::DatabaseError
+        })
+    }
+
+    async fn create_driver_suspension(
+        &self,
+        suspension: DriverSuspensionRow,
+    ) -> Result<DriverSuspensionRow, DriverError> {
+        error!("Creating driver suspension");
+        sqlx::query_as!(
+            DriverSuspensionRow,
+            r#"
+            INSERT INTO driver_suspensions (fk_driver_id, fk_created_employee_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING pk_driver_suspension_id, fk_driver_id, fk_created_employee_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at
+            "#,
+            suspension.fk_driver_id,
+            suspension.fk_created_employee_id,
+            suspension.can_access_restricted_space,
+            suspension.driver_message,
+            suspension.title,
+            suspension.description,
+            suspension.start_at,
+            suspension.end_at,
+            suspension.created_at,
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to create driver suspension: {:?}", e);
+            DriverError::DatabaseError
+        })
+    }
+
+    async fn delete_driver_suspension(&self, suspension_id: i32) -> Result<(), DriverError> {
+        error!("Deleting driver suspension with ID: {}", suspension_id);
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM driver_suspensions
+            WHERE pk_driver_suspension_id = $1
+            "#,
+            suspension_id,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|_| DriverError::DatabaseError)?;
+
+        if result.rows_affected() == 0 {
+            Err(DriverError::DriverSuspensionNotFound)
+        } else {
+            Ok(())
+        }
     }
 }

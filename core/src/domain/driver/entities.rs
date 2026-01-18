@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -68,7 +70,7 @@ pub struct CreateDriverRequest {
     pub language: String,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreateDriverResponse {
     pub access_token: String,
 }
@@ -81,4 +83,80 @@ pub struct LoginDriverRequest {
 
     #[validate(length(min = 1, message = "password must be provided"))]
     pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, sqlx::Type)]
+#[sqlx(type_name = "entity_type")]
+pub enum EntityType {
+    DRIVER,
+    EMPLOYEE,
+}
+
+impl FromStr for EntityType {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "DRIVER" => Ok(EntityType::DRIVER),
+            "EMPLOYEE" => Ok(EntityType::EMPLOYEE),
+            _ => Err(()),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+pub struct DriverLimitationRow {
+    pub pk_maximum_entity_limit_id: i32,
+    pub entity_type: EntityType,
+    pub maximum_limit: i32,
+    pub fk_created_employee_id: Uuid,
+    pub start_at: DateTime<Utc>,
+    pub end_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DriverLimitation {
+    pub start_at: DateTime<Utc>,
+    pub end_at: Option<DateTime<Utc>>,
+}
+
+impl DriverLimitationRow {
+    pub fn to_driver_limitation(&self) -> DriverLimitation {
+        DriverLimitation {
+            start_at: self.start_at,
+            end_at: self.end_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+pub struct DriverSuspensionRow {
+    pub pk_driver_suspension_id: i32,
+    pub fk_driver_id: Uuid,
+    pub fk_created_employee_id: Uuid,
+    pub can_access_restricted_space: bool,
+    pub driver_message: Option<String>,
+    pub title: String,
+    pub description: Option<String>,
+    pub start_at: DateTime<Utc>,
+    pub end_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+pub struct DriverSuspension {
+    pub message: Option<String>,
+    pub can_access_restricted_space: bool,
+    pub start_at: DateTime<Utc>,
+    pub end_at: Option<DateTime<Utc>>,
+}
+
+impl DriverSuspensionRow {
+    pub fn to_driver_suspension(&self) -> DriverSuspension {
+        DriverSuspension {
+            message: self.driver_message.clone(),
+            can_access_restricted_space: self.can_access_restricted_space,
+            start_at: self.start_at,
+            end_at: self.end_at,
+        }
+    }
 }

@@ -1,4 +1,4 @@
-use api::config::{CommonConfig, Config, Environment, JwtConfig};
+use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig};
 use api::{App, app::AppBuilder};
 use axum_test::TestServer;
 use plannify_driver_api_core::application::{DriverRepositories, create_repositories};
@@ -35,11 +35,15 @@ impl AsyncTestContext for TestContext {
             origins: vec!["0.0.0.0/0".to_string()],
         };
 
+        let check_content = CheckContentConfig {
+            email_domain_denylist: vec!["example.fr".to_string(), "example.com".to_string()],
+        };
+
         let config = Config {
             database_url: database_url.clone(),
             jwt,
             common,
-            check_content: Default::default(),
+            check_content,
             environment: Environment::Test,
         };
 
