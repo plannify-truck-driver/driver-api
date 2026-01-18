@@ -1,5 +1,7 @@
 use api::http::common::api_error::ErrorBody;
-use plannify_driver_api_core::domain::driver::entities::DriverRestPeriod;
+use plannify_driver_api_core::domain::driver::{
+    entities::DriverRestPeriod, port::DriverRepository,
+};
 use reqwest::StatusCode;
 use serde_json::json;
 use serial_test::serial;
@@ -196,4 +198,24 @@ async fn test_delete_rest_periods_success(ctx: &mut context::TestContext) {
         .await;
 
     res.assert_status(StatusCode::OK);
+
+    ctx.repositories
+        .driver_repository
+        .set_driver_rest_periods(
+            ctx.authenticated_user_id,
+            vec![
+                DriverRestPeriod {
+                    start: "00:00:00".parse().unwrap(),
+                    end: "00:59:59".parse().unwrap(),
+                    rest: "01:00:00".parse().unwrap(),
+                },
+                DriverRestPeriod {
+                    start: "01:00:00".parse().unwrap(),
+                    end: "23:59:59".parse().unwrap(),
+                    rest: "01:00:00".parse().unwrap(),
+                },
+            ],
+        )
+        .await
+        .unwrap();
 }
