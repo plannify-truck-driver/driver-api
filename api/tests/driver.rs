@@ -1,9 +1,9 @@
 use api::http::common::api_error::ErrorBody;
 use plannify_driver_api_core::domain::driver::entities::DriverRestPeriod;
 use reqwest::StatusCode;
+use serde_json::json;
 use serial_test::serial;
 use test_context::test_context;
-use serde_json::json;
 
 pub mod context;
 pub mod helpers;
@@ -12,13 +12,10 @@ pub mod helpers;
 #[tokio::test]
 #[serial]
 async fn test_get_all_rest_periods_unauthorized(ctx: &mut context::TestContext) {
-    let res = ctx
-        .unauthenticated_router
-        .get("/driver/rest-periods")
-        .await;
+    let res = ctx.unauthenticated_router.get("/driver/rest-periods").await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
-    
+
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "UNAUTHORIZED");
 }
@@ -27,13 +24,10 @@ async fn test_get_all_rest_periods_unauthorized(ctx: &mut context::TestContext) 
 #[tokio::test]
 #[serial]
 async fn test_get_all_rest_periods_success(ctx: &mut context::TestContext) {
-    let res = ctx
-        .authenticated_router
-        .get("/driver/rest-periods")
-        .await;
+    let res = ctx.authenticated_router.get("/driver/rest-periods").await;
 
     res.assert_status(StatusCode::OK);
-    
+
     let body: Vec<DriverRestPeriod> = res.json();
     assert_eq!(body.len(), 2);
     assert_eq!(body[0].start, "00:00:00".parse().unwrap());
@@ -68,7 +62,7 @@ async fn test_set_rest_periods_unauthorized(ctx: &mut context::TestContext) {
         .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
-    
+
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "UNAUTHORIZED");
 }
@@ -187,7 +181,7 @@ async fn test_delete_rest_periods_unauthorized(ctx: &mut context::TestContext) {
         .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
-    
+
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "UNAUTHORIZED");
 }
