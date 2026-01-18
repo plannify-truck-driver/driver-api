@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM maximum_entity_limits\n            WHERE pk_maximum_entity_limit_id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "95df9980f7293f79c93999b77f62a2f501a267c64e52e424f2df3c63da3755f9"
+}

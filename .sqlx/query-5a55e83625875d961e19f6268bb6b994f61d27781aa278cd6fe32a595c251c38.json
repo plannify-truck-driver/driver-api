@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM driver_suspensions\n            WHERE pk_driver_suspension_id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5a55e83625875d961e19f6268bb6b994f61d27781aa278cd6fe32a595c251c38"
+}

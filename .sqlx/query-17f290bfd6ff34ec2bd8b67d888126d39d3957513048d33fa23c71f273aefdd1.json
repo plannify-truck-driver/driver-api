@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM drivers\n            WHERE pk_driver_id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "17f290bfd6ff34ec2bd8b67d888126d39d3957513048d33fa23c71f273aefdd1"
+}

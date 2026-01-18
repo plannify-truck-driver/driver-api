@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT pk_maximum_entity_limit_id, entity_type as \"entity_type: _\", maximum_limit, fk_created_employee_id, start_at, end_at, created_at\n            FROM maximum_entity_limits\n            WHERE entity_type::text = 'DRIVER'\n            AND start_at <= $1\n            AND (end_at IS NULL OR end_at > $1)\n            ORDER BY start_at DESC\n            LIMIT 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pk_maximum_entity_limit_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "entity_type: _",
+        "type_info": {
+          "Custom": {
+            "name": "entity_type",
+            "kind": {
+              "Enum": [
+                "DRIVER",
+                "EMPLOYEE"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "maximum_limit",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "fk_created_employee_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "start_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "end_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "aa683a312b2e682e2d7ec9cfb9571ceb1e96943f30bbbe6eb9ff9d3befbda7ea"
+}
