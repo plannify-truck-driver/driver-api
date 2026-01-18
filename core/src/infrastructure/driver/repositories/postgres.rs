@@ -156,8 +156,6 @@ impl DriverRepository for PostgresDriverRepository {
     async fn get_actual_driver_limitation(
         &self,
     ) -> Result<Option<DriverLimitationRow>, DriverError> {
-        error!("Fetching actual driver limitation");
-
         sqlx::query_as!(
             DriverLimitationRow,
             r#"
