@@ -38,4 +38,7 @@ pub enum DriverError {
         start_at: String,
         end_at: Option<String>,
     },
+
+    #[error("Invalid rest period")]
+    InvalidRestPeriod { details: String },
 }

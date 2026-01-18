@@ -1,12 +1,14 @@
 use std::str::FromStr;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::prelude::FromRow;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
+
+use crate::domain::common::entities::validate_time;
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 pub struct DriverRow {
@@ -159,4 +161,36 @@ impl DriverSuspensionRow {
             end_at: self.end_at,
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct DriverRestPeriod {
+    pub start: NaiveTime,
+    pub end: NaiveTime,
+    pub rest: NaiveTime,
+}
+
+#[derive(Debug, Serialize, Deserialize, Validate, ToSchema)]
+pub struct CreateDriverRestPeriodRequest {
+    #[validate(custom(
+        function = "validate_time",
+        message = "start time must be a valid time"
+    ))]
+    pub start: NaiveTime,
+
+    #[validate(custom(function = "validate_time", message = "end time must be a valid time"))]
+    pub end: NaiveTime,
+
+    #[validate(custom(function = "validate_time", message = "rest time must be a valid time"))]
+    pub rest: NaiveTime,
+}
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct CreateDriverRestPeriodsRequest {
+    #[validate(length(
+        min = 1,
+        max = 10,
+        message = "At least one rest period must be provided and at most 10"
+    ))]
+    pub rest_periods: Vec<CreateDriverRestPeriodRequest>,
 }

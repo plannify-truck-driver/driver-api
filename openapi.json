@@ -115,6 +115,122 @@
         "security": []
       }
     },
+    "/driver/rest-periods": {
+      "get": {
+        "tags": [
+          "driver/rest-periods"
+        ],
+        "description": "Retrieve driver rest periods",
+        "operationId": "get_all_rest_periods",
+        "responses": {
+          "200": {
+            "description": "Driver rest periods retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DriverRestPeriod"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "driver/rest-periods"
+        ],
+        "description": "Set driver rest periods",
+        "operationId": "set_rest_periods",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DriverRestPeriod"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Driver rest periods set successfully"
+          },
+          "400": {
+            "description": "Invalid rest period",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "driver/rest-periods"
+        ],
+        "description": "Delete driver rest periods",
+        "operationId": "delete_rest_periods",
+        "responses": {
+          "200": {
+            "description": "Driver rest periods deleted successfully"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/driver/workdays": {
       "get": {
         "tags": [
@@ -664,6 +780,25 @@
             "type": "string"
           },
           "start_time": {
+            "type": "string"
+          }
+        }
+      },
+      "DriverRestPeriod": {
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "rest"
+        ],
+        "properties": {
+          "end": {
+            "type": "string"
+          },
+          "rest": {
+            "type": "string"
+          },
+          "start": {
             "type": "string"
           }
         }

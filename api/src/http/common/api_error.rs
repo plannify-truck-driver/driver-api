@@ -211,6 +211,14 @@ impl From<DriverError> for ApiError {
                     content: Some(Value::Mapping(content)),
                 }
             }
+            DriverError::InvalidRestPeriod { details } => {
+                let mut content = Mapping::new();
+                content.insert(Value::String("details".to_string()), Value::String(details));
+                ApiError::BadRequest {
+                    error_code: "INVALID_REST_PERIOD".to_string(),
+                    content: Some(Value::Mapping(content)),
+                }
+            }
         }
     }
 }

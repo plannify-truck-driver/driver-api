@@ -2,7 +2,10 @@ use crate::{
     Service,
     domain::{
         driver::{
-            entities::{CreateDriverRequest, DriverRow, LoginDriverRequest},
+            entities::{
+                CreateDriverRequest, CreateDriverRestPeriodRequest, DriverRestPeriod, DriverRow,
+                LoginDriverRequest,
+            },
             port::{DriverRepository, DriverService},
         },
         health::port::HealthRepository,
@@ -16,6 +19,7 @@ use argon2::{
     password_hash::{PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use tracing::error;
+use uuid::Uuid;
 
 impl<H, D, W> DriverService for Service<H, D, W>
 where
@@ -182,5 +186,86 @@ where
         self.driver_repository.update_driver(driver).await?;
 
         Ok((access_token, refresh_token_cookie))
+    }
+
+    async fn get_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Vec<DriverRestPeriod>, DriverError> {
+        let rest_periods = self
+            .driver_repository
+            .get_driver_rest_periods(driver_id)
+            .await?;
+        Ok(rest_periods)
+    }
+
+    async fn set_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+        rest_periods: Vec<CreateDriverRestPeriodRequest>,
+    ) -> Result<(), DriverError> {
+        let mut rest_periods_service: Vec<DriverRestPeriod> =
+            Vec::from_iter(rest_periods.into_iter().map(|period| DriverRestPeriod {
+                start: period.start,
+                end: period.end,
+                rest: period.rest,
+            }));
+        rest_periods_service.sort_by_key(|period| period.start);
+
+        for index in 0..rest_periods_service.len() {
+            if index == 0 {
+                if rest_periods_service[index].start != "00:00:00".parse().unwrap() {
+                    return Err(DriverError::InvalidRestPeriod {
+                        details: format!(
+                            "The first rest period must start at 00:00:00, got {}",
+                            rest_periods_service[index].start
+                        ),
+                    });
+                }
+            } else {
+                let expected_end =
+                    rest_periods_service[index - 1].end + chrono::Duration::seconds(1);
+                if rest_periods_service[index].start != expected_end {
+                    return Err(DriverError::InvalidRestPeriod {
+                        details: format!(
+                            "Rest period at index {} starts at {} but previous period ends at {}.",
+                            index,
+                            rest_periods_service[index].start,
+                            rest_periods_service[index - 1].end
+                        ),
+                    });
+                }
+            }
+
+            if index == rest_periods_service.len() - 1
+                && rest_periods_service[index].end != "23:59:59".parse().unwrap()
+            {
+                return Err(DriverError::InvalidRestPeriod {
+                    details: format!(
+                        "The last rest period must end at 23:59:59, got {}",
+                        rest_periods_service[index].end
+                    ),
+                });
+            }
+
+            if rest_periods_service[index].start >= rest_periods_service[index].end {
+                return Err(DriverError::InvalidRestPeriod {
+                    details: format!(
+                        "Rest period at index {} has start time {} which is not before end time {}.",
+                        index, rest_periods_service[index].start, rest_periods_service[index].end
+                    ),
+                });
+            }
+        }
+
+        self.driver_repository
+            .set_driver_rest_periods(driver_id, rest_periods_service)
+            .await
+    }
+
+    async fn delete_driver_rest_periods(&self, driver_id: Uuid) -> Result<(), DriverError> {
+        self.driver_repository
+            .delete_driver_rest_periods(driver_id)
+            .await
     }
 }

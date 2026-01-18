@@ -1,9 +1,11 @@
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::{
     domain::driver::{
         entities::{
-            CreateDriverRequest, DriverLimitationRow, DriverRow, DriverSuspensionRow, EntityType,
+            CreateDriverRequest, DriverLimitationRow, DriverRestPeriod, DriverRow,
+            DriverSuspensionRow, EntityType,
         },
         port::DriverRepository,
     },
@@ -37,6 +39,21 @@ impl DriverRepository for PostgresDriverRepository {
             error!("Failed to get number of drivers: {:?}", e);
             DriverError::DatabaseError
         })
+    }
+
+    async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
+        sqlx::query_as!(
+            DriverRow,
+            r#"
+            SELECT *
+            FROM drivers
+            WHERE pk_driver_id = $1
+            "#,
+            driver_id,
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|_| DriverError::DriverNotFound)
     }
 
     async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {
@@ -300,5 +317,70 @@ impl DriverRepository for PostgresDriverRepository {
         } else {
             Ok(())
         }
+    }
+
+    async fn get_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Vec<DriverRestPeriod>, DriverError> {
+        let driver = self.get_driver_by_id(driver_id).await?;
+        if let Some(rest_json) = driver.rest_json {
+            let rest_periods: Vec<DriverRestPeriod> =
+                serde_json::from_value(rest_json).map_err(|e| {
+                    error!("Failed to parse driver rest periods JSON: {:?}", e);
+                    DriverError::DatabaseError
+                })?;
+            Ok(rest_periods)
+        } else {
+            Ok(vec![])
+        }
+    }
+
+    async fn set_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+        rest_periods: Vec<DriverRestPeriod>,
+    ) -> Result<(), DriverError> {
+        let rest_json = serde_json::to_value(&rest_periods).map_err(|e| {
+            error!("Failed to serialize driver rest periods to JSON: {:?}", e);
+            DriverError::DatabaseError
+        })?;
+
+        sqlx::query!(
+            r#"
+            UPDATE drivers
+            SET rest_json = $1
+            WHERE pk_driver_id = $2
+            "#,
+            rest_json,
+            driver_id,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to set driver rest periods: {:?}", e);
+            DriverError::DatabaseError
+        })?;
+
+        Ok(())
+    }
+
+    async fn delete_driver_rest_periods(&self, driver_id: Uuid) -> Result<(), DriverError> {
+        sqlx::query!(
+            r#"
+            UPDATE drivers
+            SET rest_json = NULL
+            WHERE pk_driver_id = $1
+            "#,
+            driver_id,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to delete driver rest periods: {:?}", e);
+            DriverError::DatabaseError
+        })?;
+
+        Ok(())
     }
 }

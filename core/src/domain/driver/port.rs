@@ -1,9 +1,10 @@
+use serde_json::Value;
 use uuid::Uuid;
 
 use crate::{
     domain::driver::entities::{
-        CreateDriverRequest, DriverLimitationRow, DriverRow, DriverSuspensionRow,
-        LoginDriverRequest,
+        CreateDriverRequest, CreateDriverRestPeriodRequest, DriverLimitationRow, DriverRestPeriod,
+        DriverRow, DriverSuspensionRow, LoginDriverRequest,
     },
     infrastructure::driver::repositories::error::DriverError,
 };
@@ -14,6 +15,11 @@ use std::{
 
 pub trait DriverRepository: Send + Sync {
     fn get_number_of_drivers(&self) -> impl Future<Output = Result<i64, DriverError>> + Send;
+
+    fn get_driver_by_id(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 
     fn get_driver_by_email(
         &self,
@@ -63,6 +69,22 @@ pub trait DriverRepository: Send + Sync {
         &self,
         suspension_id: i32,
     ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn get_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<DriverRestPeriod>, DriverError>> + Send;
+
+    fn set_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+        rest_periods: Vec<DriverRestPeriod>,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn delete_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
 }
 
 pub trait DriverService: Send + Sync {
@@ -87,6 +109,22 @@ pub trait DriverService: Send + Sync {
     ) -> impl Future<Output = Result<(String, String), DriverError>> + Send
     where
         F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync;
+
+    fn get_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<DriverRestPeriod>, DriverError>> + Send;
+
+    fn set_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+        rest_periods: Vec<CreateDriverRestPeriodRequest>,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn delete_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
 }
 
 #[derive(Clone)]
@@ -116,6 +154,15 @@ impl DriverRepository for MockDriverRepository {
     async fn get_number_of_drivers(&self) -> Result<i64, DriverError> {
         let drivers = self.drivers.lock().unwrap();
         Ok(drivers.len() as i64)
+    }
+
+    async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
+        let drivers = self.drivers.lock().unwrap();
+        let driver = drivers.iter().find(|d| d.pk_driver_id == driver_id);
+        match driver {
+            Some(d) => Ok(d.clone()),
+            None => Err(DriverError::DriverNotFound),
+        }
     }
 
     async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {
@@ -244,5 +291,54 @@ impl DriverRepository for MockDriverRepository {
         }
 
         Ok(())
+    }
+
+    async fn get_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Vec<DriverRestPeriod>, DriverError> {
+        let drivers = self.drivers.lock().unwrap();
+        let driver = drivers.iter().find(|d| d.pk_driver_id == driver_id);
+        match driver {
+            Some(d) => {
+                if let Some(rest_json) = &d.rest_json {
+                    let rest_periods: Vec<DriverRestPeriod> =
+                        serde_json::from_value(rest_json.clone())
+                            .map_err(|_| DriverError::Internal)?;
+                    Ok(rest_periods)
+                } else {
+                    Ok(Vec::new())
+                }
+            }
+            None => Err(DriverError::DriverNotFound),
+        }
+    }
+
+    async fn set_driver_rest_periods(
+        &self,
+        driver_id: Uuid,
+        rest_periods: Vec<DriverRestPeriod>,
+    ) -> Result<(), DriverError> {
+        let mut drivers = self.drivers.lock().unwrap();
+        for driver in drivers.iter_mut() {
+            if driver.pk_driver_id == driver_id {
+                let rest_json =
+                    serde_json::to_string(&rest_periods).map_err(|_| DriverError::Internal)?;
+                driver.rest_json = Some(Value::String(rest_json));
+                return Ok(());
+            }
+        }
+        Err(DriverError::DriverNotFound)
+    }
+
+    async fn delete_driver_rest_periods(&self, driver_id: Uuid) -> Result<(), DriverError> {
+        let mut drivers = self.drivers.lock().unwrap();
+        for driver in drivers.iter_mut() {
+            if driver.pk_driver_id == driver_id {
+                driver.rest_json = None;
+                return Ok(());
+            }
+        }
+        Err(DriverError::DriverNotFound)
     }
 }
