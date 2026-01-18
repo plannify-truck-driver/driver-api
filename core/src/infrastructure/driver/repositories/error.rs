@@ -28,4 +28,14 @@ pub enum DriverError {
 
     #[error("Driver limitation not found")]
     DriverLimitationNotFound,
+
+    #[error("Driver suspension not found")]
+    DriverSuspensionNotFound,
+
+    #[error("Driver is suspended")]
+    DriverSuspension {
+        message: Option<String>,
+        start_at: String,
+        end_at: Option<String>,
+    },
 }

@@ -31,7 +31,10 @@ pub enum ApiError {
     Unauthorized { error_code: String },
 
     #[error("Forbidden")]
-    Forbidden { error_code: String },
+    Forbidden {
+        error_code: String,
+        content: Option<Value>,
+    },
 
     #[error("Not found")]
     NotFound { error_code: String },
@@ -80,10 +83,13 @@ impl From<ApiError> for ErrorBody {
                 content: None,
                 status,
             },
-            ApiError::Forbidden { error_code } => ErrorBody {
+            ApiError::Forbidden {
+                error_code,
+                content,
+            } => ErrorBody {
                 message,
                 error_code,
-                content: None,
+                content,
                 status,
             },
             ApiError::NotFound { error_code } => ErrorBody {
@@ -181,6 +187,30 @@ impl From<DriverError> for ApiError {
             DriverError::DriverLimitationNotFound => ApiError::NotFound {
                 error_code: "DRIVER_LIMITATION_NOT_FOUND".to_string(),
             },
+            DriverError::DriverSuspensionNotFound => ApiError::NotFound {
+                error_code: "DRIVER_SUSPENSION_NOT_FOUND".to_string(),
+            },
+            DriverError::DriverSuspension {
+                message,
+                start_at,
+                end_at,
+            } => {
+                let mut content = Mapping::new();
+                if let Some(msg) = message {
+                    content.insert(Value::String("message".to_string()), Value::String(msg));
+                }
+                content.insert(
+                    Value::String("start_at".to_string()),
+                    Value::String(start_at),
+                );
+                if let Some(end_at) = end_at {
+                    content.insert(Value::String("end_at".to_string()), Value::String(end_at));
+                }
+                ApiError::Forbidden {
+                    error_code: "DRIVER_SUSPENDED".to_string(),
+                    content: Some(Value::Mapping(content)),
+                }
+            }
         }
     }
 }

@@ -128,3 +128,35 @@ impl DriverLimitationRow {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+pub struct DriverSuspensionRow {
+    pub pk_driver_suspension_id: i32,
+    pub fk_driver_id: Uuid,
+    pub fk_created_employee_id: Uuid,
+    pub can_access_restricted_space: bool,
+    pub driver_message: Option<String>,
+    pub title: String,
+    pub description: Option<String>,
+    pub start_at: DateTime<Utc>,
+    pub end_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+pub struct DriverSuspension {
+    pub message: Option<String>,
+    pub can_access_restricted_space: bool,
+    pub start_at: DateTime<Utc>,
+    pub end_at: Option<DateTime<Utc>>,
+}
+
+impl DriverSuspensionRow {
+    pub fn to_driver_suspension(&self) -> DriverSuspension {
+        DriverSuspension {
+            message: self.driver_message.clone(),
+            can_access_restricted_space: self.can_access_restricted_space,
+            start_at: self.start_at,
+            end_at: self.end_at,
+        }
+    }
+}

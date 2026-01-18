@@ -128,6 +128,21 @@ where
             false => return Err(DriverError::InvalidCredentials),
         }
 
+        let suspension = self
+            .driver_repository
+            .get_current_driver_suspension(driver.pk_driver_id)
+            .await?;
+
+        if let Some(suspension_info) = suspension
+            && !suspension_info.can_access_restricted_space
+        {
+            return Err(DriverError::DriverSuspension {
+                message: suspension_info.driver_message,
+                start_at: suspension_info.start_at.to_rfc3339(),
+                end_at: suspension_info.end_at.map(|dt| dt.to_rfc3339()),
+            });
+        }
+
         Ok(driver)
     }
 
