@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE drivers\n            SET rest_json = $1\n            WHERE pk_driver_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Jsonb",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0ee884840c2dc52f3ea74e6cf02cbf35394a4f2b0b59ccb60d76c0291b2c88ce"
+}
