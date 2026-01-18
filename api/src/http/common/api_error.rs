@@ -164,6 +164,23 @@ impl From<DriverError> for ApiError {
             DriverError::DriverNotFound => ApiError::NotFound {
                 error_code: "DRIVER_NOT_FOUND".to_string(),
             },
+            DriverError::DriverLimitReached { start_at, end_at } => {
+                let mut content = Mapping::new();
+                content.insert(
+                    Value::String("start_at".to_string()),
+                    Value::String(start_at),
+                );
+                if let Some(end_at) = end_at {
+                    content.insert(Value::String("end_at".to_string()), Value::String(end_at));
+                }
+                ApiError::BadRequest {
+                    error_code: "DRIVER_LIMIT_REACHED".to_string(),
+                    content: Some(Value::Mapping(content)),
+                }
+            }
+            DriverError::DriverLimitationNotFound => ApiError::NotFound {
+                error_code: "DRIVER_LIMITATION_NOT_FOUND".to_string(),
+            },
         }
     }
 }

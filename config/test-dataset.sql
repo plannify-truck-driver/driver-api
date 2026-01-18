@@ -1,6 +1,6 @@
 INSERT INTO "drivers" ("pk_driver_id", "firstname", "lastname", "gender", "email", "password_hash", "phone_number", "is_searchable", "allow_request_professional_agreement", "language", "rest_json", "mail_preferences", "created_at", "verified_at", "last_login_at", "deactivated_at", "refresh_token_hash") VALUES
-('123e4567-e89b-12d3-a456-426614174000', 'Test', 'Test', NULL, 'test.user@example.com', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 't', 'f', 'fr', NULL, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, NULL, '$argon2id$v=19$m=19456,t=2,p=1$keLh9hYB2aBoQ9/59bZ/2g$lu1ieiTyfpvGuNdZ//brM+b7GvbaleGkmRI02fqc8Jo'),
-('123e4567-e89b-12d3-a456-426614174001', 'Test-bis', 'Test', NULL, 'test-bis.user@example.com', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 't', 'f', 'fr', NULL, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, NULL, '$argon2id$v=19$m=19456,t=2,p=1$keLh9hYB2aBoQ9/59bZ/2g$lu1ieiTyfpvGuNdZ//brM+b7GvbaleGkmRI02fqc8Jo');
+('123e4567-e89b-12d3-a456-426614174000', 'Test', 'Test', NULL, 'test.user@example.be', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 't', 'f', 'fr', NULL, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, NULL, '$argon2id$v=19$m=19456,t=2,p=1$keLh9hYB2aBoQ9/59bZ/2g$lu1ieiTyfpvGuNdZ//brM+b7GvbaleGkmRI02fqc8Jo'),
+('123e4567-e89b-12d3-a456-426614174001', 'Test-bis', 'Test', NULL, 'test-bis.user@example.be', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 't', 'f', 'fr', NULL, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, NULL, '$argon2id$v=19$m=19456,t=2,p=1$keLh9hYB2aBoQ9/59bZ/2g$lu1ieiTyfpvGuNdZ//brM+b7GvbaleGkmRI02fqc8Jo');
 
 INSERT INTO "workdays" ("date", "fk_driver_id", "start_time", "end_time", "rest_time", "overnight_rest") VALUES
 ('2024-01-01', '123e4567-e89b-12d3-a456-426614174000', '08:00:00', '19:00:00', '00:00:00', 't'),
@@ -18,3 +18,6 @@ INSERT INTO "workday_garbage" ("workday_date", "fk_driver_id", "created_at", "sc
 ('2024-01-01', '123e4567-e89b-12d3-a456-426614174000', '2024-01-01 08:45:00', '2024-02-01'),
 ('2026-01-15', '123e4567-e89b-12d3-a456-426614174000', '2026-02-10 11:30:00', '2026-03-11'),
 ('2026-01-02', '123e4567-e89b-12d3-a456-426614174001', '2026-02-10 11:30:00', '2026-03-11');
+
+INSERT INTO "employees" ("pk_employee_id", "firstname", "lastname", "gender", "personal_email", "login_password_hash", "phone_number", "professional_email", "professional_email_password", "created_at", "last_login_at", "deactivated_at") VALUES
+('73a2539a-9496-4844-8f73-f170ef30d5a6', 'Admin', 'User', NULL, 'admin.user@example.com', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 'admin.user@plannify.be', 'Passw0rd!', '2026-01-01 00:00:00', NULL, NULL);

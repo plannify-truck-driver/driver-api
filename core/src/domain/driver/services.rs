@@ -48,6 +48,20 @@ where
         mut create_request: CreateDriverRequest,
         email_list_deny: Vec<String>,
     ) -> Result<DriverRow, DriverError> {
+        let limitation = self
+            .driver_repository
+            .get_actual_driver_limitation()
+            .await?;
+        if let Some(limitation_info) = limitation {
+            let current_drivers = self.driver_repository.get_number_of_drivers().await?;
+            if current_drivers >= limitation_info.maximum_limit as i64 {
+                return Err(DriverError::DriverLimitReached {
+                    start_at: limitation_info.start_at.to_rfc3339(),
+                    end_at: limitation_info.end_at.map(|dt| dt.to_rfc3339()),
+                });
+            }
+        }
+
         create_request.firstname = Self::to_title_case(create_request.firstname);
         create_request.lastname = Self::to_title_case(create_request.lastname);
         create_request.email = create_request.email.trim().to_lowercase();

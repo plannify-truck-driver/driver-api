@@ -379,7 +379,7 @@ async fn test_create_workday_duplicate(ctx: &mut context::TestContext) {
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
-async fn test_create_workday_wrong_body(ctx: &mut context::TestContext) {
+async fn test_create_workday_with_wrong_body(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
         .post("/driver/workdays")
@@ -580,7 +580,7 @@ async fn test_update_workday_not_found(ctx: &mut context::TestContext) {
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
-async fn test_update_workday_wrong_body(ctx: &mut context::TestContext) {
+async fn test_update_workday_with_wrong_body(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
         .put("/driver/workdays")
