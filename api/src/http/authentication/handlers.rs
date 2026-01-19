@@ -20,6 +20,8 @@ use crate::{
     },
 };
 
+use tracing::error;
+
 #[utoipa::path(
     post,
     path = "/authentication/signup",
@@ -54,7 +56,7 @@ pub async fn signup(
         auth_validator
             .create_tokens(driver)
             .map_err(|e| {
-                error!("Failed to create tokens for driver {}: {:?}", driver.id, e);
+                error!("Failed to create tokens for driver {}: {:?}", driver.pk_driver_id, e);
                 DriverError::Internal
             })
     };
@@ -101,7 +103,7 @@ pub async fn login(
         auth_validator
             .create_tokens(driver)
             .map_err(|e| {
-                error!("Failed to create tokens for driver {}: {:?}", driver.id, e);
+                error!("Failed to create tokens for driver {}: {:?}", driver.pk_driver_id, e);
                 DriverError::Internal
             })
     };
