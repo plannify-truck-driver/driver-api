@@ -9,6 +9,7 @@ use crate::{
             port::{DriverRepository, DriverService},
         },
         health::port::HealthRepository,
+        mail::port::MailRepository,
         workday::port::WorkdayRepository,
     },
     infrastructure::driver::repositories::error::DriverError,
@@ -21,11 +22,12 @@ use argon2::{
 use tracing::error;
 use uuid::Uuid;
 
-impl<H, D, W> DriverService for Service<H, D, W>
+impl<H, D, W, M> DriverService for Service<H, D, W, M>
 where
     H: HealthRepository,
     D: DriverRepository,
     W: WorkdayRepository,
+    M: MailRepository,
 {
     fn to_title_case(name: String) -> String {
         name.trim()
@@ -97,7 +99,14 @@ where
             })?;
         create_request.password = password_hash.to_string();
 
-        self.driver_repository.create_driver(create_request).await
+        let driver = self.driver_repository.create_driver(create_request).await?;
+
+        self.mail_repository
+            .send_driver_creation_email(driver.clone())
+            .await
+            .map_err(|_| DriverError::EmailSendError)?;
+
+        Ok(driver)
     }
 
     async fn login_driver(

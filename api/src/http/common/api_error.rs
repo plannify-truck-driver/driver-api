@@ -219,6 +219,7 @@ impl From<DriverError> for ApiError {
                     content: Some(Value::Mapping(content)),
                 }
             }
+            DriverError::EmailSendError => ApiError::InternalServerError,
         }
     }
 }

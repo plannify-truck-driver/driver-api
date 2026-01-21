@@ -48,12 +48,16 @@ pub struct App {
 
 impl App {
     pub async fn new(config: Config) -> Result<Self, ApiError> {
-        let mut state: AppState = create_repositories(&config.database_url)
-            .await
-            .map_err(|e| ApiError::StartupError {
-                msg: format!("Failed to create repositories: {}", e),
-            })?
-            .into();
+        let mut state: AppState = create_repositories(
+            &config.database_url,
+            config.smtp.to_client(),
+            config.smtp.to_transport(),
+        )
+        .await
+        .map_err(|e| ApiError::StartupError {
+            msg: format!("Failed to create repositories: {}", e),
+        })?
+        .into();
         state.config = config.clone();
 
         let cors_origins = config

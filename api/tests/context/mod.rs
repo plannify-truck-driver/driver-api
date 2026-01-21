@@ -1,4 +1,4 @@
-use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig};
+use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, SmtpConfig};
 use api::{App, app::AppBuilder};
 use axum_test::TestServer;
 use plannify_driver_api_core::application::{DriverRepositories, create_repositories};
@@ -23,6 +23,14 @@ impl AsyncTestContext for TestContext {
         let database_url: String =
             "postgres://plannify_user:plannify_password@localhost:5432/plannify_db".to_string();
 
+        let smtp_config = SmtpConfig {
+            default_sender: "".to_string(),
+            default_sender_reply_to: "".to_string(),
+            username: "user".to_string(),
+            password: "password".to_string(),
+            domain: "localhost".to_string(),
+        };
+
         let jwt: JwtConfig = JwtConfig {
             secret_key: "test-secret-key".to_string(),
             access_ttl: 3600,
@@ -41,15 +49,20 @@ impl AsyncTestContext for TestContext {
 
         let config = Config {
             database_url: database_url.clone(),
+            smtp: smtp_config,
             jwt,
             common,
             check_content,
             environment: Environment::Test,
         };
 
-        let repositories = create_repositories(&database_url)
-            .await
-            .expect("Failed to create repositories");
+        let repositories = create_repositories(
+            &database_url,
+            config.smtp.to_client(),
+            config.smtp.to_transport(),
+        )
+        .await
+        .expect("Failed to create repositories");
 
         let app = App::build(config.clone())
             .await

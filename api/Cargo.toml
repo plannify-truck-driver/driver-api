@@ -13,15 +13,14 @@ tower-http = { version = "0.6.6", features = ["cors"] }
 axum-extra = { version = "0.12.2", features = ["cookie"] }
 
 # Serialization
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
-validator = { version = "0.20", features = ["derive"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+validator = { workspace = true }
 
 # Database
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "uuid", "macros"] }
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.18", features = ["serde", "v4"] }
+chrono = { workspace = true }
+uuid = { workspace = true }
 
 # JWT
 jsonwebtoken = "9.2"
@@ -37,12 +36,15 @@ thiserror = { workspace = true }
 
 # Swagger / OpenAPI
 utoipa-axum = "0.2.0"
-utoipa = "5.4.0"
+utoipa = { workspace = true }
 utoipa-scalar = { version = "0.3.0", features = ["axum"] }
 
 # Logging
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Email
+lettre = { workspace = true }
 
 [dev-dependencies]
 axum-test = "18.3.0"

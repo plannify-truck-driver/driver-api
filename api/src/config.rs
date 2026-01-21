@@ -1,5 +1,9 @@
 use clap::Parser;
 use clap::ValueEnum;
+use lettre::SmtpTransport;
+use lettre::message::MessageBuilder;
+use lettre::message::header::ContentType;
+use lettre::transport::smtp::authentication::Credentials;
 
 #[derive(Clone, Parser, Debug, Default)]
 #[command(name = "driver-api")]
@@ -11,6 +15,9 @@ pub struct Config {
         default_value = "postgres://postgres:password@localhost:5432/plannify"
     )]
     pub database_url: String,
+
+    #[command(flatten)]
+    pub smtp: SmtpConfig,
 
     #[command(flatten)]
     pub jwt: JwtConfig,
@@ -27,6 +34,50 @@ pub struct Config {
         default_value = "development"
     )]
     pub environment: Environment,
+}
+
+#[derive(Clone, Parser, Debug, Default)]
+pub struct SmtpConfig {
+    #[arg(
+        long = "smtp-default-sender",
+        env = "SMTP_DEFAULT_SENDER",
+        name = "smtp_default_sender"
+    )]
+    pub default_sender: String,
+
+    #[arg(
+        long = "smtp-default-sender-reply-to",
+        env = "SMTP_DEFAULT_SENDER_REPLY_TO",
+        name = "smtp_default_sender_reply_to"
+    )]
+    pub default_sender_reply_to: String,
+
+    #[arg(long = "smtp-username", env = "SMTP_USERNAME", name = "smtp_username")]
+    pub username: String,
+
+    #[arg(long = "smtp-password", env = "SMTP_PASSWORD", name = "smtp_password")]
+    pub password: String,
+
+    #[arg(long = "smtp-domain", env = "SMTP_DOMAIN", name = "smtp_domain")]
+    pub domain: String,
+}
+
+impl SmtpConfig {
+    pub fn to_client(&self) -> MessageBuilder {
+        MessageBuilder::new()
+            .from(self.default_sender.parse().unwrap())
+            .reply_to(self.default_sender_reply_to.parse().unwrap())
+            .header(ContentType::TEXT_HTML)
+    }
+
+    pub fn to_transport(&self) -> SmtpTransport {
+        let creds = Credentials::new(self.username.to_owned(), self.password.to_owned());
+
+        SmtpTransport::relay(&self.domain)
+            .unwrap()
+            .credentials(creds)
+            .build()
+    }
 }
 
 #[derive(Clone, Parser, Debug, Default)]

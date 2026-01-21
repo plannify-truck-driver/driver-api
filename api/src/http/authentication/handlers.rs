@@ -5,6 +5,8 @@ use plannify_driver_api_core::domain::driver::{
 };
 use plannify_driver_api_core::infrastructure::driver::repositories::error::DriverError;
 
+use tracing::error;
+
 use crate::{
     AppState,
     http::common::{
@@ -44,9 +46,13 @@ pub async fn signup(
 
     let auth_validator = &state.auth_validator;
     let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
-        auth_validator
-            .create_tokens(driver)
-            .map_err(|_| DriverError::Internal)
+        auth_validator.create_tokens(driver).map_err(|e| {
+            error!(
+                "Failed to create tokens for driver {}: {:?}",
+                driver.pk_driver_id, e
+            );
+            DriverError::Internal
+        })
     };
 
     let (access_token, refresh_token_cookie) = state
@@ -88,9 +94,13 @@ pub async fn login(
 
     let auth_validator = &state.auth_validator;
     let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
-        auth_validator
-            .create_tokens(driver)
-            .map_err(|_| DriverError::Internal)
+        auth_validator.create_tokens(driver).map_err(|e| {
+            error!(
+                "Failed to create tokens for driver {}: {:?}",
+                driver.pk_driver_id, e
+            );
+            DriverError::Internal
+        })
     };
 
     let (access_token, refresh_token_cookie) = state

@@ -32,6 +32,7 @@ impl From<DriverRepositories> for AppState {
             repositories.health_repository,
             repositories.driver_repository,
             repositories.workday_repository,
+            repositories.mail_repository,
         );
         let config = Config::default();
         let jwt_config = &config.jwt;
