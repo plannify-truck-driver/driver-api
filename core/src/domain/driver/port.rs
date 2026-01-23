@@ -1,5 +1,9 @@
+use chrono::{DateTime, Utc};
+use passwords::PasswordGenerator;
 use serde_json::Value;
 use uuid::Uuid;
+
+use tracing::error;
 
 use crate::{
     domain::driver::entities::{
@@ -9,8 +13,7 @@ use crate::{
     infrastructure::driver::repositories::error::DriverError,
 };
 use std::{
-    future::Future,
-    sync::{Arc, Mutex},
+    collections::HashMap, future::Future, sync::{Arc, Mutex}
 };
 
 pub trait DriverRepository: Send + Sync {
@@ -340,5 +343,111 @@ impl DriverRepository for MockDriverRepository {
             }
         }
         Err(DriverError::DriverNotFound)
+    }
+}
+
+pub enum DriverCacheKeyType {
+    VerifyEmail,
+    ResetPassword,
+}
+
+impl DriverCacheKeyType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            DriverCacheKeyType::VerifyEmail => "verify_email",
+            DriverCacheKeyType::ResetPassword => "reset_password",
+        }
+    }
+}
+
+pub trait DriverCacheRepository: Send + Sync {
+    fn generate_random_value(&self, length: usize) -> impl Future<Output = Result<String, DriverError>> + Send;
+
+    fn generate_redis_key(&self, driver_id: Uuid, suffix: &str) -> String;
+
+    fn set_redis(
+        &self,
+        key: String,
+        value: String,
+        ttl_seconds: u64,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn get_redis(
+        &self,
+        key: String,
+    ) -> impl Future<Output = Result<Option<String>, DriverError>> + Send;
+
+    fn get_key_by_type(&self, driver_id: Uuid, key_type: DriverCacheKeyType) -> String {
+        self.generate_redis_key(driver_id, key_type.as_str())
+    }
+}
+
+#[derive(Clone)]
+pub struct MockDriverCacheRepository {
+    cache: Arc<Mutex<HashMap<String, (String, DateTime<Utc>)>>>,
+}
+
+impl MockDriverCacheRepository {
+    pub fn new() -> Self {
+        Self {
+            cache: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+}
+
+impl Default for MockDriverCacheRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl DriverCacheRepository for MockDriverCacheRepository {
+    async fn generate_random_value(&self, length: usize) -> Result<String, DriverError> {
+        let generator = PasswordGenerator {
+            length,
+            numbers: true,
+            lowercase_letters: true,
+            uppercase_letters: true,
+            symbols: false,
+            spaces: false,
+            exclude_similar_characters: false,
+            strict: true,
+        };
+
+        match generator.generate_one() {
+            Ok(key) => Ok(key),
+            Err(e) => {
+                error!("Failed to generate random key: {:?}", e);
+                Err(DriverError::Internal)
+            }
+        }
+    }
+
+    fn generate_redis_key(&self, driver_id: Uuid, suffix: &str) -> String {
+        format!("driver:{}:{}", driver_id, suffix)
+    }
+
+    async fn set_redis(
+        &self,
+        key: String,
+        value: String,
+        ttl_seconds: u64,
+    ) -> Result<(), DriverError> {
+        let mut cache = self.cache.lock().unwrap();
+        let expiry = Utc::now() + chrono::Duration::seconds(ttl_seconds as i64);
+        cache.insert(key, (value, expiry));
+        Ok(())
+    }
+
+    async fn get_redis(&self, key: String) -> Result<Option<String>, DriverError> {
+        let mut cache = self.cache.lock().unwrap();
+        if let Some((value, expiry)) = cache.get(&key) {
+            if *expiry > Utc::now() {
+                return Ok(Some(value.clone()));
+            } else {
+                cache.remove(&key);
+            }
+        }
+        Ok(None)
     }
 }

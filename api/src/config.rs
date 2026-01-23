@@ -16,6 +16,13 @@ pub struct Config {
     )]
     pub database_url: String,
 
+    #[arg(
+        long = "redis-url",
+        env = "REDIS_URL",
+        default_value = "redis://localhost:6379/0"
+    )]
+    pub redis_url: String,
+
     #[command(flatten)]
     pub smtp: SmtpConfig,
 

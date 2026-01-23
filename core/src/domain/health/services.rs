@@ -1,7 +1,7 @@
 use crate::{
     Service,
     domain::{
-        driver::port::DriverRepository,
+        driver::port::{DriverCacheRepository, DriverRepository},
         health::{
             entities::IsHealthy,
             port::{HealthRepository, HealthService},
@@ -12,10 +12,11 @@ use crate::{
     infrastructure::health::repositories::error::HealthError,
 };
 
-impl<H, D, W, E> HealthService for Service<H, D, W, E>
+impl<H, D, DC, W, E> HealthService for Service<H, D, DC, W, E>
 where
     H: HealthRepository,
     D: DriverRepository,
+    DC: DriverCacheRepository,
     W: WorkdayRepository,
     E: MailRepository,
 {

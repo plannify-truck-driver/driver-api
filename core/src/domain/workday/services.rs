@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::{
     Service,
     domain::{
-        driver::port::DriverRepository,
+        driver::port::{DriverCacheRepository, DriverRepository},
         health::port::HealthRepository,
         mail::port::MailRepository,
         workday::{
@@ -15,10 +15,11 @@ use crate::{
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
-impl<H, D, W, E> WorkdayService for Service<H, D, W, E>
+impl<H, D, DC, W, E> WorkdayService for Service<H, D, DC, W, E>
 where
     H: HealthRepository,
     D: DriverRepository,
+    DC: DriverCacheRepository,
     W: WorkdayRepository,
     E: MailRepository,
 {

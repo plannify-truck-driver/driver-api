@@ -50,6 +50,7 @@ impl App {
     pub async fn new(config: Config) -> Result<Self, ApiError> {
         let mut state: AppState = create_repositories(
             &config.database_url,
+            &config.redis_url,
             config.smtp.to_client(),
             config.smtp.to_transport(),
         )

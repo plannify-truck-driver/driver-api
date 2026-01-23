@@ -23,6 +23,8 @@ impl AsyncTestContext for TestContext {
         let database_url: String =
             "postgres://plannify_user:plannify_password@localhost:5432/plannify_db".to_string();
 
+        let redis_url: String = "redis://localhost:6379/0".to_string();
+
         let smtp_config = SmtpConfig {
             default_sender: "".to_string(),
             default_sender_reply_to: "".to_string(),
@@ -48,7 +50,8 @@ impl AsyncTestContext for TestContext {
         };
 
         let config = Config {
-            database_url: database_url.clone(),
+            database_url: database_url,
+            redis_url: redis_url,
             smtp: smtp_config,
             jwt,
             common,
@@ -57,7 +60,8 @@ impl AsyncTestContext for TestContext {
         };
 
         let repositories = create_repositories(
-            &database_url,
+            &config.database_url,
+            &config.redis_url,
             config.smtp.to_client(),
             config.smtp.to_transport(),
         )

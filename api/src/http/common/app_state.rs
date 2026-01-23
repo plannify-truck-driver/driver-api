@@ -31,6 +31,7 @@ impl From<DriverRepositories> for AppState {
         let service = DriverService::new(
             repositories.health_repository,
             repositories.driver_repository,
+            repositories.driver_cache_repository,
             repositories.workday_repository,
             repositories.mail_repository,
         );
