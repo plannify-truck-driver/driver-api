@@ -6,7 +6,9 @@ use crate::{
     PostgresHealthRepository, Service,
     domain::common::CoreError,
     infrastructure::{
-        driver::repositories::{postgres::PostgresDriverRepository, redis::RedisDriverCacheRepository},
+        driver::repositories::{
+            postgres::PostgresDriverRepository, redis::RedisDriverCacheRepository,
+        },
         employee::repositories::postgres::PostgresEmployeeRepository,
         mail::repositories::smtp::SmtpMailRepository,
         workday::repositories::postgres::PostgresWorkdayRepository,
@@ -44,8 +46,8 @@ pub async fn create_repositories(
         .await
         .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
 
-    let redis_client = Client::open(redis_url)
-        .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
+    let redis_client =
+        Client::open(redis_url).map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
     let redis_manager: ConnectionManager = ConnectionManager::new(redis_client)
         .await
         .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;

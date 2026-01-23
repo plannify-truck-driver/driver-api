@@ -13,7 +13,9 @@ use crate::{
     infrastructure::driver::repositories::error::DriverError,
 };
 use std::{
-    collections::HashMap, future::Future, sync::{Arc, Mutex}
+    collections::HashMap,
+    future::Future,
+    sync::{Arc, Mutex},
 };
 
 pub trait DriverRepository: Send + Sync {
@@ -361,7 +363,10 @@ impl DriverCacheKeyType {
 }
 
 pub trait DriverCacheRepository: Send + Sync {
-    fn generate_random_value(&self, length: usize) -> impl Future<Output = Result<String, DriverError>> + Send;
+    fn generate_random_value(
+        &self,
+        length: usize,
+    ) -> impl Future<Output = Result<String, DriverError>> + Send;
 
     fn generate_redis_key(&self, driver_id: Uuid, suffix: &str) -> String;
 

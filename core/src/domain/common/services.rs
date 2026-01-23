@@ -1,5 +1,7 @@
 use crate::domain::{
-    driver::port::{DriverCacheRepository, DriverRepository}, health::port::HealthRepository, mail::port::MailRepository,
+    driver::port::{DriverCacheRepository, DriverRepository},
+    health::port::HealthRepository,
+    mail::port::MailRepository,
     workday::port::WorkdayRepository,
 };
 

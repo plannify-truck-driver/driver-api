@@ -102,13 +102,21 @@ where
 
         let driver = self.driver_repository.create_driver(create_request).await?;
 
-        let verify_value = self.driver_cache_repository.generate_random_value(32).await?;
-        let redis_key = self.driver_cache_repository.get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::VerifyEmail);
+        let verify_value = self
+            .driver_cache_repository
+            .generate_random_value(32)
+            .await?;
+        let redis_key = self
+            .driver_cache_repository
+            .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::VerifyEmail);
         let _ = self
             .driver_cache_repository
-            .set_redis(redis_key, verify_value.clone(), 3600).await;
-        
-        let _ = self.mail_repository.send_driver_creation_email(driver.clone());
+            .set_redis(redis_key, verify_value.clone(), 3600)
+            .await;
+
+        let _ = self
+            .mail_repository
+            .send_driver_creation_email(driver.clone());
 
         Ok(driver)
     }

@@ -1,15 +1,22 @@
 use crate::{
     Service,
     domain::{
-        driver::port::{MockDriverCacheRepository, MockDriverRepository}, health::port::MockHealthRepository,
-        mail::port::MockMailRepository, workday::port::MockWorkdayRepository,
+        driver::port::{MockDriverCacheRepository, MockDriverRepository},
+        health::port::MockHealthRepository,
+        mail::port::MockMailRepository,
+        workday::port::MockWorkdayRepository,
     },
 };
 
 pub mod workday;
 
-pub type MockService =
-    Service<MockHealthRepository, MockDriverRepository, MockDriverCacheRepository, MockWorkdayRepository, MockMailRepository>;
+pub type MockService = Service<
+    MockHealthRepository,
+    MockDriverRepository,
+    MockDriverCacheRepository,
+    MockWorkdayRepository,
+    MockMailRepository,
+>;
 
 pub fn create_mock_service() -> MockService {
     let health_repository = MockHealthRepository::new();

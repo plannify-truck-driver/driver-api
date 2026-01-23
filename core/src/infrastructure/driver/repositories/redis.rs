@@ -3,7 +3,10 @@ use redis::{AsyncCommands, aio::ConnectionManager};
 use tracing::error;
 use uuid::Uuid;
 
-use crate::{domain::driver::port::DriverCacheRepository, infrastructure::driver::repositories::error::DriverError};
+use crate::{
+    domain::driver::port::DriverCacheRepository,
+    infrastructure::driver::repositories::error::DriverError,
+};
 
 #[derive(Clone)]
 pub struct RedisDriverCacheRepository {
@@ -43,30 +46,30 @@ impl DriverCacheRepository for RedisDriverCacheRepository {
     }
 
     async fn set_redis(
-            &self,
-            key: String,
-            value: String,
-            ttl_seconds: u64,
-        ) -> Result<(), DriverError> {
-            let mut conn = self.connection.clone();
-            let _: () = conn.set_ex(key.clone(), value, ttl_seconds).await.map_err(|e| {
+        &self,
+        key: String,
+        value: String,
+        ttl_seconds: u64,
+    ) -> Result<(), DriverError> {
+        let mut conn = self.connection.clone();
+        let _: () = conn
+            .set_ex(key.clone(), value, ttl_seconds)
+            .await
+            .map_err(|e| {
                 error!("Failed to set redis key {}: {:?}", key, e);
                 DriverError::Internal
             })?;
 
-            Ok(())
+        Ok(())
     }
 
-    async fn get_redis(
-            &self,
-            key: String,
-        ) -> Result<Option<String>, DriverError> {
-            let mut conn = self.connection.clone();
-            let result: Option<String> = conn.get(key.clone()).await.map_err(|e| {
-                error!("Failed to get redis key {}: {:?}", key, e);
-                DriverError::Internal
-            })?;
+    async fn get_redis(&self, key: String) -> Result<Option<String>, DriverError> {
+        let mut conn = self.connection.clone();
+        let result: Option<String> = conn.get(key.clone()).await.map_err(|e| {
+            error!("Failed to get redis key {}: {:?}", key, e);
+            DriverError::Internal
+        })?;
 
-            Ok(result)
+        Ok(result)
     }
 }
