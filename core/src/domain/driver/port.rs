@@ -387,9 +387,11 @@ pub trait DriverCacheRepository: Send + Sync {
     }
 }
 
+type MockDriverCacheType = HashMap<String, (String, DateTime<Utc>)>;
+
 #[derive(Clone)]
 pub struct MockDriverCacheRepository {
-    cache: Arc<Mutex<HashMap<String, (String, DateTime<Utc>)>>>,
+    cache: Arc<Mutex<MockDriverCacheType>>,
 }
 
 impl MockDriverCacheRepository {

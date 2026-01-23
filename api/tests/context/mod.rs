@@ -50,8 +50,8 @@ impl AsyncTestContext for TestContext {
         };
 
         let config = Config {
-            database_url: database_url,
-            redis_url: redis_url,
+            database_url,
+            redis_url,
             smtp: smtp_config,
             jwt,
             common,

@@ -30,10 +30,7 @@ impl MailRepository for MockMailRepository {
         Ok(())
     }
 
-    fn send_driver_creation_email(
-        &self,
-        _driver: DriverRow,
-    ) -> impl Future<Output = Result<(), MailError>> + Send {
-        async { Ok(()) }
+    async fn send_driver_creation_email(&self, _driver: DriverRow) -> Result<(), MailError> {
+        Ok(())
     }
 }

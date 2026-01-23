@@ -114,9 +114,10 @@ where
             .set_redis(redis_key, verify_value.clone(), 3600)
             .await;
 
-        let _ = self
-            .mail_repository
-            .send_driver_creation_email(driver.clone());
+        self.mail_repository
+            .send_driver_creation_email(driver.clone())
+            .await
+            .map_err(|_| DriverError::Internal)?;
 
         Ok(driver)
     }
