@@ -88,7 +88,7 @@ impl MailSmtpRepository for SmtpMailRepository {
         );
         context.insert("duration", &(verify_ttl / 60).to_string());
 
-        let template_path = format!("{}/account_verification.html", driver.language.as_str());
+        let template_path = format!("{}/account_creation.html", driver.language.as_str());
         let html_body = self.tera.render(&template_path, &context).map_err(|e| {
             error!("Could not render email template: {:?}", e);
             MailError::CannotCreateMessage
