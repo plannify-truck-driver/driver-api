@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use lettre::{
-    SmtpTransport, Transport,
-    message::MessageBuilder,
-};
+use lettre::{SmtpTransport, Transport, message::MessageBuilder};
 use tera::{Context, Tera};
 
 use crate::{
