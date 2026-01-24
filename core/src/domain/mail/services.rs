@@ -29,25 +29,23 @@ where
     async fn send_creation_email(&self, driver: DriverRow) -> Result<(), MailError> {
         let verify_value = self
             .driver_cache_repository
-            .generate_random_value(32)
+            .generate_random_value(100)
             .await
             .map_err(|_| MailError::Internal)?;
 
-        let verify_ttl = 3600;
-
-        let redis_key = self
+        let (redis_key, redis_ttl) = self
             .driver_cache_repository
             .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::VerifyEmail);
         let _ = self
             .driver_cache_repository
-            .set_redis(redis_key, verify_value.clone(), verify_ttl)
+            .set_redis(redis_key, verify_value.clone(), redis_ttl)
             .await;
 
         let mail = self
             .mail_database_repository
             .create_mail(
                 driver.clone(),
-                1, // Assuming 1 is the mail type ID for creation emails
+                1,
                 "Driver account creation".to_string(),
                 Some(format!(
                     "Welcome! Please verify your email using this code: {}",
@@ -58,7 +56,7 @@ where
 
         match self
             .mail_smtp_repository
-            .send_driver_creation_email(driver.clone(), verify_value, verify_ttl)
+            .send_driver_creation_email(driver.clone(), verify_value, redis_ttl)
             .await
         {
             Ok(_) => {

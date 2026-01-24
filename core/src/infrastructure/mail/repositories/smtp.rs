@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use lettre::{
     SmtpTransport, Transport,
-    message::{MessageBuilder, header::ContentType},
+    message::MessageBuilder,
 };
+use tera::{Context, Tera};
 
 use crate::{
     domain::{driver::entities::DriverRow, mail::port::MailSmtpRepository},
@@ -13,13 +16,15 @@ use tracing::error;
 pub struct SmtpMailRepository {
     mail_client: MessageBuilder,
     transport: SmtpTransport,
+    tera: Arc<Tera>,
 }
 
 impl SmtpMailRepository {
-    pub fn new(mail_client: MessageBuilder, transport: SmtpTransport) -> Self {
+    pub fn new(mail_client: MessageBuilder, transport: SmtpTransport, tera: Arc<Tera>) -> Self {
         Self {
             mail_client,
             transport,
+            tera,
         }
     }
 }
@@ -31,7 +36,6 @@ impl MailSmtpRepository for SmtpMailRepository {
             .clone()
             .to(to.parse().unwrap())
             .subject(subject)
-            .header(ContentType::TEXT_PLAIN)
             .body(body)
             .map_err(|e| {
                 error!("Could not create email content: {:?}", e);
@@ -53,13 +57,29 @@ impl MailSmtpRepository for SmtpMailRepository {
         verify_value: String,
         verify_ttl: u64,
     ) -> Result<(), MailError> {
-        let to = driver.email;
-        let subject = "Welcome to Plannify!".to_string();
-        let body = format!(
-            "<p>Hello {},<br/><br/>Welcome to Plannify! Your account has been successfully created.<br/><br/>Please verify your email using this code: {}. It will expire in {} seconds.<br/><br/>Best regards,<br/>The Plannify Team</p>",
-            driver.firstname, verify_value, verify_ttl
+        let mut context = Context::new();
+        context.insert("full_name", driver.firstname.as_str());
+        context.insert(
+            "token_url",
+            &format!("https://app.plannify.be/{}", verify_value.as_str()),
         );
+        context.insert("duration", &(verify_ttl / 60).to_string());
+        context.insert("mail_id", "mail_id_placeholder");
 
-        self.send_email(to, subject, body)
+        let template_path = format!("{}/account_verification.html", driver.language.as_str());
+        let html_body = self.tera.render(&template_path, &context).map_err(|e| {
+            error!("Could not render email template: {:?}", e);
+            MailError::CannotCreateMessage
+        })?;
+
+        let to = driver.email;
+
+        let subject = match driver.language.as_str() {
+            "fr" => "Bienvenue sur Plannify !".to_string(),
+            "en" => "Welcome to Plannify!".to_string(),
+            _ => "Welcome to Plannify!".to_string(),
+        };
+
+        self.send_email(to, subject, html_body)
     }
 }

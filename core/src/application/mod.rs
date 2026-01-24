@@ -1,6 +1,9 @@
+use std::sync::Arc;
+
 use lettre::{SmtpTransport, message::MessageBuilder};
 use redis::{Client, aio::ConnectionManager};
 use sqlx::{PgPool, postgres::PgPoolOptions};
+use tera::Tera;
 
 use crate::{
     PostgresHealthRepository, Service,
@@ -54,12 +57,20 @@ pub async fn create_repositories(
         .await
         .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
 
+    let tera = match Tera::new("core/src/templates/mails/**/*.html") {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Parsing error(s): {}", e);
+            std::process::exit(1);
+        }
+    };
+
     let health_repository = PostgresHealthRepository::new(pg_pool.clone());
     let driver_repository = PostgresDriverRepository::new(pg_pool.clone());
     let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager);
     let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
     let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
-    let mail_smtp_repository = SmtpMailRepository::new(mail_client, transport);
+    let mail_smtp_repository = SmtpMailRepository::new(mail_client, transport, Arc::new(tera));
     let mail_database_repository = PostgresMailRepository::new(pg_pool.clone());
 
     Ok(DriverRepositories {

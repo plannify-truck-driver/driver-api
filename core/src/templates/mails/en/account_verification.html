@@ -1,0 +1,32 @@
+{% extends "en/base.html" %} {% block email_title %}Account Verification -
+Plannify{% endblock email_title %} {% block content %}
+<p>Hello {{ full_name }},</p>
+<p>Thank you for choosing Plannify to manage your workdays.</p>
+<p>
+  To enjoy all the features, please verify your account by clicking the button
+  below:
+</p>
+<div style="text-align: center; margin: 40px 0">
+  <a
+    href="{{ token_url }}"
+    style="
+      background-color: #4a7ab4;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 0 auto;
+      color: white;
+      text-decoration: none;
+    "
+    >Verify my account</a
+  >
+</div>
+<p>
+  This button is valid for
+  <span style="font-weight: bold; text-decoration: underline"
+    >{{ duration | default(value="15") }} minutes</span
+  >
+  from the receipt of this email.
+</p>
+
+<p>Best regards,<br />Baptiste, the moderator of Plannify</p>
+{% endblock content %}

@@ -42,6 +42,7 @@ tracing = { workspace = true }
 
 # Mailing
 lettre = { workspace = true }
+tera = "1.20.1"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

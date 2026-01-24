@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="{% block lang %}fr{% endblock lang %}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block email_title %}Plannify{% endblock email_title %}</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #eeeeee;
+    "
+  >
+    <table
+      role="presentation"
+      align="center"
+      border="0"
+      cellpadding="0"
+      cellspacing="0"
+    >
+      <tr>
+        <td>
+          <!-- Email header with logo -->
+          <table align="center" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td height="20px"></td>
+            </tr>
+            <tr>
+              <td style="border-radius: 10px; background: #ffffff">
+                <img
+                  src="{{ image_logo | default(value='https://beep-image.baptistebronsin.be/logo.png') }}"
+                  alt="Logo Plannify"
+                  width="168px"
+                  height="20px"
+                  style="margin: 10px 20px"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td height="20px"></td>
+            </tr>
+          </table>
+
+          <!-- Email main content -->
+          <table
+            style="background: white; border-radius: 10px; max-width: 600px"
+            align="center"
+            border="0"
+            cellpadding="0"
+            cellspacing="0"
+            width="100%"
+          >
+            <tr>
+              <td style="padding: 0 20px">
+                {% block content %}
+                <!-- Le contenu spécifique de chaque email ira ici -->
+                {% endblock content %}
+              </td>
+            </tr>
+          </table>
+
+          <!-- Email footer -->
+          <table
+            align="center"
+            border="0"
+            cellpadding="0"
+            cellspacing="0"
+            width="100%"
+          >
+            <tr>
+              <td
+                style="text-align: center; padding: 20px 10px; margin-top: 20px"
+              >
+                {% block footer %}
+                <p>
+                  Un problème, une question ? Contactez-nous à
+                  <a
+                    href="mailto:{{ support_email | default(value='support@plannify.be') }}"
+                    >{{ support_email | default(value='support@plannify.be')
+                    }}</a
+                  >
+                </p>
+                <p style="color: #999999">
+                  Identifiant du mail : {{ mail_id }}
+                </p>
+                {% endblock footer %}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

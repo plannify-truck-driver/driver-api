@@ -360,6 +360,13 @@ impl DriverCacheKeyType {
             DriverCacheKeyType::ResetPassword => "reset_password",
         }
     }
+
+    pub fn to_ttl(&self) -> u64 {
+        match self {
+            DriverCacheKeyType::VerifyEmail => 3600,
+            DriverCacheKeyType::ResetPassword => 3600,
+        }
+    }
 }
 
 pub trait DriverCacheRepository: Send + Sync {
@@ -382,8 +389,11 @@ pub trait DriverCacheRepository: Send + Sync {
         key: String,
     ) -> impl Future<Output = Result<Option<String>, DriverError>> + Send;
 
-    fn get_key_by_type(&self, driver_id: Uuid, key_type: DriverCacheKeyType) -> String {
-        self.generate_redis_key(driver_id, key_type.as_str())
+    fn get_key_by_type(&self, driver_id: Uuid, key_type: DriverCacheKeyType) -> (String, u64) {
+        (
+            self.generate_redis_key(driver_id, key_type.as_str()),
+            key_type.to_ttl(),
+        )
     }
 }
 

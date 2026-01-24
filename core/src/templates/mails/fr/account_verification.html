@@ -1,0 +1,33 @@
+{% extends "fr/base.html" %} {% block email_title %}Vérification de compte -
+Plannify{% endblock email_title %} {% block content %}
+<p>Bonjour {{ full_name }},</p>
+<p>Je vous remercie d'avoir choisi Plannify pour gérer vos journées.</p>
+<p>
+  Afin de pouvoir profiter de toutes les fonctionnalités, pouvez-vous valider
+  votre compte en cliquant sur le bouton ci-dessous :
+</p>
+<div style="text-align: center; margin: 40px 0">
+  <a
+    href="{{ token_url }}"
+    style="
+      background-color: #4a7ab4;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 0 auto;
+      color: white;
+      text-decoration: none;
+    "
+    >Vérifier mon compte</a
+  >
+</div>
+
+<p>
+  Ce bouton possède une durée de validité de
+  <span style="font-weight: bold; text-decoration: underline"
+    >{{ duration | default(value="15") }} minutes</span
+  >
+  à compter de la réception de ce mail.
+</p>
+
+<p>Bien cordialement,<br />Baptiste, le modérateur de Plannify</p>
+{% endblock content %}
