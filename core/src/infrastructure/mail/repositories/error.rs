@@ -7,4 +7,13 @@ pub enum MailError {
 
     #[error("Cannot send email message")]
     CannotSendMessage,
+
+    #[error("Database error")]
+    DatabaseError,
+
+    #[error("Mail not found")]
+    MailNotFound,
+
+    #[error("Mail type not found")]
+    MailTypeNotFound,
 }

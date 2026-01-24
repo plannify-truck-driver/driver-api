@@ -1,5 +1,12 @@
+use chrono::{DateTime, Utc};
+use uuid::Uuid;
+
 use crate::{
-    domain::driver::entities::DriverRow, infrastructure::mail::repositories::error::MailError,
+    domain::{
+        driver::entities::DriverRow,
+        mail::entities::{DriverMailRow, MailStatus},
+    },
+    infrastructure::mail::repositories::error::MailError,
 };
 
 pub trait MailSmtpRepository: Send + Sync {
@@ -9,6 +16,23 @@ pub trait MailSmtpRepository: Send + Sync {
         &self,
         driver: DriverRow,
     ) -> impl Future<Output = Result<(), MailError>> + Send;
+}
+
+pub trait MailDatabaseRepository: Send + Sync {
+    fn create_mail(
+        &self,
+        driver: DriverRow,
+        mail_type_id: i32,
+        description: String,
+        content: Option<String>,
+    ) -> impl Future<Output = Result<DriverMailRow, MailError>> + Send;
+
+    fn update_mail_status(
+        &self,
+        mail_id: Uuid,
+        status: MailStatus,
+        sent_at: Option<DateTime<Utc>>,
+    ) -> impl Future<Output = Result<DriverMailRow, MailError>> + Send;
 }
 
 pub struct MockMailRepository;

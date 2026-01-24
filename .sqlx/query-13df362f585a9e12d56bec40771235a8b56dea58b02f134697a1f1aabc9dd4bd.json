@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE driver_mails\n            SET status = $2, sent_at = $3\n            WHERE pk_driver_mail_id = $1\n            RETURNING pk_driver_mail_id, fk_driver_id, fk_employee_id, fk_mail_type_id, email_used, status as \"status: MailStatus\", description, content, created_at, sent_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pk_driver_mail_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "fk_driver_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "fk_employee_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "fk_mail_type_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "email_used",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "status: MailStatus",
+        "type_info": {
+          "Custom": {
+            "name": "mail_status",
+            "kind": {
+              "Enum": [
+                "PENDING",
+                "SUCCESS",
+                "FAILED"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "sent_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        {
+          "Custom": {
+            "name": "mail_status",
+            "kind": {
+              "Enum": [
+                "PENDING",
+                "SUCCESS",
+                "FAILED"
+              ]
+            }
+          }
+        },
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "13df362f585a9e12d56bec40771235a8b56dea58b02f134697a1f1aabc9dd4bd"
+}
