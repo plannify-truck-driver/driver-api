@@ -26,8 +26,8 @@ impl AsyncTestContext for TestContext {
         let redis_url: String = "redis://localhost:6379/0".to_string();
 
         let smtp_config = SmtpConfig {
-            default_sender: "".to_string(),
-            default_sender_reply_to: "".to_string(),
+            default_sender: "Plannify <contact@plannify.be>".to_string(),
+            default_sender_reply_to: "contact@plannify.be".to_string(),
             username: "user".to_string(),
             password: "password".to_string(),
             domain: "localhost".to_string(),
