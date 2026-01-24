@@ -4,7 +4,7 @@ use lettre::{
 };
 
 use crate::{
-    domain::{driver::entities::DriverRow, mail::port::MailRepository},
+    domain::{driver::entities::DriverRow, mail::port::MailSmtpRepository},
     infrastructure::mail::repositories::error::MailError,
 };
 use tracing::error;
@@ -24,7 +24,7 @@ impl SmtpMailRepository {
     }
 }
 
-impl MailRepository for SmtpMailRepository {
+impl MailSmtpRepository for SmtpMailRepository {
     fn send_email(&self, to: String, subject: String, body: String) -> Result<(), MailError> {
         let email = self
             .mail_client

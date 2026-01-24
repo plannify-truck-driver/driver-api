@@ -2,7 +2,7 @@ use crate::{
     domain::driver::entities::DriverRow, infrastructure::mail::repositories::error::MailError,
 };
 
-pub trait MailRepository: Send + Sync {
+pub trait MailSmtpRepository: Send + Sync {
     fn send_email(&self, to: String, subject: String, body: String) -> Result<(), MailError>;
 
     fn send_driver_creation_email(
@@ -25,7 +25,7 @@ impl Default for MockMailRepository {
     }
 }
 
-impl MailRepository for MockMailRepository {
+impl MailSmtpRepository for MockMailRepository {
     fn send_email(&self, _to: String, _subject: String, _body: String) -> Result<(), MailError> {
         Ok(())
     }

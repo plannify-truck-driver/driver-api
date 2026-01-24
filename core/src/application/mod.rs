@@ -31,7 +31,7 @@ pub struct DriverRepositories {
     pub driver_cache_repository: RedisDriverCacheRepository,
     pub employee_repository: PostgresEmployeeRepository,
     pub workday_repository: PostgresWorkdayRepository,
-    pub mail_repository: SmtpMailRepository,
+    pub mail_smtp_repository: SmtpMailRepository,
 }
 
 pub async fn create_repositories(
@@ -57,7 +57,7 @@ pub async fn create_repositories(
     let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager);
     let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
     let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
-    let mail_repository = SmtpMailRepository::new(mail_client, transport);
+    let mail_smtp_repository = SmtpMailRepository::new(mail_client, transport);
 
     Ok(DriverRepositories {
         pool: pg_pool,
@@ -66,7 +66,7 @@ pub async fn create_repositories(
         driver_cache_repository,
         employee_repository,
         workday_repository,
-        mail_repository,
+        mail_smtp_repository,
     })
 }
 
@@ -77,7 +77,7 @@ impl From<DriverRepositories> for DriverService {
             val.driver_repository,
             val.driver_cache_repository,
             val.workday_repository,
-            val.mail_repository,
+            val.mail_smtp_repository,
         )
     }
 }

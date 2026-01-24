@@ -6,7 +6,7 @@ use crate::{
             entities::IsHealthy,
             port::{HealthRepository, HealthService},
         },
-        mail::port::MailRepository,
+        mail::port::MailSmtpRepository,
         workday::port::WorkdayRepository,
     },
     infrastructure::health::repositories::error::HealthError,
@@ -18,7 +18,7 @@ where
     D: DriverRepository,
     DC: DriverCacheRepository,
     W: WorkdayRepository,
-    E: MailRepository,
+    E: MailSmtpRepository,
 {
     async fn check_health(&self) -> Result<IsHealthy, HealthError> {
         self.health_repository.ping().await.to_result()

@@ -6,7 +6,7 @@ use crate::{
     domain::{
         driver::port::{DriverCacheRepository, DriverRepository},
         health::port::HealthRepository,
-        mail::port::MailRepository,
+        mail::port::MailSmtpRepository,
         workday::{
             entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow},
             port::{WorkdayRepository, WorkdayService},
@@ -21,7 +21,7 @@ where
     D: DriverRepository,
     DC: DriverCacheRepository,
     W: WorkdayRepository,
-    E: MailRepository,
+    E: MailSmtpRepository,
 {
     async fn get_workdays_by_month(
         &self,

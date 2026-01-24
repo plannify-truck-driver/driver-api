@@ -9,7 +9,7 @@ use crate::{
             port::{DriverCacheKeyType, DriverCacheRepository, DriverRepository, DriverService},
         },
         health::port::HealthRepository,
-        mail::port::MailRepository,
+        mail::port::MailSmtpRepository,
         workday::port::WorkdayRepository,
     },
     infrastructure::driver::repositories::error::DriverError,
@@ -28,7 +28,7 @@ where
     D: DriverRepository,
     DC: DriverCacheRepository,
     W: WorkdayRepository,
-    M: MailRepository,
+    M: MailSmtpRepository,
 {
     fn to_title_case(name: String) -> String {
         name.trim()
@@ -114,7 +114,7 @@ where
             .set_redis(redis_key, verify_value.clone(), 3600)
             .await;
 
-        self.mail_repository
+        self.mail_smtp_repository
             .send_driver_creation_email(driver.clone())
             .await
             .map_err(|_| DriverError::Internal)?;
