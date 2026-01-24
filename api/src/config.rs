@@ -130,6 +130,14 @@ pub struct CommonConfig {
 
     #[arg(long = "cors-origins", env = "CORS_ORIGINS", value_delimiter = ',')]
     pub origins: Vec<String>,
+
+    #[arg(
+        long = "frontend-url",
+        env = "FRONTEND_URL",
+        default_value = "https://app.plannify.be",
+        name = "frontend_url"
+    )]
+    pub frontend_url: String,
 }
 
 #[derive(Clone, Parser, Debug, Default)]

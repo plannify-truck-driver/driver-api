@@ -14,7 +14,7 @@ use utoipa_scalar::{Scalar, Servable};
 
 use crate::{
     ApiError, AppState, AuthMiddleware, AuthValidator,
-    config::Config,
+    config::{Config, Environment},
     health_routes,
     http::{
         authentication::routes::authentication_routes,
@@ -53,6 +53,8 @@ impl App {
             &config.redis_url,
             config.smtp.to_client(),
             config.smtp.to_transport(),
+            config.common.frontend_url.clone(),
+            matches!(config.environment, Environment::Test),
         )
         .await
         .map_err(|e| ApiError::StartupError {

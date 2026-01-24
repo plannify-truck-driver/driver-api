@@ -43,6 +43,7 @@ impl AsyncTestContext for TestContext {
             api_port: 8080,
             health_port: 8081,
             origins: vec!["0.0.0.0/0".to_string()],
+            frontend_url: "http://localhost:3000".to_string(),
         };
 
         let check_content = CheckContentConfig {
@@ -64,6 +65,8 @@ impl AsyncTestContext for TestContext {
             &config.redis_url,
             config.smtp.to_client(),
             config.smtp.to_transport(),
+            config.common.frontend_url.clone(),
+            true,
         )
         .await
         .expect("Failed to create repositories");

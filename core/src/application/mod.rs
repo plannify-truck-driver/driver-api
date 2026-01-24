@@ -44,6 +44,8 @@ pub async fn create_repositories(
     redis_url: &str,
     mail_client: MessageBuilder,
     transport: SmtpTransport,
+    frontend_url: String,
+    is_test_environment: bool,
 ) -> Result<DriverRepositories, CoreError> {
     let pg_pool = PgPoolOptions::new()
         .max_connections(5)
@@ -70,7 +72,13 @@ pub async fn create_repositories(
     let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager);
     let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
     let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
-    let mail_smtp_repository = SmtpMailRepository::new(mail_client, transport, Arc::new(tera));
+    let mail_smtp_repository = SmtpMailRepository::new(
+        mail_client,
+        transport,
+        Arc::new(tera),
+        frontend_url,
+        is_test_environment,
+    );
     let mail_database_repository = PostgresMailRepository::new(pg_pool.clone());
 
     Ok(DriverRepositories {

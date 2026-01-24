@@ -111,7 +111,7 @@ async fn test_signup_with_wrong_body(ctx: &mut context::TestContext) {
             "gender": "",
             "email": "",
             "password": "",
-            "language": ""
+            "language": "fr"
         }))
         .await;
 
@@ -122,7 +122,7 @@ async fn test_signup_with_wrong_body(ctx: &mut context::TestContext) {
 
     let content_body1 = body1.content.as_ref().unwrap();
     assert!(content_body1.is_mapping());
-    assert_eq!(content_body1.as_mapping().unwrap().len(), 6);
+    assert_eq!(content_body1.as_mapping().unwrap().len(), 5);
 
     let res2 = ctx
         .unauthenticated_router
@@ -133,7 +133,7 @@ async fn test_signup_with_wrong_body(ctx: &mut context::TestContext) {
             "gender": "MF",
             "email": "firstname.lastname@mail.comfirstname.lastname@mail.comfirstname.lastname@mail.comfirstname.lastname@mail.comfirstname.lastname@mail.comfirstname.lastname@mail.comfirstname.lastname@mail.comfirstname.lastname@mail.comfirstname.lastname@mail.comfirstname.lastname@mail.com",
             "password": "passwordpasswordpasswordpasswordpasswordpassword",
-            "language": "fren"
+            "language": "fr"
         }))
         .await;
 
@@ -144,7 +144,7 @@ async fn test_signup_with_wrong_body(ctx: &mut context::TestContext) {
 
     let content_body2 = body2.content.as_ref().unwrap();
     assert!(content_body2.is_mapping());
-    assert_eq!(content_body2.as_mapping().unwrap().len(), 6);
+    assert_eq!(content_body2.as_mapping().unwrap().len(), 5);
 }
 
 #[test_context(context::TestContext)]

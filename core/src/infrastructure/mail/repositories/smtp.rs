@@ -7,27 +7,45 @@ use crate::{
     domain::{driver::entities::DriverRow, mail::port::MailSmtpRepository},
     infrastructure::mail::repositories::error::MailError,
 };
-use tracing::error;
+use tracing::{error, warn};
 
 #[derive(Clone)]
 pub struct SmtpMailRepository {
     mail_client: MessageBuilder,
     transport: SmtpTransport,
     tera: Arc<Tera>,
+    frontend_url: String,
+    is_test_environment: bool,
 }
 
 impl SmtpMailRepository {
-    pub fn new(mail_client: MessageBuilder, transport: SmtpTransport, tera: Arc<Tera>) -> Self {
+    pub fn new(
+        mail_client: MessageBuilder,
+        transport: SmtpTransport,
+        tera: Arc<Tera>,
+        frontend_url: String,
+        is_test_environment: bool,
+    ) -> Self {
         Self {
             mail_client,
             transport,
             tera,
+            frontend_url,
+            is_test_environment,
         }
     }
 }
 
 impl MailSmtpRepository for SmtpMailRepository {
     fn send_email(&self, to: String, subject: String, body: String) -> Result<(), MailError> {
+        if self.is_test_environment {
+            warn!(
+                "Test Environment: Email to {} with subject '{}' not sent.",
+                to, subject
+            );
+            return Ok(());
+        }
+
         let email = self
             .mail_client
             .clone()
@@ -54,14 +72,21 @@ impl MailSmtpRepository for SmtpMailRepository {
         verify_value: String,
         verify_ttl: u64,
     ) -> Result<(), MailError> {
+        if self.is_test_environment {
+            warn!(
+                "Test Environment: Driver creation email to {} not sent.",
+                driver.email
+            );
+            return Ok(());
+        }
+
         let mut context = Context::new();
         context.insert("full_name", driver.firstname.as_str());
         context.insert(
             "token_url",
-            &format!("https://app.plannify.be/{}", verify_value.as_str()),
+            &format!("{}/{}", self.frontend_url, verify_value.as_str()),
         );
         context.insert("duration", &(verify_ttl / 60).to_string());
-        context.insert("mail_id", "mail_id_placeholder");
 
         let template_path = format!("{}/account_verification.html", driver.language.as_str());
         let html_body = self.tera.render(&template_path, &context).map_err(|e| {

@@ -47,10 +47,7 @@ where
                 driver.clone(),
                 1,
                 "Driver account creation".to_string(),
-                Some(format!(
-                    "Welcome! Please verify your email using this code: {}",
-                    verify_value
-                )),
+                None,
             )
             .await?;
 
