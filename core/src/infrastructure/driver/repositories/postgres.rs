@@ -87,7 +87,7 @@ impl DriverRepository for PostgresDriverRepository {
             create_request.gender,
             create_request.email,
             create_request.password,
-            create_request.language,
+            create_request.language.to_string(),
         )
         .fetch_one(&self.pool)
         .await

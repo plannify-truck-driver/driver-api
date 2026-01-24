@@ -1,6 +1,14 @@
 use chrono::{Datelike, NaiveDate, NaiveTime, Timelike};
 use validator::ValidationError;
 
+use crate::domain::driver::entities::DriverLanguage;
+
+pub fn validate_language(lang: &DriverLanguage) -> Result<(), ValidationError> {
+    match lang {
+        DriverLanguage::FR | DriverLanguage::EN => Ok(()),
+    }
+}
+
 pub fn validate_date(date: &NaiveDate) -> Result<(), ValidationError> {
     if date.year() < 1900 || date.year() > 2100 {
         return Err(ValidationError::new("date must be between 1900 and 2100"));

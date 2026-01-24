@@ -200,7 +200,7 @@ impl DriverRepository for MockDriverRepository {
             phone_number: None,
             is_searchable: false,
             allow_request_professional_agreement: false,
-            language: create_request.language,
+            language: create_request.language.to_string(),
             rest_json: None,
             mail_preferences: 0,
             created_at: chrono::Utc::now(),
