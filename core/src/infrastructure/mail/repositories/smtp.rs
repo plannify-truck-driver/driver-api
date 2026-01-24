@@ -47,12 +47,17 @@ impl MailSmtpRepository for SmtpMailRepository {
         }
     }
 
-    async fn send_driver_creation_email(&self, driver: DriverRow) -> Result<(), MailError> {
+    async fn send_driver_creation_email(
+        &self,
+        driver: DriverRow,
+        verify_value: String,
+        verify_ttl: u64,
+    ) -> Result<(), MailError> {
         let to = driver.email;
         let subject = "Welcome to Plannify!".to_string();
         let body = format!(
-            "Hello {},\n\nWelcome to Plannify! Your account has been successfully created.\n\nBest regards,\nThe Plannify Team",
-            driver.firstname
+            "<p>Hello {},<br/><br/>Welcome to Plannify! Your account has been successfully created.<br/><br/>Please verify your email using this code: {}. It will expire in {} seconds.<br/><br/>Best regards,<br/>The Plannify Team</p>",
+            driver.firstname, verify_value, verify_ttl
         );
 
         self.send_email(to, subject, body)

@@ -2,6 +2,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Clone)]
 pub enum MailError {
+    #[error("Internal server error")]
+    Internal,
+
     #[error("Cannot create email message")]
     CannotCreateMessage,
 

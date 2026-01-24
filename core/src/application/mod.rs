@@ -10,7 +10,7 @@ use crate::{
             postgres::PostgresDriverRepository, redis::RedisDriverCacheRepository,
         },
         employee::repositories::postgres::PostgresEmployeeRepository,
-        mail::repositories::smtp::SmtpMailRepository,
+        mail::repositories::{postgres::PostgresMailRepository, smtp::SmtpMailRepository},
         workday::repositories::postgres::PostgresWorkdayRepository,
     },
 };
@@ -21,6 +21,7 @@ pub type DriverService = Service<
     RedisDriverCacheRepository,
     PostgresWorkdayRepository,
     SmtpMailRepository,
+    PostgresMailRepository,
 >;
 
 #[derive(Clone)]
@@ -32,6 +33,7 @@ pub struct DriverRepositories {
     pub employee_repository: PostgresEmployeeRepository,
     pub workday_repository: PostgresWorkdayRepository,
     pub mail_smtp_repository: SmtpMailRepository,
+    pub mail_database_repository: PostgresMailRepository,
 }
 
 pub async fn create_repositories(
@@ -58,6 +60,7 @@ pub async fn create_repositories(
     let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
     let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
     let mail_smtp_repository = SmtpMailRepository::new(mail_client, transport);
+    let mail_database_repository = PostgresMailRepository::new(pg_pool.clone());
 
     Ok(DriverRepositories {
         pool: pg_pool,
@@ -67,6 +70,7 @@ pub async fn create_repositories(
         employee_repository,
         workday_repository,
         mail_smtp_repository,
+        mail_database_repository,
     })
 }
 
@@ -78,6 +82,7 @@ impl From<DriverRepositories> for DriverService {
             val.driver_cache_repository,
             val.workday_repository,
             val.mail_smtp_repository,
+            val.mail_database_repository,
         )
     }
 }

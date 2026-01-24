@@ -6,10 +6,10 @@ use crate::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverRestPeriod, DriverRow,
                 LoginDriverRequest,
             },
-            port::{DriverCacheKeyType, DriverCacheRepository, DriverRepository, DriverService},
+            port::{DriverCacheRepository, DriverRepository, DriverService},
         },
         health::port::HealthRepository,
-        mail::port::MailSmtpRepository,
+        mail::port::{MailDatabaseRepository, MailSmtpRepository},
         workday::port::WorkdayRepository,
     },
     infrastructure::driver::repositories::error::DriverError,
@@ -22,13 +22,14 @@ use argon2::{
 use tracing::error;
 use uuid::Uuid;
 
-impl<H, D, DC, W, M> DriverService for Service<H, D, DC, W, M>
+impl<H, D, DC, W, MS, MD> DriverService for Service<H, D, DC, W, MS, MD>
 where
     H: HealthRepository,
     D: DriverRepository,
     DC: DriverCacheRepository,
     W: WorkdayRepository,
-    M: MailSmtpRepository,
+    MS: MailSmtpRepository,
+    MD: MailDatabaseRepository,
 {
     fn to_title_case(name: String) -> String {
         name.trim()
@@ -101,23 +102,6 @@ where
         create_request.password = password_hash.to_string();
 
         let driver = self.driver_repository.create_driver(create_request).await?;
-
-        let verify_value = self
-            .driver_cache_repository
-            .generate_random_value(32)
-            .await?;
-        let redis_key = self
-            .driver_cache_repository
-            .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::VerifyEmail);
-        let _ = self
-            .driver_cache_repository
-            .set_redis(redis_key, verify_value.clone(), 3600)
-            .await;
-
-        self.mail_smtp_repository
-            .send_driver_creation_email(driver.clone())
-            .await
-            .map_err(|_| DriverError::Internal)?;
 
         Ok(driver)
     }

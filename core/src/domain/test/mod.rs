@@ -3,7 +3,7 @@ use crate::{
     domain::{
         driver::port::{MockDriverCacheRepository, MockDriverRepository},
         health::port::MockHealthRepository,
-        mail::port::MockMailRepository,
+        mail::port::{MockMailDatabaseRepository, MockMailSmtpRepository},
         workday::port::MockWorkdayRepository,
     },
 };
@@ -15,7 +15,8 @@ pub type MockService = Service<
     MockDriverRepository,
     MockDriverCacheRepository,
     MockWorkdayRepository,
-    MockMailRepository,
+    MockMailSmtpRepository,
+    MockMailDatabaseRepository,
 >;
 
 pub fn create_mock_service() -> MockService {
@@ -23,13 +24,15 @@ pub fn create_mock_service() -> MockService {
     let driver_repository = MockDriverRepository::new();
     let driver_cache_repository = MockDriverCacheRepository::new();
     let workday_repository = MockWorkdayRepository::new();
-    let mail_repository = MockMailRepository::new();
+    let mail_smtp_repository = MockMailSmtpRepository::new();
+    let mail_database_repository = MockMailDatabaseRepository::new();
 
     MockService::new(
         health_repository,
         driver_repository,
         driver_cache_repository,
         workday_repository,
-        mail_repository,
+        mail_smtp_repository,
+        mail_database_repository,
     )
 }

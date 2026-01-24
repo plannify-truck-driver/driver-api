@@ -1,7 +1,10 @@
 use axum::{extract::State, http::header::SET_COOKIE, response::AppendHeaders};
-use plannify_driver_api_core::domain::driver::{
-    entities::{CreateDriverRequest, CreateDriverResponse, DriverRow, LoginDriverRequest},
-    port::DriverService,
+use plannify_driver_api_core::domain::{
+    driver::{
+        entities::{CreateDriverRequest, CreateDriverResponse, DriverRow, LoginDriverRequest},
+        port::DriverService,
+    },
+    mail::port::MailService,
 };
 use plannify_driver_api_core::infrastructure::driver::repositories::error::DriverError;
 
@@ -43,6 +46,8 @@ pub async fn signup(
         .service
         .create_driver(request, state.config.check_content.email_domain_denylist)
         .await?;
+
+    state.service.send_creation_email(driver.clone()).await?;
 
     let auth_validator = &state.auth_validator;
     let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {

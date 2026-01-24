@@ -34,6 +34,7 @@ impl From<DriverRepositories> for AppState {
             repositories.driver_cache_repository,
             repositories.workday_repository,
             repositories.mail_smtp_repository,
+            repositories.mail_database_repository,
         );
         let config = Config::default();
         let jwt_config = &config.jwt;
