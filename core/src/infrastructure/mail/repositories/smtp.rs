@@ -99,7 +99,10 @@ impl MailSmtpRepository for SmtpMailRepository {
         let subject = match driver.language.as_str() {
             "fr" => "Bienvenue sur Plannify !".to_string(),
             "en" => "Welcome to Plannify!".to_string(),
-            _ => "Welcome to Plannify!".to_string(),
+            _ => {
+                error!("Unsupported driver language: {}", driver.language);
+                return Err(MailError::Internal)
+            },
         };
 
         self.send_email(to, subject, html_body)

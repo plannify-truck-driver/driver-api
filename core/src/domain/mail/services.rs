@@ -3,16 +3,13 @@ use chrono::Utc;
 use crate::{
     Service,
     domain::{
-        driver::{
+        common::constants::EnumDriverMailType, driver::{
             entities::DriverRow,
             port::{DriverCacheKeyType, DriverCacheRepository, DriverRepository},
-        },
-        health::port::HealthRepository,
-        mail::{
+        }, health::port::HealthRepository, mail::{
             entities::MailStatus,
             port::{MailDatabaseRepository, MailService, MailSmtpRepository},
-        },
-        workday::port::WorkdayRepository,
+        }, workday::port::WorkdayRepository
     },
     infrastructure::mail::repositories::error::MailError,
 };
@@ -45,7 +42,7 @@ where
             .mail_database_repository
             .create_mail(
                 driver.clone(),
-                1,
+                EnumDriverMailType::AccountVerification,
                 "Driver account creation".to_string(),
                 None,
             )

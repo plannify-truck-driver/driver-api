@@ -4,11 +4,10 @@ use uuid::Uuid;
 
 use crate::{
     domain::{
-        driver::entities::DriverRow,
-        mail::{
+        common::constants::EnumDriverMailType, driver::entities::DriverRow, mail::{
             entities::{DriverMailRow, MailStatus},
             port::MailDatabaseRepository,
-        },
+        }
     },
     infrastructure::mail::repositories::error::MailError,
 };
@@ -29,7 +28,7 @@ impl MailDatabaseRepository for PostgresMailRepository {
     async fn create_mail(
         &self,
         driver: DriverRow,
-        mail_type_id: i32,
+        mail_type: EnumDriverMailType,
         description: String,
         content: Option<String>,
     ) -> Result<DriverMailRow, MailError> {
@@ -41,7 +40,7 @@ impl MailDatabaseRepository for PostgresMailRepository {
             RETURNING pk_driver_mail_id, fk_driver_id, fk_employee_id, fk_mail_type_id, email_used, status as "status: MailStatus", description, content, created_at, sent_at
             "#,
             driver.pk_driver_id,
-            mail_type_id,
+            mail_type.as_id(),
             driver.email.clone(),
             MailStatus::PENDING as MailStatus,
             description,

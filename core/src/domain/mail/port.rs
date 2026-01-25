@@ -5,8 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     domain::{
-        driver::entities::DriverRow,
-        mail::entities::{DriverMailRow, MailStatus},
+        common::constants::EnumDriverMailType, driver::entities::DriverRow, mail::entities::{DriverMailRow, MailStatus}
     },
     infrastructure::mail::repositories::error::MailError,
 };
@@ -26,7 +25,7 @@ pub trait MailDatabaseRepository: Send + Sync {
     fn create_mail(
         &self,
         driver: DriverRow,
-        mail_type_id: i32,
+        mail_type: EnumDriverMailType,
         description: String,
         content: Option<String>,
     ) -> impl Future<Output = Result<DriverMailRow, MailError>> + Send;
@@ -97,7 +96,7 @@ impl MailDatabaseRepository for MockMailDatabaseRepository {
     async fn create_mail(
         &self,
         driver: DriverRow,
-        mail_type_id: i32,
+        mail_type: EnumDriverMailType,
         description: String,
         content: Option<String>,
     ) -> Result<DriverMailRow, MailError> {
@@ -105,7 +104,7 @@ impl MailDatabaseRepository for MockMailDatabaseRepository {
             pk_driver_mail_id: Uuid::new_v4(),
             fk_driver_id: driver.pk_driver_id,
             fk_employee_id: None,
-            fk_mail_type_id: mail_type_id,
+            fk_mail_type_id: mail_type.as_id(),
             description,
             content,
             email_used: driver.email.clone(),

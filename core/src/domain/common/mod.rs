@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+pub mod constants;
 pub mod entities;
 pub mod services;
 

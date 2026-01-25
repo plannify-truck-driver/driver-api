@@ -9,6 +9,7 @@ use uuid::Uuid;
 pub struct DriverMailTypeRow {
     pub pk_driver_mail_type_id: i32,
     pub label: String,
+    pub index: i32,    
     pub is_editable: bool,
 }
 
