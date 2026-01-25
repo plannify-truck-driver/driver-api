@@ -18,6 +18,8 @@ use crate::{
     },
 };
 
+use tracing::error;
+
 pub type DriverService = Service<
     PostgresHealthRepository,
     PostgresDriverRepository,
@@ -59,11 +61,11 @@ pub async fn create_repositories(
         .await
         .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
 
-    let tera = match Tera::new("core/src/templates/mails/**/*.html") {
+    let tera = match Tera::new("core/templates/mails/**/*.html") {
         Ok(t) => t,
         Err(e) => {
-            eprintln!("Parsing error(s): {}", e);
-            std::process::exit(1);
+            error!("Templating parsing error: {}", e);
+            return Err(CoreError::ServiceUnavailable(e.to_string()));
         }
     };
 

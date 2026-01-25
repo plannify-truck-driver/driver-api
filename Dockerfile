@@ -54,6 +54,7 @@ USER plannify-user
 FROM runtime AS api
 
 COPY --from=rust-build /usr/local/src/user/target/release/api /usr/local/bin/
+COPY --from=rust-build --chown=plannify-user:plannify-user /usr/local/src/user/core/templates /usr/local/src/user/core/templates
 
 WORKDIR /usr/local/src/user
 
