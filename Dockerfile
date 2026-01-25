@@ -2,6 +2,13 @@ FROM rust:1.92.0-slim-bookworm AS rust-build
 
 WORKDIR /usr/local/src/user
 
+RUN \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY Cargo.toml Cargo.lock ./
 COPY api/Cargo.toml ./api/
 COPY core/Cargo.toml ./core/
