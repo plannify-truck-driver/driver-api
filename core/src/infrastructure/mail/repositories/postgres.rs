@@ -4,10 +4,12 @@ use uuid::Uuid;
 
 use crate::{
     domain::{
-        common::constants::EnumDriverMailType, driver::entities::DriverRow, mail::{
+        common::constants::EnumDriverMailType,
+        driver::entities::DriverRow,
+        mail::{
             entities::{DriverMailRow, MailStatus},
             port::MailDatabaseRepository,
-        }
+        },
     },
     infrastructure::mail::repositories::error::MailError,
 };

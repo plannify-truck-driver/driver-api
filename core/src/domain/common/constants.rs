@@ -2,7 +2,7 @@ pub enum EnumDriverMailType {
     AccountVerification,
     PasswordReset,
     AccountChangement,
-    MonthlyReports
+    MonthlyReports,
 }
 
 impl EnumDriverMailType {

@@ -101,8 +101,8 @@ impl MailSmtpRepository for SmtpMailRepository {
             "en" => "Welcome to Plannify!".to_string(),
             _ => {
                 error!("Unsupported driver language: {}", driver.language);
-                return Err(MailError::Internal)
-            },
+                return Err(MailError::Internal);
+            }
         };
 
         self.send_email(to, subject, html_body)

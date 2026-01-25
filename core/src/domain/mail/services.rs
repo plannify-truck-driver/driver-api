@@ -3,13 +3,17 @@ use chrono::Utc;
 use crate::{
     Service,
     domain::{
-        common::constants::EnumDriverMailType, driver::{
+        common::constants::EnumDriverMailType,
+        driver::{
             entities::DriverRow,
             port::{DriverCacheKeyType, DriverCacheRepository, DriverRepository},
-        }, health::port::HealthRepository, mail::{
+        },
+        health::port::HealthRepository,
+        mail::{
             entities::MailStatus,
             port::{MailDatabaseRepository, MailService, MailSmtpRepository},
-        }, workday::port::WorkdayRepository
+        },
+        workday::port::WorkdayRepository,
     },
     infrastructure::mail::repositories::error::MailError,
 };
