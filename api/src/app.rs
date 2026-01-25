@@ -91,16 +91,13 @@ impl App {
         let auth_validator = AuthValidator::new(&config.clone().jwt);
         state.auth_validator = auth_validator.clone();
 
-        let router = OpenApiRouter::<AppState>::new()
+        let (app_router, mut api) = OpenApiRouter::<AppState>::new()
             .merge(driver_routes())
             .merge(workday_routes())
             .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
                 auth_validator.clone(),
             ))
-            .merge(authentication_routes());
-
-        let (app_router, mut api) = OpenApiRouter::<AppState>::new()
-            .nest("/driver", router)
+            .merge(authentication_routes())
             .layer(cors)
             .split_for_parts();
 
