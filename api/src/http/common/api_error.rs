@@ -144,6 +144,12 @@ impl From<HealthError> for ApiError {
     fn from(error: HealthError) -> Self {
         match error {
             HealthError::DatabaseError => ApiError::InternalServerError,
+            HealthError::DatabaseUnhealthy => ApiError::ServiceUnavailable {
+                msg: "Database is unhealthy".to_string(),
+            },
+            HealthError::CacheUnhealthy => ApiError::ServiceUnavailable {
+                msg: "Cache is unhealthy".to_string(),
+            },
         }
     }
 }

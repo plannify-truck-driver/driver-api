@@ -1,21 +1,23 @@
 use crate::infrastructure::health::repositories::error::HealthError;
 
-pub struct IsHealthy(bool);
+#[derive(Clone)]
+pub struct IsHealthy {
+    pub database: bool,
+    pub cache: bool,
+}
 
 impl IsHealthy {
-    pub fn new(is_healthy: bool) -> Self {
-        Self(is_healthy)
-    }
-
-    pub fn value(&self) -> bool {
-        self.0
+    pub fn new(database: bool, cache: bool) -> Self {
+        Self { database, cache }
     }
 
     pub fn to_result(&self) -> Result<Self, HealthError> {
-        if self.value() {
-            Ok(IsHealthy(self.0))
+        if !self.database {
+            Err(HealthError::DatabaseUnhealthy)
+        } else if !self.cache {
+            Err(HealthError::CacheUnhealthy)
         } else {
-            Err(HealthError::DatabaseError)
+            Ok(self.clone())
         }
     }
 }

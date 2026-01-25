@@ -4,4 +4,10 @@ use thiserror::Error;
 pub enum HealthError {
     #[error("A database error occurred")]
     DatabaseError,
+
+    #[error("The database is unhealthy")]
+    DatabaseUnhealthy,
+
+    #[error("The cache is unhealthy")]
+    CacheUnhealthy,
 }

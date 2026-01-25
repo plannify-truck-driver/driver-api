@@ -69,7 +69,7 @@ pub async fn create_repositories(
         }
     };
 
-    let health_repository = PostgresHealthRepository::new(pg_pool.clone());
+    let health_repository = PostgresHealthRepository::new(pg_pool.clone(), redis_manager.clone());
     let driver_repository = PostgresDriverRepository::new(pg_pool.clone());
     let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager);
     let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
