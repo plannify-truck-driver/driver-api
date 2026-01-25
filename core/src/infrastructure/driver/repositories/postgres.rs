@@ -87,7 +87,7 @@ impl DriverRepository for PostgresDriverRepository {
             create_request.gender,
             create_request.email,
             create_request.password,
-            create_request.language,
+            create_request.language.to_string(),
         )
         .fetch_one(&self.pool)
         .await
@@ -139,7 +139,7 @@ impl DriverRepository for PostgresDriverRepository {
         .map_err(|_| DriverError::DriverNotFound)
     }
 
-    async fn delete_driver(&self, driver_id: uuid::Uuid) -> Result<(), DriverError> {
+    async fn delete_driver(&self, driver_id: Uuid) -> Result<(), DriverError> {
         let result = sqlx::query!(
             r#"
             DELETE FROM drivers
@@ -246,7 +246,7 @@ impl DriverRepository for PostgresDriverRepository {
 
     async fn get_current_driver_suspension(
         &self,
-        driver_id: uuid::Uuid,
+        driver_id: Uuid,
     ) -> Result<Option<DriverSuspensionRow>, DriverError> {
         sqlx::query_as!(
             DriverSuspensionRow,

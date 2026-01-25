@@ -4,8 +4,9 @@ use uuid::Uuid;
 use crate::{
     Service,
     domain::{
-        driver::port::DriverRepository,
+        driver::port::{DriverCacheRepository, DriverRepository},
         health::port::HealthRepository,
+        mail::port::{MailDatabaseRepository, MailSmtpRepository},
         workday::{
             entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow},
             port::{WorkdayRepository, WorkdayService},
@@ -14,11 +15,14 @@ use crate::{
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
-impl<H, D, W> WorkdayService for Service<H, D, W>
+impl<H, D, DC, W, MS, MD> WorkdayService for Service<H, D, DC, W, MS, MD>
 where
     H: HealthRepository,
     D: DriverRepository,
+    DC: DriverCacheRepository,
     W: WorkdayRepository,
+    MS: MailSmtpRepository,
+    MD: MailDatabaseRepository,
 {
     async fn get_workdays_by_month(
         &self,

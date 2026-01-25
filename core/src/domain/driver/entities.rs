@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 use chrono::{DateTime, NaiveTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,8 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::domain::common::entities::validate_time;
+
+use crate::domain::common::entities::validate_language;
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 pub struct DriverRow {
@@ -29,6 +31,34 @@ pub struct DriverRow {
     pub last_login_at: Option<DateTime<Utc>>,
     pub deactivated_at: Option<DateTime<Utc>>,
     pub refresh_token_hash: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+pub enum DriverLanguage {
+    #[serde(rename = "fr")]
+    FR,
+    #[serde(rename = "en")]
+    EN,
+}
+
+impl FromStr for DriverLanguage {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "fr" => Ok(DriverLanguage::FR),
+            "en" => Ok(DriverLanguage::EN),
+            _ => Err(()),
+        }
+    }
+}
+
+impl Display for DriverLanguage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DriverLanguage::FR => write!(f, "fr"),
+            DriverLanguage::EN => write!(f, "en"),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
@@ -65,11 +95,11 @@ pub struct CreateDriverRequest {
     ))]
     pub password: String,
 
-    #[validate(length(
-        equal = 2,
-        message = "language must be a 2 characters code (ex: fr, en)"
+    #[validate(custom(
+        function = "validate_language",
+        message = "language must be 'fr' or 'en'"
     ))]
-    pub language: String,
+    pub language: DriverLanguage,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

@@ -733,7 +733,7 @@
             ]
           },
           "language": {
-            "type": "string"
+            "$ref": "#/components/schemas/DriverLanguage"
           },
           "lastname": {
             "type": "string"
@@ -783,6 +783,13 @@
             "type": "string"
           }
         }
+      },
+      "DriverLanguage": {
+        "type": "string",
+        "enum": [
+          "fr",
+          "en"
+        ]
       },
       "DriverRestPeriod": {
         "type": "object",

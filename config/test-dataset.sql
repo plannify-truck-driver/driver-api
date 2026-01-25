@@ -21,3 +21,6 @@ INSERT INTO "workday_garbage" ("workday_date", "fk_driver_id", "created_at", "sc
 
 INSERT INTO "employees" ("pk_employee_id", "firstname", "lastname", "gender", "personal_email", "login_password_hash", "phone_number", "professional_email", "professional_email_password", "created_at", "last_login_at", "deactivated_at") VALUES
 ('73a2539a-9496-4844-8f73-f170ef30d5a6', 'Admin', 'User', NULL, 'admin.user@example.com', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 'admin.user@plannify.be', 'Passw0rd!', '2026-01-01 00:00:00', NULL, NULL);
+
+INSERT INTO "driver_mail_types" ("pk_driver_mail_type_id", "label", "is_editable") VALUES
+(1, 'ACCOUNT_VERIFICATION', 'f');

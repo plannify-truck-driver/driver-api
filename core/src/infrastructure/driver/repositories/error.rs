@@ -41,4 +41,7 @@ pub enum DriverError {
 
     #[error("Invalid rest period")]
     InvalidRestPeriod { details: String },
+
+    #[error("Failed to send email")]
+    EmailSendError,
 }

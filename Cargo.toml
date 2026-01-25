@@ -11,3 +11,23 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 thiserror = "2.0.17"
+
+# Logging
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Mailing
+lettre = { version = "0.11.19", features = ["builder", "serde", "tokio1", "tokio1-native-tls"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+validator = { version = "0.20", features = ["derive"] }
+
+# Database
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.18.1", features = ["serde", "v4"] }
+
+# Documentation
+utoipa = { version = "5.4.0", features = ["uuid", "chrono"] }

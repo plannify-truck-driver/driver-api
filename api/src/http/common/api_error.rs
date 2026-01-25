@@ -7,7 +7,7 @@ use plannify_driver_api_core::{
     domain::common::CoreError,
     infrastructure::{
         driver::repositories::error::DriverError, health::repositories::error::HealthError,
-        workday::repositories::error::WorkdayError,
+        mail::repositories::error::MailError, workday::repositories::error::WorkdayError,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -219,6 +219,7 @@ impl From<DriverError> for ApiError {
                     content: Some(Value::Mapping(content)),
                 }
             }
+            DriverError::EmailSendError => ApiError::InternalServerError,
         }
     }
 }
@@ -238,6 +239,23 @@ impl From<WorkdayError> for ApiError {
             },
             WorkdayError::WorkdayGarbageNotFound => ApiError::NotFound {
                 error_code: "WORKDAY_GARBAGE_NOT_FOUND".to_string(),
+            },
+        }
+    }
+}
+
+impl From<MailError> for ApiError {
+    fn from(_error: MailError) -> Self {
+        match _error {
+            MailError::Internal => ApiError::InternalServerError,
+            MailError::CannotCreateMessage => ApiError::InternalServerError,
+            MailError::CannotSendMessage => ApiError::InternalServerError,
+            MailError::DatabaseError => ApiError::InternalServerError,
+            MailError::MailNotFound => ApiError::NotFound {
+                error_code: "MAIL_NOT_FOUND".to_string(),
+            },
+            MailError::MailTypeNotFound => ApiError::NotFound {
+                error_code: "MAIL_TYPE_NOT_FOUND".to_string(),
             },
         }
     }

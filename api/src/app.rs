@@ -14,7 +14,7 @@ use utoipa_scalar::{Scalar, Servable};
 
 use crate::{
     ApiError, AppState, AuthMiddleware, AuthValidator,
-    config::Config,
+    config::{Config, Environment},
     health_routes,
     http::{
         authentication::routes::authentication_routes,
@@ -48,12 +48,19 @@ pub struct App {
 
 impl App {
     pub async fn new(config: Config) -> Result<Self, ApiError> {
-        let mut state: AppState = create_repositories(&config.database_url)
-            .await
-            .map_err(|e| ApiError::StartupError {
-                msg: format!("Failed to create repositories: {}", e),
-            })?
-            .into();
+        let mut state: AppState = create_repositories(
+            &config.database_url,
+            &config.redis_url,
+            config.smtp.to_client(),
+            config.smtp.to_transport(),
+            config.common.frontend_url.clone(),
+            matches!(config.environment, Environment::Test),
+        )
+        .await
+        .map_err(|e| ApiError::StartupError {
+            msg: format!("Failed to create repositories: {}", e),
+        })?
+        .into();
         state.config = config.clone();
 
         let cors_origins = config
