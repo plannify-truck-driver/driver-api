@@ -33,7 +33,8 @@ use crate::{
     ),
     servers(
         (url = "http://localhost:3000", description = "Local development server"),
-        (url = "https://api.plannify.be/driver", description = "Production server")
+        (url = "https://api-dev.plannify.be/driver/v1", description = "Development server"),
+        (url = "https://api.plannify.be/driver/v1", description = "Production server")
     ),
     modifiers(&SecurityAddon)
 )]
@@ -111,7 +112,7 @@ impl App {
 
         let app_router = app_router
             .with_state(state.clone())
-            .merge(Scalar::with_url("/driver/doc", api))
+            .merge(Scalar::with_url("/doc", api))
             .layer(from_fn(tracing_middleware));
 
         // Write OpenAPI spec to file in development environment

@@ -14,7 +14,7 @@ pub mod helpers;
 #[tokio::test]
 #[serial]
 async fn test_get_all_rest_periods_unauthorized(ctx: &mut context::TestContext) {
-    let res = ctx.unauthenticated_router.get("/driver/rest-periods").await;
+    let res = ctx.unauthenticated_router.get("/rest-periods").await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
 
@@ -26,7 +26,7 @@ async fn test_get_all_rest_periods_unauthorized(ctx: &mut context::TestContext) 
 #[tokio::test]
 #[serial]
 async fn test_get_all_rest_periods_success(ctx: &mut context::TestContext) {
-    let res = ctx.authenticated_router.get("/driver/rest-periods").await;
+    let res = ctx.authenticated_router.get("/rest-periods").await;
 
     res.assert_status(StatusCode::OK);
 
@@ -46,7 +46,7 @@ async fn test_get_all_rest_periods_success(ctx: &mut context::TestContext) {
 async fn test_set_rest_periods_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .post("/driver/rest-periods")
+        .post("/rest-periods")
         .json(&json!({
             "rest_periods": [
                 {
@@ -75,7 +75,7 @@ async fn test_set_rest_periods_unauthorized(ctx: &mut context::TestContext) {
 async fn test_set_rest_periods_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .post("/driver/rest-periods")
+        .post("/rest-periods")
         .json(&json!({
             "rest_periods": [
                 {
@@ -101,7 +101,7 @@ async fn test_set_rest_periods_success(ctx: &mut context::TestContext) {
 async fn test_set_rest_periods_with_wrong_body_first_start(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .post("/driver/rest-periods")
+        .post("/rest-periods")
         .json(&json!({
             "rest_periods": [
                 {
@@ -127,7 +127,7 @@ async fn test_set_rest_periods_with_wrong_body_first_start(ctx: &mut context::Te
 async fn test_set_rest_periods_with_wrong_body_last_end(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .post("/driver/rest-periods")
+        .post("/rest-periods")
         .json(&json!({
             "rest_periods": [
                 {
@@ -153,7 +153,7 @@ async fn test_set_rest_periods_with_wrong_body_last_end(ctx: &mut context::TestC
 async fn test_set_rest_periods_with_wrong_body_big_gap(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .post("/driver/rest-periods")
+        .post("/rest-periods")
         .json(&json!({
             "rest_periods": [
                 {
@@ -177,10 +177,7 @@ async fn test_set_rest_periods_with_wrong_body_big_gap(ctx: &mut context::TestCo
 #[tokio::test]
 #[serial]
 async fn test_delete_rest_periods_unauthorized(ctx: &mut context::TestContext) {
-    let res = ctx
-        .unauthenticated_router
-        .delete("/driver/rest-periods")
-        .await;
+    let res = ctx.unauthenticated_router.delete("/rest-periods").await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
 
@@ -192,10 +189,7 @@ async fn test_delete_rest_periods_unauthorized(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_delete_rest_periods_success(ctx: &mut context::TestContext) {
-    let res = ctx
-        .authenticated_router
-        .delete("/driver/rest-periods")
-        .await;
+    let res = ctx.authenticated_router.delete("/rest-periods").await;
 
     res.assert_status(StatusCode::OK);
 

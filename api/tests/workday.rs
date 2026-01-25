@@ -25,7 +25,7 @@ fn verify_workday_content(workday: Workday, expected_workday: Workday) {
 async fn test_get_all_workdays_month_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .get("/driver/workdays/month?month=1&year=2026")
+        .get("/workdays/month?month=1&year=2026")
         .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
@@ -40,7 +40,7 @@ async fn test_get_all_workdays_month_unauthorized(ctx: &mut context::TestContext
 async fn test_get_all_workdays_month_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .get("/driver/workdays/month?month=1&year=2026")
+        .get("/workdays/month?month=1&year=2026")
         .await;
 
     res.assert_status(StatusCode::OK);
@@ -77,7 +77,7 @@ async fn test_get_all_workdays_month_success(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_get_all_workdays_month_with_no_parameters(ctx: &mut context::TestContext) {
-    let res1 = ctx.authenticated_router.get("/driver/workdays/month").await;
+    let res1 = ctx.authenticated_router.get("/workdays/month").await;
 
     res1.assert_status(StatusCode::BAD_REQUEST);
 
@@ -86,7 +86,7 @@ async fn test_get_all_workdays_month_with_no_parameters(ctx: &mut context::TestC
 
     let res2 = ctx
         .authenticated_router
-        .get("/driver/workdays/month?month=1")
+        .get("/workdays/month?month=1")
         .await;
 
     res2.assert_status(StatusCode::BAD_REQUEST);
@@ -96,7 +96,7 @@ async fn test_get_all_workdays_month_with_no_parameters(ctx: &mut context::TestC
 
     let res3 = ctx
         .authenticated_router
-        .get("/driver/workdays/month?year=2026")
+        .get("/workdays/month?year=2026")
         .await;
 
     res3.assert_status(StatusCode::BAD_REQUEST);
@@ -111,7 +111,7 @@ async fn test_get_all_workdays_month_with_no_parameters(ctx: &mut context::TestC
 async fn test_get_all_workdays_month_with_wrong_parameters(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
-        .get("/driver/workdays/month?month=0&year=2026")
+        .get("/workdays/month?month=0&year=2026")
         .await;
 
     res1.assert_status(StatusCode::BAD_REQUEST);
@@ -121,7 +121,7 @@ async fn test_get_all_workdays_month_with_wrong_parameters(ctx: &mut context::Te
 
     let res2 = ctx
         .authenticated_router
-        .get("/driver/workdays/month?month=13&year=2026")
+        .get("/workdays/month?month=13&year=2026")
         .await;
 
     res2.assert_status(StatusCode::BAD_REQUEST);
@@ -131,7 +131,7 @@ async fn test_get_all_workdays_month_with_wrong_parameters(ctx: &mut context::Te
 
     let res3 = ctx
         .authenticated_router
-        .get("/driver/workdays/month?month=1&year=1800")
+        .get("/workdays/month?month=1&year=1800")
         .await;
 
     res3.assert_status(StatusCode::BAD_REQUEST);
@@ -141,7 +141,7 @@ async fn test_get_all_workdays_month_with_wrong_parameters(ctx: &mut context::Te
 
     let res4 = ctx
         .authenticated_router
-        .get("/driver/workdays/month?month=1&year=2200")
+        .get("/workdays/month?month=1&year=2200")
         .await;
 
     res4.assert_status(StatusCode::BAD_REQUEST);
@@ -156,7 +156,7 @@ async fn test_get_all_workdays_month_with_wrong_parameters(ctx: &mut context::Te
 async fn test_get_all_workdays_period_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .get("/driver/workdays?from=2026-01-01&to=2026-01-31&page=1&limit=10")
+        .get("/workdays?from=2026-01-01&to=2026-01-31&page=1&limit=10")
         .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
@@ -171,7 +171,7 @@ async fn test_get_all_workdays_period_unauthorized(ctx: &mut context::TestContex
 async fn test_get_all_workdays_period_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .get("/driver/workdays?from=2026-01-01&to=2026-12-31&page=1&limit=10")
+        .get("/workdays?from=2026-01-01&to=2026-12-31&page=1&limit=10")
         .await;
 
     res.assert_status(StatusCode::OK);
@@ -220,7 +220,7 @@ async fn test_get_all_workdays_period_success(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_get_all_workdays_period_with_no_parameters(ctx: &mut context::TestContext) {
-    let res1 = ctx.authenticated_router.get("/driver/workdays").await;
+    let res1 = ctx.authenticated_router.get("/workdays").await;
 
     res1.assert_status(StatusCode::BAD_REQUEST);
 
@@ -229,7 +229,7 @@ async fn test_get_all_workdays_period_with_no_parameters(ctx: &mut context::Test
 
     let res2 = ctx
         .authenticated_router
-        .get("/driver/workdays?from=2026-01-01&to=2026-01-31")
+        .get("/workdays?from=2026-01-01&to=2026-01-31")
         .await;
 
     res2.assert_status(StatusCode::BAD_REQUEST);
@@ -239,7 +239,7 @@ async fn test_get_all_workdays_period_with_no_parameters(ctx: &mut context::Test
 
     let res3 = ctx
         .authenticated_router
-        .get("/driver/workdays?page=1&limit=10")
+        .get("/workdays?page=1&limit=10")
         .await;
 
     res3.assert_status(StatusCode::BAD_REQUEST);
@@ -254,7 +254,7 @@ async fn test_get_all_workdays_period_with_no_parameters(ctx: &mut context::Test
 async fn test_get_all_workdays_period_with_wrong_parameters(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
-        .get("/driver/workdays?from=2026-01-01&to=2026-01-31&page=0&limit=10")
+        .get("/workdays?from=2026-01-01&to=2026-01-31&page=0&limit=10")
         .await;
 
     res1.assert_status(StatusCode::BAD_REQUEST);
@@ -264,7 +264,7 @@ async fn test_get_all_workdays_period_with_wrong_parameters(ctx: &mut context::T
 
     let res2 = ctx
         .authenticated_router
-        .get("/driver/workdays?from=2026-01-01&to=2026-01-31&page=1&limit=0")
+        .get("/workdays?from=2026-01-01&to=2026-01-31&page=1&limit=0")
         .await;
 
     res2.assert_status(StatusCode::BAD_REQUEST);
@@ -274,7 +274,7 @@ async fn test_get_all_workdays_period_with_wrong_parameters(ctx: &mut context::T
 
     let res3 = ctx
         .authenticated_router
-        .get("/driver/workdays?from=2026-01-01&to=2026-01-31&page=1&limit=101")
+        .get("/workdays?from=2026-01-01&to=2026-01-31&page=1&limit=101")
         .await;
 
     res3.assert_status(StatusCode::BAD_REQUEST);
@@ -284,7 +284,7 @@ async fn test_get_all_workdays_period_with_wrong_parameters(ctx: &mut context::T
 
     let res4 = ctx
         .authenticated_router
-        .get("/driver/workdays?from=2026-01&to=2026-01-31&page=1&limit=10")
+        .get("/workdays?from=2026-01&to=2026-01-31&page=1&limit=10")
         .await;
 
     res4.assert_status(StatusCode::BAD_REQUEST);
@@ -299,7 +299,7 @@ async fn test_get_all_workdays_period_with_wrong_parameters(ctx: &mut context::T
 async fn test_create_workday_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": "08:00:00",
@@ -321,7 +321,7 @@ async fn test_create_workday_unauthorized(ctx: &mut context::TestContext) {
 async fn test_create_workday_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": "2027-03-01",
             "start_time": "08:00:00",
@@ -360,7 +360,7 @@ async fn test_create_workday_success(ctx: &mut context::TestContext) {
 async fn test_create_workday_duplicate(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": "08:00:00",
@@ -382,7 +382,7 @@ async fn test_create_workday_duplicate(ctx: &mut context::TestContext) {
 async fn test_create_workday_with_wrong_body(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": "2026-01",
             "start_time": "08:00:00",
@@ -399,7 +399,7 @@ async fn test_create_workday_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res2 = ctx
         .authenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": "08:61",
@@ -416,7 +416,7 @@ async fn test_create_workday_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res3 = ctx
         .authenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": null,
             "start_time": "08:00:00",
@@ -433,7 +433,7 @@ async fn test_create_workday_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res4 = ctx
         .authenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": null,
@@ -450,7 +450,7 @@ async fn test_create_workday_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res5 = ctx
         .authenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": "08:00:00",
@@ -472,7 +472,7 @@ async fn test_create_workday_with_wrong_body(ctx: &mut context::TestContext) {
 async fn test_create_workday_duplicate_garbage(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .post("/driver/workdays")
+        .post("/workdays")
         .json(&json!({
             "date": "2026-01-15",
             "start_time": "08:00:00",
@@ -494,7 +494,7 @@ async fn test_create_workday_duplicate_garbage(ctx: &mut context::TestContext) {
 async fn test_update_workday_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .put("/driver/workdays")
+        .put("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": "08:00:00",
@@ -516,7 +516,7 @@ async fn test_update_workday_unauthorized(ctx: &mut context::TestContext) {
 async fn test_update_workday_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .put("/driver/workdays")
+        .put("/workdays")
         .json(&json!({
             "date": "2027-01-01",
             "start_time": "08:00:00",
@@ -561,7 +561,7 @@ async fn test_update_workday_success(ctx: &mut context::TestContext) {
 async fn test_update_workday_not_found(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .put("/driver/workdays")
+        .put("/workdays")
         .json(&json!({
             "date": "2028-01-01",
             "start_time": "08:00:00",
@@ -583,7 +583,7 @@ async fn test_update_workday_not_found(ctx: &mut context::TestContext) {
 async fn test_update_workday_with_wrong_body(ctx: &mut context::TestContext) {
     let res1 = ctx
         .authenticated_router
-        .put("/driver/workdays")
+        .put("/workdays")
         .json(&json!({
             "date": "2026-01",
             "start_time": "08:00:00",
@@ -600,7 +600,7 @@ async fn test_update_workday_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res2 = ctx
         .authenticated_router
-        .put("/driver/workdays")
+        .put("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": "08:61",
@@ -617,7 +617,7 @@ async fn test_update_workday_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res3 = ctx
         .authenticated_router
-        .put("/driver/workdays")
+        .put("/workdays")
         .json(&json!({
             "date": null,
             "start_time": "08:00:00",
@@ -634,7 +634,7 @@ async fn test_update_workday_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res4 = ctx
         .authenticated_router
-        .put("/driver/workdays")
+        .put("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": null,
@@ -651,7 +651,7 @@ async fn test_update_workday_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res5 = ctx
         .authenticated_router
-        .put("/driver/workdays")
+        .put("/workdays")
         .json(&json!({
             "date": "2026-01-01",
             "start_time": "08:00:00",
@@ -673,7 +673,7 @@ async fn test_update_workday_with_wrong_body(ctx: &mut context::TestContext) {
 async fn test_delete_workday_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .delete("/driver/workdays/2027-01-02")
+        .delete("/workdays/2027-01-02")
         .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
@@ -688,7 +688,7 @@ async fn test_delete_workday_unauthorized(ctx: &mut context::TestContext) {
 async fn test_delete_workday_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .delete("/driver/workdays/2027-01-02")
+        .delete("/workdays/2027-01-02")
         .await;
 
     res.assert_status(StatusCode::OK);
@@ -709,7 +709,7 @@ async fn test_delete_workday_success(ctx: &mut context::TestContext) {
 async fn test_delete_workday_not_found(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .delete("/driver/workdays/2028-01-01")
+        .delete("/workdays/2028-01-01")
         .await;
 
     res.assert_status(StatusCode::NOT_FOUND);
@@ -724,7 +724,7 @@ async fn test_delete_workday_not_found(ctx: &mut context::TestContext) {
 async fn test_delete_workday_duplicate(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .delete("/driver/workdays/2026-01-15")
+        .delete("/workdays/2026-01-15")
         .await;
 
     res.assert_status(StatusCode::CONFLICT);
@@ -737,10 +737,7 @@ async fn test_delete_workday_duplicate(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_get_all_workday_garbage_unauthorized(ctx: &mut context::TestContext) {
-    let res = ctx
-        .unauthenticated_router
-        .get("/driver/workdays/garbage")
-        .await;
+    let res = ctx.unauthenticated_router.get("/workdays/garbage").await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
 
@@ -752,10 +749,7 @@ async fn test_get_all_workday_garbage_unauthorized(ctx: &mut context::TestContex
 #[tokio::test]
 #[serial]
 async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
-    let res = ctx
-        .authenticated_router
-        .get("/driver/workdays/garbage")
-        .await;
+    let res = ctx.authenticated_router.get("/workdays/garbage").await;
 
     res.assert_status(StatusCode::OK);
 
@@ -802,7 +796,7 @@ async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
 async fn test_delete_workday_garbage_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .delete("/driver/workdays/garbage/2026-01-15")
+        .delete("/workdays/garbage/2026-01-15")
         .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
@@ -817,7 +811,7 @@ async fn test_delete_workday_garbage_unauthorized(ctx: &mut context::TestContext
 async fn test_delete_workday_garbage_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .delete("/driver/workdays/garbage/2026-01-15")
+        .delete("/workdays/garbage/2026-01-15")
         .await;
 
     res.assert_status(StatusCode::OK);
@@ -846,7 +840,7 @@ async fn test_delete_workday_garbage_success(ctx: &mut context::TestContext) {
 async fn test_delete_workday_garbage_not_found(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .delete("/driver/workdays/garbage/2028-01-01")
+        .delete("/workdays/garbage/2028-01-01")
         .await;
 
     res.assert_status(StatusCode::NOT_FOUND);
@@ -861,7 +855,7 @@ async fn test_delete_workday_garbage_not_found(ctx: &mut context::TestContext) {
 async fn test_get_workday_documents_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .get("/driver/workdays/documents/year")
+        .get("/workdays/documents/year")
         .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
@@ -876,7 +870,7 @@ async fn test_get_workday_documents_unauthorized(ctx: &mut context::TestContext)
 async fn test_get_workday_documents_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .get("/driver/workdays/documents/year")
+        .get("/workdays/documents/year")
         .await;
 
     res.assert_status(StatusCode::OK);
@@ -908,7 +902,7 @@ async fn test_get_workday_documents_success(ctx: &mut context::TestContext) {
 async fn test_get_workday_documents_by_year_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .get("/driver/workdays/documents/2026")
+        .get("/workdays/documents/2026")
         .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
@@ -923,7 +917,7 @@ async fn test_get_workday_documents_by_year_unauthorized(ctx: &mut context::Test
 async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .get("/driver/workdays/documents/2026")
+        .get("/workdays/documents/2026")
         .await;
 
     res.assert_status(StatusCode::OK);
@@ -951,7 +945,7 @@ async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestConte
 async fn test_get_workday_documents_by_year_without_garbage(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
-        .get("/driver/workdays/documents/2024")
+        .get("/workdays/documents/2024")
         .await;
 
     res.assert_status(StatusCode::OK);

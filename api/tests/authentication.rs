@@ -20,7 +20,7 @@ pub mod helpers;
 async fn test_signup_success(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "john",
             "lastname": "DOE",
@@ -63,7 +63,7 @@ async fn test_signup_success(ctx: &mut context::TestContext) {
 async fn test_signup_with_banned_email(ctx: &mut context::TestContext) {
     let res1 = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "John",
             "lastname": "Doe",
@@ -81,7 +81,7 @@ async fn test_signup_with_banned_email(ctx: &mut context::TestContext) {
 
     let res2 = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "John",
             "lastname": "Doe",
@@ -104,7 +104,7 @@ async fn test_signup_with_banned_email(ctx: &mut context::TestContext) {
 async fn test_signup_with_wrong_body(ctx: &mut context::TestContext) {
     let res1 = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "",
             "lastname": "",
@@ -126,7 +126,7 @@ async fn test_signup_with_wrong_body(ctx: &mut context::TestContext) {
 
     let res2 = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "firstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstnamefirstname",
             "lastname": "lastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastnamelastname",
@@ -153,7 +153,7 @@ async fn test_signup_with_wrong_body(ctx: &mut context::TestContext) {
 async fn test_signup_already_exists(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "John",
             "lastname": "Doe",
@@ -210,7 +210,7 @@ async fn test_signup_with_entity_limitations(ctx: &mut context::TestContext) {
 
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "John",
             "lastname": "Doe",
@@ -283,7 +283,7 @@ async fn test_signup_with_entity_limitations_outbound(ctx: &mut context::TestCon
 
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "John",
             "lastname": "Doe",
@@ -351,7 +351,7 @@ async fn test_signup_with_entity_limitations_other_entity(ctx: &mut context::Tes
 
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/signup")
+        .post("/authentication/signup")
         .json(&json!({
             "firstname": "John",
             "lastname": "Doe",
@@ -380,7 +380,7 @@ async fn test_signup_with_entity_limitations_other_entity(ctx: &mut context::Tes
 async fn test_login_success(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/login")
+        .post("/authentication/login")
         .json(&json!({
             "email": "TeST.usEr@eXAmPlE.be",
             "password": "Baptiste01!"
@@ -398,7 +398,7 @@ async fn test_login_success(ctx: &mut context::TestContext) {
 async fn test_login_with_wrong_email(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/login")
+        .post("/authentication/login")
         .json(&json!({
             "email": "TeST.usEr@eXAmPlE.com",
             "password": "Baptiste01!"
@@ -416,7 +416,7 @@ async fn test_login_with_wrong_email(ctx: &mut context::TestContext) {
 async fn test_login_with_wrong_password(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/login")
+        .post("/authentication/login")
         .json(&json!({
             "email": "TeST.usEr@eXAmPlE.be",
             "password": "Baptiste01!wrong"
@@ -464,7 +464,7 @@ async fn test_login_with_suspension(ctx: &mut context::TestContext) {
 
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/login")
+        .post("/authentication/login")
         .json(&json!({
             "email": "test.user@example.be",
             "password": "Baptiste01!"
@@ -518,7 +518,7 @@ async fn test_login_with_suspension_outbound(ctx: &mut context::TestContext) {
 
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/login")
+        .post("/authentication/login")
         .json(&json!({
             "email": "test.user@example.be",
             "password": "Baptiste01!"
@@ -572,7 +572,7 @@ async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut contex
 
     let res = ctx
         .unauthenticated_router
-        .post("/driver/authentication/login")
+        .post("/authentication/login")
         .json(&json!({
             "email": "test.user@example.be",
             "password": "Baptiste01!"

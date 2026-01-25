@@ -13,7 +13,7 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/driver/authentication/login": {
+    "/authentication/login": {
       "post": {
         "tags": [
           "authentication"
@@ -64,7 +64,7 @@
         "security": []
       }
     },
-    "/driver/authentication/signup": {
+    "/authentication/signup": {
       "post": {
         "tags": [
           "authentication"
@@ -115,7 +115,7 @@
         "security": []
       }
     },
-    "/driver/rest-periods": {
+    "/rest-periods": {
       "get": {
         "tags": [
           "driver/rest-periods"
@@ -231,7 +231,7 @@
         ]
       }
     },
-    "/driver/workdays": {
+    "/workdays": {
       "get": {
         "tags": [
           "workdays"
@@ -415,7 +415,7 @@
         ]
       }
     },
-    "/driver/workdays/documents/year": {
+    "/workdays/documents/year": {
       "get": {
         "tags": [
           "workdays/documents"
@@ -455,7 +455,7 @@
         ]
       }
     },
-    "/driver/workdays/documents/{year}": {
+    "/workdays/documents/{year}": {
       "get": {
         "tags": [
           "workdays/documents"
@@ -507,7 +507,7 @@
         ]
       }
     },
-    "/driver/workdays/garbage": {
+    "/workdays/garbage": {
       "get": {
         "tags": [
           "workdays/garbage"
@@ -546,7 +546,7 @@
         ]
       }
     },
-    "/driver/workdays/garbage/{date}": {
+    "/workdays/garbage/{date}": {
       "delete": {
         "tags": [
           "workdays/garbage"
@@ -597,7 +597,7 @@
         ]
       }
     },
-    "/driver/workdays/month": {
+    "/workdays/month": {
       "get": {
         "tags": [
           "workdays"
@@ -656,7 +656,7 @@
         ]
       }
     },
-    "/driver/workdays/{date}": {
+    "/workdays/{date}": {
       "delete": {
         "tags": [
           "workdays"
