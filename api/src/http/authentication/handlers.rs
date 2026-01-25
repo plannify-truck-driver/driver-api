@@ -20,8 +20,6 @@ use crate::{
     },
 };
 
-use tracing::error;
-
 #[utoipa::path(
     post,
     path = "/authentication/signup",
