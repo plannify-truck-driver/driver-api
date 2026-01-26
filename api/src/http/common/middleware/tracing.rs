@@ -1,22 +1,18 @@
 use axum::{extract::Request, middleware::Next, response::Response};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
-use serde::{Deserialize, Serialize};
 use std::time::Instant;
 use tracing::info;
-use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct TokenClaims {
-    sub: Uuid,
-}
+use crate::http::common::middleware::auth::entities::AccessClaims;
 
-pub async fn tracing_middleware(request: Request, next: Next) -> Response {
+pub async fn tracing_middleware(request: Request, next: Next, jwt_secret: String) -> Response {
     let start = Instant::now();
     let method = request.method().clone();
     let uri = request.uri().clone();
     let path = uri.path().to_string();
 
-    let driver_id = extract_driver_id(&request).unwrap_or_else(|| "unknown".to_string());
+    let driver_id =
+        extract_driver_id(&request, jwt_secret).unwrap_or_else(|| "unknown".to_string());
 
     let response = next.run(request).await;
 
@@ -36,7 +32,7 @@ pub async fn tracing_middleware(request: Request, next: Next) -> Response {
     response
 }
 
-fn extract_driver_id(request: &Request) -> Option<String> {
+fn extract_driver_id(request: &Request, jwt_secret: String) -> Option<String> {
     let auth_header = request
         .headers()
         .get("Authorization")
@@ -46,9 +42,9 @@ fn extract_driver_id(request: &Request) -> Option<String> {
 
     // Try to decode the token without verification (just to get the claims)
     // In production, you might want to properly validate with your secret key
-    let token_data = decode::<TokenClaims>(
+    let token_data = decode::<AccessClaims>(
         token,
-        &DecodingKey::from_secret(b""),
+        &DecodingKey::from_secret(jwt_secret.as_bytes()),
         &Validation::new(Algorithm::HS256),
     )
     .ok()?;

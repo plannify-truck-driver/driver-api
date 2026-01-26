@@ -110,10 +110,15 @@ impl App {
             msg: format!("Failed to generate OpenAPI spec: {}", e),
         })?;
 
+        let jwt_secret = config.jwt.secret_key.clone();
+        let jwt_secret_for_app = jwt_secret.clone();
         let app_router = app_router
             .with_state(state.clone())
             .merge(Scalar::with_url("/doc", api))
-            .layer(from_fn(tracing_middleware));
+            .layer(from_fn(move |request, next| {
+                let secret = jwt_secret_for_app.clone();
+                tracing_middleware(request, next, secret)
+            }));
 
         // Write OpenAPI spec to file in development environment
         if matches!(config.environment, crate::config::Environment::Development) {
@@ -125,7 +130,10 @@ impl App {
         let health_router = axum::Router::new()
             .merge(health_routes())
             .with_state(state.clone())
-            .layer(from_fn(tracing_middleware));
+            .layer(from_fn(move |request, next| {
+                let secret = jwt_secret.clone();
+                tracing_middleware(request, next, secret)
+            }));
 
         Ok(Self {
             config,
