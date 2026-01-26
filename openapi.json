@@ -12,6 +12,14 @@
     },
     "version": "0.1.0"
   },
+  "servers": [
+    {
+      "url": "https://api-dev.plannify.be/driver/v1"
+    },
+    {
+      "url": "http://localhost:8080/driver/v1"
+    }
+  ],
   "paths": {
     "/authentication/login": {
       "post": {

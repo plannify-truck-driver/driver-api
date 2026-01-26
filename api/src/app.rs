@@ -31,11 +31,6 @@ use crate::{
         description = "API documentation for the Plannify Driver API",
         version = "0.1.0"
     ),
-    servers(
-        (url = "http://localhost:3000", description = "Local development server"),
-        (url = "https://api-dev.plannify.be/driver/v1", description = "Development server"),
-        (url = "https://api.plannify.be/driver/v1", description = "Production server")
-    ),
     modifiers(&SecurityAddon)
 )]
 struct ApiDoc;
@@ -106,6 +101,16 @@ impl App {
         // Override API documentation info
         let custom_info = ApiDoc::openapi();
         api.info = custom_info.info;
+        if config.environment.eq(&Environment::Production) {
+            api.servers = Some(vec![utoipa::openapi::Server::new(
+                "https://api.plannify.be/driver/v1",
+            )]);
+        } else {
+            api.servers = Some(vec![
+                utoipa::openapi::Server::new("https://api-dev.plannify.be/driver/v1"),
+                utoipa::openapi::Server::new("http://localhost:8080/driver/v1"),
+            ]);
+        }
 
         let openapi_json = api.to_pretty_json().map_err(|e| ApiError::StartupError {
             msg: format!("Failed to generate OpenAPI spec: {}", e),

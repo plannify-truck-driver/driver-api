@@ -150,7 +150,7 @@ pub struct CheckContentConfig {
     pub email_domain_denylist: Vec<String>,
 }
 
-#[derive(Clone, Debug, ValueEnum, Default)]
+#[derive(Clone, Debug, ValueEnum, Default, PartialEq)]
 pub enum Environment {
     #[default]
     Development,
