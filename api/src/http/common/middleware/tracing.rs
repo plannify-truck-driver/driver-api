@@ -1,21 +1,22 @@
 use axum::{extract::Request, middleware::Next, response::Response};
+use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
+use serde::{Deserialize, Serialize};
 use std::time::Instant;
 use tracing::info;
 use uuid::Uuid;
 
+#[derive(Debug, Serialize, Deserialize)]
+struct TokenClaims {
+    sub: Uuid,
+}
+
 pub async fn tracing_middleware(request: Request, next: Next) -> Response {
-    let trace_id = Uuid::new_v4();
     let start = Instant::now();
     let method = request.method().clone();
     let uri = request.uri().clone();
     let path = uri.path().to_string();
 
-    info!(
-        trace_id = %trace_id,
-        method = %method,
-        route = %path,
-        "API Request"
-    );
+    let driver_id = extract_driver_id(&request).unwrap_or_else(|| "unknown".to_string());
 
     let response = next.run(request).await;
 
@@ -24,13 +25,33 @@ pub async fn tracing_middleware(request: Request, next: Next) -> Response {
     let status_code = status.as_u16();
 
     info!(
-        trace_id = %trace_id,
         method = %method,
         route = %path,
+        driver_id = %driver_id,
         status = status_code,
         duration_ms = duration.as_millis(),
         "API Response"
     );
 
     response
+}
+
+fn extract_driver_id(request: &Request) -> Option<String> {
+    let auth_header = request
+        .headers()
+        .get("Authorization")
+        .and_then(|v| v.to_str().ok())?;
+
+    let token = auth_header.strip_prefix("Bearer ")?.trim();
+
+    // Try to decode the token without verification (just to get the claims)
+    // In production, you might want to properly validate with your secret key
+    let token_data = decode::<TokenClaims>(
+        token,
+        &DecodingKey::from_secret(b""),
+        &Validation::new(Algorithm::HS256),
+    )
+    .ok()?;
+
+    Some(token_data.claims.sub.to_string())
 }
