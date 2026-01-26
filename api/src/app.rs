@@ -111,13 +111,18 @@ impl App {
         })?;
 
         let jwt_secret = config.jwt.secret_key.clone();
-        let jwt_secret_for_app = jwt_secret.clone();
         let app_router = app_router
             .with_state(state.clone())
             .merge(Scalar::with_url("/doc", api))
             .layer(from_fn(move |request, next| {
-                let secret = jwt_secret_for_app.clone();
-                tracing_middleware(request, next, secret)
+                tracing_middleware(request, next, Some(jwt_secret.clone()))
+            }));
+
+        let health_router = axum::Router::new()
+            .merge(health_routes())
+            .with_state(state.clone())
+            .layer(from_fn(|request, next| {
+                tracing_middleware(request, next, None)
             }));
 
         // Write OpenAPI spec to file in development environment
@@ -126,14 +131,6 @@ impl App {
                 msg: format!("Failed to write OpenAPI spec to file: {}", e),
             })?;
         }
-
-        let health_router = axum::Router::new()
-            .merge(health_routes())
-            .with_state(state.clone())
-            .layer(from_fn(move |request, next| {
-                let secret = jwt_secret.clone();
-                tracing_middleware(request, next, secret)
-            }));
 
         Ok(Self {
             config,

@@ -5,7 +5,11 @@ use tracing::info;
 
 use crate::http::common::middleware::auth::entities::AccessClaims;
 
-pub async fn tracing_middleware(request: Request, next: Next, jwt_secret: String) -> Response {
+pub async fn tracing_middleware(
+    request: Request,
+    next: Next,
+    jwt_secret: Option<String>,
+) -> Response {
     let start = Instant::now();
     let method = request.method().clone();
     let uri = request.uri().clone();
@@ -32,7 +36,13 @@ pub async fn tracing_middleware(request: Request, next: Next, jwt_secret: String
     response
 }
 
-fn extract_driver_id(request: &Request, jwt_secret: String) -> Option<String> {
+fn extract_driver_id(request: &Request, jwt_secret: Option<String>) -> Option<String> {
+    if jwt_secret.is_none() {
+        return None;
+    }
+
+    let jwt_secret = jwt_secret.unwrap();
+
     let auth_header = request
         .headers()
         .get("Authorization")
