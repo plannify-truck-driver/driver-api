@@ -10,6 +10,7 @@ use crate::{
         },
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
+        update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::port::WorkdayRepository,
     },
     infrastructure::driver::repositories::error::DriverError,
@@ -22,7 +23,7 @@ use argon2::{
 use tracing::error;
 use uuid::Uuid;
 
-impl<H, D, DC, W, MS, MD> DriverService for Service<H, D, DC, W, MS, MD>
+impl<H, D, DC, W, MS, MD, UD, UC> DriverService for Service<H, D, DC, W, MS, MD, UD, UC>
 where
     H: HealthRepository,
     D: DriverRepository,
@@ -30,6 +31,8 @@ where
     W: WorkdayRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
+    UD: UpdateDatabaseRepository,
+    UC: UpdateCacheRepository,
 {
     fn to_title_case(name: String) -> String {
         name.trim()

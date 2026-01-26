@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT pk_update_id, version, description, entity_type as \"entity_type: _\", mandatory_completion_date, fk_created_employee_id, created_at\n            FROM updates\n            WHERE created_at > $1\n            AND entity_type = 'DRIVER'\n            ORDER BY created_at ASC\n            OFFSET $2\n            LIMIT $3\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pk_update_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "version",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "entity_type: _",
+        "type_info": {
+          "Custom": {
+            "name": "entity_type",
+            "kind": {
+              "Enum": [
+                "DRIVER",
+                "EMPLOYEE"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "mandatory_completion_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "fk_created_employee_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "d3cf11663b66c736b537bd15b60d8909cadf14c3101f42fb77af139afea44ece"
+}

@@ -37,11 +37,7 @@ pub async fn tracing_middleware(
 }
 
 fn extract_driver_id(request: &Request, jwt_secret: Option<String>) -> Option<String> {
-    if jwt_secret.is_none() {
-        return None;
-    }
-
-    let jwt_secret = jwt_secret.unwrap();
+    let jwt_secret = jwt_secret.as_ref()?;
 
     let auth_header = request
         .headers()

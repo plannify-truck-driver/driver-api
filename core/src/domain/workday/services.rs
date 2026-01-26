@@ -7,6 +7,7 @@ use crate::{
         driver::port::{DriverCacheRepository, DriverRepository},
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
+        update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::{
             entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow},
             port::{WorkdayRepository, WorkdayService},
@@ -15,7 +16,7 @@ use crate::{
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
-impl<H, D, DC, W, MS, MD> WorkdayService for Service<H, D, DC, W, MS, MD>
+impl<H, D, DC, W, MS, MD, UD, UC> WorkdayService for Service<H, D, DC, W, MS, MD, UD, UC>
 where
     H: HealthRepository,
     D: DriverRepository,
@@ -23,6 +24,8 @@ where
     W: WorkdayRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
+    UD: UpdateDatabaseRepository,
+    UC: UpdateCacheRepository,
 {
     async fn get_workdays_by_month(
         &self,

@@ -19,7 +19,7 @@ use crate::{
     http::{
         authentication::routes::authentication_routes,
         common::middleware::tracing::tracing_middleware, driver::routes::driver_routes,
-        workday::routes::workday_routes,
+        update::routes::update_routes, workday::routes::workday_routes,
     },
 };
 
@@ -99,6 +99,7 @@ impl App {
                 auth_validator.clone(),
             ))
             .merge(authentication_routes())
+            .merge(update_routes())
             .layer(cors)
             .split_for_parts();
 

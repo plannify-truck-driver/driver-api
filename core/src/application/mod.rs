@@ -14,6 +14,9 @@ use crate::{
         },
         employee::repositories::postgres::PostgresEmployeeRepository,
         mail::repositories::{postgres::PostgresMailRepository, smtp::SmtpMailRepository},
+        update::repositories::{
+            postgres::PostgresUpdateRepository, redis::RedisUpdateCacheRepository,
+        },
         workday::repositories::postgres::PostgresWorkdayRepository,
     },
 };
@@ -27,6 +30,8 @@ pub type DriverService = Service<
     PostgresWorkdayRepository,
     SmtpMailRepository,
     PostgresMailRepository,
+    PostgresUpdateRepository,
+    RedisUpdateCacheRepository,
 >;
 
 #[derive(Clone)]
@@ -39,6 +44,8 @@ pub struct DriverRepositories {
     pub workday_repository: PostgresWorkdayRepository,
     pub mail_smtp_repository: SmtpMailRepository,
     pub mail_database_repository: PostgresMailRepository,
+    pub update_database_repository: PostgresUpdateRepository,
+    pub update_cache_repository: RedisUpdateCacheRepository,
 }
 
 pub async fn create_repositories(
@@ -71,7 +78,7 @@ pub async fn create_repositories(
 
     let health_repository = PostgresHealthRepository::new(pg_pool.clone(), redis_manager.clone());
     let driver_repository = PostgresDriverRepository::new(pg_pool.clone());
-    let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager);
+    let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager.clone());
     let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
     let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
     let mail_smtp_repository = SmtpMailRepository::new(
@@ -82,6 +89,8 @@ pub async fn create_repositories(
         is_test_environment,
     );
     let mail_database_repository = PostgresMailRepository::new(pg_pool.clone());
+    let update_database_repository = PostgresUpdateRepository::new(pg_pool.clone());
+    let update_cache_repository = RedisUpdateCacheRepository::new(redis_manager);
 
     Ok(DriverRepositories {
         pool: pg_pool,
@@ -92,6 +101,8 @@ pub async fn create_repositories(
         workday_repository,
         mail_smtp_repository,
         mail_database_repository,
+        update_database_repository,
+        update_cache_repository,
     })
 }
 
@@ -104,6 +115,8 @@ impl From<DriverRepositories> for DriverService {
             val.workday_repository,
             val.mail_smtp_repository,
             val.mail_database_repository,
+            val.update_database_repository,
+            val.update_cache_repository,
         )
     }
 }

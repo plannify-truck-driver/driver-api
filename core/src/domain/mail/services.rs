@@ -13,12 +13,13 @@ use crate::{
             entities::MailStatus,
             port::{MailDatabaseRepository, MailService, MailSmtpRepository},
         },
+        update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::port::WorkdayRepository,
     },
     infrastructure::mail::repositories::error::MailError,
 };
 
-impl<H, D, DC, W, MS, MD> MailService for Service<H, D, DC, W, MS, MD>
+impl<H, D, DC, W, MS, MD, UD, UC> MailService for Service<H, D, DC, W, MS, MD, UD, UC>
 where
     H: HealthRepository,
     D: DriverRepository,
@@ -26,6 +27,8 @@ where
     W: WorkdayRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
+    UD: UpdateDatabaseRepository,
+    UC: UpdateCacheRepository,
 {
     async fn send_creation_email(&self, driver: DriverRow) -> Result<(), MailError> {
         let verify_value = self

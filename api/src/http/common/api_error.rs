@@ -7,7 +7,8 @@ use plannify_driver_api_core::{
     domain::common::CoreError,
     infrastructure::{
         driver::repositories::error::DriverError, health::repositories::error::HealthError,
-        mail::repositories::error::MailError, workday::repositories::error::WorkdayError,
+        mail::repositories::error::MailError, update::repositories::error::UpdateError,
+        workday::repositories::error::WorkdayError,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -262,6 +263,18 @@ impl From<MailError> for ApiError {
             },
             MailError::MailTypeNotFound => ApiError::NotFound {
                 error_code: "MAIL_TYPE_NOT_FOUND".to_string(),
+            },
+        }
+    }
+}
+
+impl From<UpdateError> for ApiError {
+    fn from(_error: UpdateError) -> Self {
+        match _error {
+            UpdateError::DatabaseError => ApiError::InternalServerError,
+            UpdateError::Internal => ApiError::InternalServerError,
+            UpdateError::NotFound => ApiError::NotFound {
+                error_code: "UPDATE_NOT_FOUND".to_string(),
             },
         }
     }
