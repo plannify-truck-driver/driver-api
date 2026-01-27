@@ -42,7 +42,7 @@ pub async fn get_all_rest_periods(
     path = "/rest-periods",
     tag = "driver/rest-periods",
     description = "Set driver rest periods",
-    request_body = Vec<DriverRestPeriod>,
+    request_body = CreateDriverRestPeriodsRequest,
     security(
         ("bearer_auth" = [])
     ),
