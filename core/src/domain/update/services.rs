@@ -1,24 +1,25 @@
 use crate::{
     Service,
     domain::{
-        driver::port::{DriverCacheRepository, DriverRepository},
+        driver::port::{DriverCacheRepository, DriverDatabaseRepository},
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
         update::{
             entities::UpdateCache,
             port::{UpdateCacheRepository, UpdateDatabaseRepository, UpdateService},
         },
-        workday::port::WorkdayRepository,
+        workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
     infrastructure::update::repositories::error::UpdateError,
 };
 
-impl<H, D, DC, W, MS, MD, UD, UC> UpdateService for Service<H, D, DC, W, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC> UpdateService for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
 where
     H: HealthRepository,
-    D: DriverRepository,
+    DD: DriverDatabaseRepository,
     DC: DriverCacheRepository,
-    W: WorkdayRepository,
+    WD: WorkdayDatabaseRepository,
+    WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,

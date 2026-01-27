@@ -6,7 +6,7 @@ use crate::{
         common::constants::EnumDriverMailType,
         driver::{
             entities::DriverRow,
-            port::{DriverCacheKeyType, DriverCacheRepository, DriverRepository},
+            port::{DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository},
         },
         health::port::HealthRepository,
         mail::{
@@ -14,17 +14,18 @@ use crate::{
             port::{MailDatabaseRepository, MailService, MailSmtpRepository},
         },
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
-        workday::port::WorkdayRepository,
+        workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
     infrastructure::mail::repositories::error::MailError,
 };
 
-impl<H, D, DC, W, MS, MD, UD, UC> MailService for Service<H, D, DC, W, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC> MailService for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
 where
     H: HealthRepository,
-    D: DriverRepository,
+    DD: DriverDatabaseRepository,
     DC: DriverCacheRepository,
-    W: WorkdayRepository,
+    WD: WorkdayDatabaseRepository,
+    WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,

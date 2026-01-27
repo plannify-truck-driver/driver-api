@@ -107,8 +107,11 @@ impl App {
             )]);
         } else {
             api.servers = Some(vec![
+                utoipa::openapi::Server::new(format!(
+                    "http://localhost:{}",
+                    config.common.api_port
+                )),
                 utoipa::openapi::Server::new("https://api-dev.plannify.be/driver/v1"),
-                utoipa::openapi::Server::new("http://localhost:8080/driver/v1"),
             ]);
         }
 

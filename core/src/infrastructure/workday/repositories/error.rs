@@ -5,6 +5,9 @@ pub enum WorkdayError {
     #[error("A database error occurred")]
     DatabaseError,
 
+    #[error("An internal error occurred")]
+    Internal,
+
     #[error("Workday already exists for the given date")]
     WorkdayAlreadyExists,
 

@@ -30,9 +30,10 @@ impl From<DriverRepositories> for AppState {
     fn from(repositories: DriverRepositories) -> Self {
         let service = DriverService::new(
             repositories.health_repository,
-            repositories.driver_repository,
+            repositories.driver_database_repository,
             repositories.driver_cache_repository,
-            repositories.workday_repository,
+            repositories.workday_database_repository,
+            repositories.workday_cache_repository,
             repositories.mail_smtp_repository,
             repositories.mail_database_repository,
             repositories.update_database_repository,

@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::{
     domain::workday::{
         entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow},
-        port::WorkdayRepository,
+        port::WorkdayDatabaseRepository,
     },
     infrastructure::workday::repositories::error::WorkdayError,
 };
@@ -22,7 +22,7 @@ impl PostgresWorkdayRepository {
     }
 }
 
-impl WorkdayRepository for PostgresWorkdayRepository {
+impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,

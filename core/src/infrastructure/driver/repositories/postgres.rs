@@ -7,7 +7,7 @@ use crate::{
             CreateDriverRequest, DriverLimitationRow, DriverRestPeriod, DriverRow,
             DriverSuspensionRow, EntityType,
         },
-        port::DriverRepository,
+        port::DriverDatabaseRepository,
     },
     infrastructure::driver::repositories::error::DriverError,
 };
@@ -24,7 +24,7 @@ impl PostgresDriverRepository {
     }
 }
 
-impl DriverRepository for PostgresDriverRepository {
+impl DriverDatabaseRepository for PostgresDriverRepository {
     async fn get_number_of_drivers(&self) -> Result<i64, DriverError> {
         sqlx::query!(
             r#"

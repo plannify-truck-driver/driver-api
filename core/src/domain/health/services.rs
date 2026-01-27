@@ -1,24 +1,25 @@
 use crate::{
     Service,
     domain::{
-        driver::port::{DriverCacheRepository, DriverRepository},
+        driver::port::{DriverCacheRepository, DriverDatabaseRepository},
         health::{
             entities::IsHealthy,
             port::{HealthRepository, HealthService},
         },
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
-        workday::port::WorkdayRepository,
+        workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
     infrastructure::health::repositories::error::HealthError,
 };
 
-impl<H, D, DC, W, MS, MD, UD, UC> HealthService for Service<H, D, DC, W, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC> HealthService for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
 where
     H: HealthRepository,
-    D: DriverRepository,
+    DD: DriverDatabaseRepository,
     DC: DriverCacheRepository,
-    W: WorkdayRepository,
+    WD: WorkdayDatabaseRepository,
+    WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
