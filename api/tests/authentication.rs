@@ -2,7 +2,7 @@ use api::http::common::api_error::ErrorBody;
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{CreateDriverResponse, DriverLimitationRow, DriverSuspensionRow, EntityType},
-        port::DriverRepository,
+        port::DriverDatabaseRepository,
     },
     employee::port::EmployeeRepository,
 };
@@ -37,7 +37,7 @@ async fn test_signup_success(ctx: &mut context::TestContext) {
 
     let driver = ctx
         .repositories
-        .driver_repository
+        .driver_database_repository
         .get_driver_by_email("john.doe@mail.com".to_string())
         .await
         .unwrap();
@@ -51,7 +51,7 @@ async fn test_signup_success(ctx: &mut context::TestContext) {
     );
 
     ctx.repositories
-        .driver_repository
+        .driver_database_repository
         .delete_driver(driver.pk_driver_id)
         .await
         .unwrap();
@@ -187,7 +187,7 @@ async fn test_signup_with_entity_limitations(ctx: &mut context::TestContext) {
     let employee = employee.unwrap();
 
     let limitation = DriverLimitationRow {
-        pk_maximum_entity_limit_id: 0,
+        pk_maximum_entity_limit_id: 100,
         entity_type: EntityType::DRIVER,
         maximum_limit: 0,
         fk_created_employee_id: employee.pk_employee_id,
@@ -197,7 +197,7 @@ async fn test_signup_with_entity_limitations(ctx: &mut context::TestContext) {
     };
     let result = ctx
         .repositories
-        .driver_repository
+        .driver_database_repository
         .create_driver_limitation(limitation)
         .await;
 
@@ -227,7 +227,7 @@ async fn test_signup_with_entity_limitations(ctx: &mut context::TestContext) {
     assert_eq!(body.error_code, "DRIVER_LIMIT_REACHED");
 
     ctx.repositories
-        .driver_repository
+        .driver_database_repository
         .delete_driver_limitation(result.pk_maximum_entity_limit_id)
         .await
         .unwrap();
@@ -270,13 +270,13 @@ async fn test_signup_with_entity_limitations_outbound(ctx: &mut context::TestCon
     };
     let result_before = ctx
         .repositories
-        .driver_repository
+        .driver_database_repository
         .create_driver_limitation(limitation_before)
         .await
         .unwrap();
     let result_after = ctx
         .repositories
-        .driver_repository
+        .driver_database_repository
         .create_driver_limitation(limitation_after)
         .await
         .unwrap();
@@ -300,12 +300,12 @@ async fn test_signup_with_entity_limitations_outbound(ctx: &mut context::TestCon
     assert_eq!(body.error_code, "DRIVER_ALREADY_EXISTS");
 
     ctx.repositories
-        .driver_repository
+        .driver_database_repository
         .delete_driver_limitation(result_before.pk_maximum_entity_limit_id)
         .await
         .unwrap();
     ctx.repositories
-        .driver_repository
+        .driver_database_repository
         .delete_driver_limitation(result_after.pk_maximum_entity_limit_id)
         .await
         .unwrap();
@@ -338,7 +338,7 @@ async fn test_signup_with_entity_limitations_other_entity(ctx: &mut context::Tes
     };
     let result = ctx
         .repositories
-        .driver_repository
+        .driver_database_repository
         .create_driver_limitation(limitation)
         .await;
 
@@ -368,7 +368,7 @@ async fn test_signup_with_entity_limitations_other_entity(ctx: &mut context::Tes
     assert_eq!(body.error_code, "DRIVER_ALREADY_EXISTS");
 
     ctx.repositories
-        .driver_repository
+        .driver_database_repository
         .delete_driver_limitation(result.pk_maximum_entity_limit_id)
         .await
         .unwrap();
@@ -446,7 +446,7 @@ async fn test_login_with_suspension(ctx: &mut context::TestContext) {
 
     let suspension = ctx
         .repositories
-        .driver_repository
+        .driver_database_repository
         .create_driver_suspension(DriverSuspensionRow {
             pk_driver_suspension_id: 0,
             fk_driver_id: ctx.authenticated_user_id,
@@ -476,7 +476,7 @@ async fn test_login_with_suspension(ctx: &mut context::TestContext) {
     assert_eq!(body.error_code, "DRIVER_SUSPENDED");
 
     ctx.repositories
-        .driver_repository
+        .driver_database_repository
         .delete_driver_suspension(suspension.pk_driver_suspension_id)
         .await
         .unwrap();
@@ -500,7 +500,7 @@ async fn test_login_with_suspension_outbound(ctx: &mut context::TestContext) {
 
     let suspension = ctx
         .repositories
-        .driver_repository
+        .driver_database_repository
         .create_driver_suspension(DriverSuspensionRow {
             pk_driver_suspension_id: 0,
             fk_driver_id: ctx.authenticated_user_id,
@@ -530,7 +530,7 @@ async fn test_login_with_suspension_outbound(ctx: &mut context::TestContext) {
     assert!(!body.access_token.is_empty());
 
     ctx.repositories
-        .driver_repository
+        .driver_database_repository
         .delete_driver_suspension(suspension.pk_driver_suspension_id)
         .await
         .unwrap();
@@ -554,7 +554,7 @@ async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut contex
 
     let suspension = ctx
         .repositories
-        .driver_repository
+        .driver_database_repository
         .create_driver_suspension(DriverSuspensionRow {
             pk_driver_suspension_id: 0,
             fk_driver_id: ctx.authenticated_user_id,
@@ -584,7 +584,7 @@ async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut contex
     assert!(!body.access_token.is_empty());
 
     ctx.repositories
-        .driver_repository
+        .driver_database_repository
         .delete_driver_suspension(suspension.pk_driver_suspension_id)
         .await
         .unwrap();

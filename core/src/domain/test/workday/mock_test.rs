@@ -8,7 +8,7 @@ mod tests {
             test::create_mock_service,
             workday::{
                 entities::{CreateWorkdayRequest, UpdateWorkdayRequest},
-                port::{WorkdayRepository, WorkdayService},
+                port::{WorkdayDatabaseRepository, WorkdayService},
             },
         },
         infrastructure::workday::repositories::error::WorkdayError,
@@ -20,7 +20,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -35,7 +35,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -50,7 +50,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -65,7 +65,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
                 CreateWorkdayRequest {
@@ -102,11 +102,6 @@ mod tests {
             2026,
             "Expected workday year to be 2026"
         );
-        assert_eq!(
-            workdays[0].fk_driver_id,
-            Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
-            "Expected workday driver ID to match"
-        );
 
         assert_eq!(
             workdays[1].date.month(),
@@ -118,11 +113,6 @@ mod tests {
             2026,
             "Expected workday year to be 2026"
         );
-        assert_eq!(
-            workdays[1].fk_driver_id,
-            Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
-            "Expected workday driver ID to match"
-        );
 
         Ok(())
     }
@@ -133,7 +123,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -148,7 +138,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -163,7 +153,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -178,7 +168,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -193,7 +183,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
                 CreateWorkdayRequest {
@@ -232,7 +222,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
                 CreateWorkdayRequest {
@@ -265,7 +255,7 @@ mod tests {
             .expect("create_workday returned an error");
 
         let workdays = service
-            .workday_repository
+            .workday_database_repository
             .get_workdays_by_period(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
@@ -287,7 +277,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -334,7 +324,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -367,7 +357,7 @@ mod tests {
             .expect("create_workday returned an error");
 
         let workdays = service
-            .workday_repository
+            .workday_database_repository
             .get_workdays_by_period(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
@@ -409,7 +399,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
                 CreateWorkdayRequest {
@@ -456,7 +446,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -481,7 +471,7 @@ mod tests {
             .expect("delete_workday returned an error");
 
         let workdays = service
-            .workday_repository
+            .workday_database_repository
             .get_workdays_by_period(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
@@ -504,7 +494,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
                 CreateWorkdayRequest {
@@ -543,7 +533,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -558,7 +548,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {
@@ -573,7 +563,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
                 CreateWorkdayRequest {
@@ -588,7 +578,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday_garbage(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
@@ -597,7 +587,7 @@ mod tests {
             )
             .await?;
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday_garbage(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174002").unwrap(),
                 chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
@@ -659,7 +649,7 @@ mod tests {
 
         // Add dataset
         service
-            .workday_repository
+            .workday_database_repository
             .create_workday(
                 Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
                 CreateWorkdayRequest {

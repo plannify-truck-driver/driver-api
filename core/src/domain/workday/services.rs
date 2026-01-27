@@ -1,27 +1,31 @@
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use uuid::Uuid;
 
 use crate::{
     Service,
     domain::{
-        driver::port::{DriverCacheRepository, DriverRepository},
+        driver::port::{DriverCacheRepository, DriverDatabaseRepository},
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::{
-            entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow},
-            port::{WorkdayRepository, WorkdayService},
+            entities::{
+                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayGarbageRow, WorkdayRow,
+            },
+            port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
         },
     },
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
-impl<H, D, DC, W, MS, MD, UD, UC> WorkdayService for Service<H, D, DC, W, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC> WorkdayService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
 where
     H: HealthRepository,
-    D: DriverRepository,
+    DD: DriverDatabaseRepository,
     DC: DriverCacheRepository,
-    W: WorkdayRepository,
+    WD: WorkdayDatabaseRepository,
+    WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
@@ -32,10 +36,26 @@ where
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> Result<Vec<WorkdayRow>, WorkdayError> {
-        self.workday_repository
+    ) -> Result<Vec<Workday>, WorkdayError> {
+        let cached_workdays = self
+            .workday_cache_repository
             .get_workdays_by_month(driver_id, month, year)
-            .await
+            .await?;
+        if let Some(cached_workdays) = cached_workdays {
+            return Ok(cached_workdays);
+        }
+
+        let workdays = self
+            .workday_database_repository
+            .get_workdays_by_month(driver_id, month, year)
+            .await?;
+        let workdays_transformed: Vec<Workday> = workdays.iter().map(|w| w.to_workday()).collect();
+
+        self.workday_cache_repository
+            .set_workdays_by_month(driver_id, month, year, workdays_transformed.clone())
+            .await?;
+
+        Ok(workdays_transformed)
     }
 
     async fn get_workdays_by_period(
@@ -46,7 +66,7 @@ where
         page: u32,
         limit: u32,
     ) -> Result<(Vec<WorkdayRow>, u32), WorkdayError> {
-        self.workday_repository
+        self.workday_database_repository
             .get_workdays_by_period(driver_id, start_date, end_date, page, limit)
             .await
     }
@@ -56,9 +76,16 @@ where
         driver_id: Uuid,
         create_workday_request: CreateWorkdayRequest,
     ) -> Result<WorkdayRow, WorkdayError> {
-        self.workday_repository
+        let workday = self
+            .workday_database_repository
             .create_workday(driver_id, create_workday_request)
-            .await
+            .await?;
+
+        self.workday_cache_repository
+            .delete_workdays_by_month(driver_id, workday.date.month() as i32, workday.date.year())
+            .await?;
+
+        Ok(workday)
     }
 
     async fn update_workday(
@@ -66,22 +93,35 @@ where
         driver_id: Uuid,
         update_workday_request: UpdateWorkdayRequest,
     ) -> Result<WorkdayRow, WorkdayError> {
-        self.workday_repository
+        let workday = self
+            .workday_database_repository
             .update_workday(driver_id, update_workday_request)
-            .await
+            .await?;
+
+        self.workday_cache_repository
+            .delete_workdays_by_month(driver_id, workday.date.month() as i32, workday.date.year())
+            .await?;
+
+        Ok(workday)
     }
 
     async fn delete_workday(&self, driver_id: Uuid, date: NaiveDate) -> Result<(), WorkdayError> {
-        self.workday_repository
+        self.workday_database_repository
             .delete_workday(driver_id, date)
-            .await
+            .await?;
+
+        self.workday_cache_repository
+            .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
+            .await?;
+
+        Ok(())
     }
 
     async fn get_workdays_garbage(
         &self,
         driver_id: Uuid,
     ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
-        self.workday_repository
+        self.workday_database_repository
             .get_workdays_garbage(driver_id)
             .await
     }
@@ -93,9 +133,16 @@ where
     ) -> Result<WorkdayGarbageRow, WorkdayError> {
         let scheduled_deletion_date =
             chrono::Utc::now().naive_utc().date() + chrono::Duration::days(30);
-        self.workday_repository
+        let workday_garbage = self
+            .workday_database_repository
             .create_workday_garbage(driver_id, date, scheduled_deletion_date, None)
-            .await
+            .await?;
+
+        self.workday_cache_repository
+            .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
+            .await?;
+
+        Ok(workday_garbage)
     }
 
     async fn delete_workday_garbage(
@@ -103,13 +150,19 @@ where
         driver_id: Uuid,
         date: NaiveDate,
     ) -> Result<(), WorkdayError> {
-        self.workday_repository
+        self.workday_database_repository
             .delete_workday_garbage(driver_id, date)
-            .await
+            .await?;
+
+        self.workday_cache_repository
+            .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
+            .await?;
+
+        Ok(())
     }
 
     async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
-        self.workday_repository
+        self.workday_database_repository
             .get_workday_documents(driver_id)
             .await
     }
@@ -119,7 +172,7 @@ where
         driver_id: Uuid,
         year: i32,
     ) -> Result<Vec<i32>, WorkdayError> {
-        self.workday_repository
+        self.workday_database_repository
             .get_workday_documents_by_year(driver_id, year)
             .await
     }

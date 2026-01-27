@@ -44,9 +44,8 @@ pub async fn get_all_workdays_month(
         .service
         .get_workdays_by_month(user_identity.user_id, query.month, query.year)
         .await?;
-    let response_workdays: Vec<Workday> = workdays.iter().map(|w| w.to_workday()).collect();
 
-    Ok(Response::ok(response_workdays))
+    Ok(Response::ok(workdays))
 }
 
 #[utoipa::path(

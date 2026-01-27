@@ -2,7 +2,7 @@ use api::http::common::{api_error::ErrorBody, response::PaginatedResponse};
 use axum::http::StatusCode;
 use plannify_driver_api_core::domain::workday::{
     entities::{UpdateWorkdayRequest, Workday, WorkdayGarbage},
-    port::WorkdayRepository,
+    port::WorkdayDatabaseRepository,
 };
 use serde_json::json;
 use serial_test::serial;
@@ -345,7 +345,7 @@ async fn test_create_workday_success(ctx: &mut context::TestContext) {
     verify_workday_content(body, expected_workday);
 
     ctx.repositories
-        .workday_repository
+        .workday_database_repository
         .delete_workday(
             ctx.authenticated_user_id,
             chrono::NaiveDate::from_ymd_opt(2027, 3, 1).unwrap(),
@@ -540,7 +540,7 @@ async fn test_update_workday_success(ctx: &mut context::TestContext) {
     verify_workday_content(body, expected_workday);
 
     ctx.repositories
-        .workday_repository
+        .workday_database_repository
         .update_workday(
             ctx.authenticated_user_id,
             UpdateWorkdayRequest {
@@ -694,7 +694,7 @@ async fn test_delete_workday_success(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::OK);
 
     ctx.repositories
-        .workday_repository
+        .workday_database_repository
         .delete_workday_garbage(
             ctx.authenticated_user_id,
             chrono::NaiveDate::from_ymd_opt(2027, 1, 2).unwrap(),
@@ -817,7 +817,7 @@ async fn test_delete_workday_garbage_success(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::OK);
 
     ctx.repositories
-        .workday_repository
+        .workday_database_repository
         .create_workday_garbage(
             ctx.authenticated_user_id,
             chrono::NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),

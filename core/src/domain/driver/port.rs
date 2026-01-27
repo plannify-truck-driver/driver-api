@@ -18,7 +18,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-pub trait DriverRepository: Send + Sync {
+pub trait DriverDatabaseRepository: Send + Sync {
     fn get_number_of_drivers(&self) -> impl Future<Output = Result<i64, DriverError>> + Send;
 
     fn get_driver_by_id(
@@ -133,13 +133,13 @@ pub trait DriverService: Send + Sync {
 }
 
 #[derive(Clone)]
-pub struct MockDriverRepository {
+pub struct MockDriverDatabaseRepository {
     drivers: Arc<Mutex<Vec<DriverRow>>>,
     limitations: Arc<Mutex<Option<DriverLimitationRow>>>,
     suspensions: Arc<Mutex<Vec<DriverSuspensionRow>>>,
 }
 
-impl MockDriverRepository {
+impl MockDriverDatabaseRepository {
     pub fn new() -> Self {
         Self {
             drivers: Arc::new(Mutex::new(Vec::new())),
@@ -149,13 +149,13 @@ impl MockDriverRepository {
     }
 }
 
-impl Default for MockDriverRepository {
+impl Default for MockDriverDatabaseRepository {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl DriverRepository for MockDriverRepository {
+impl DriverDatabaseRepository for MockDriverDatabaseRepository {
     async fn get_number_of_drivers(&self) -> Result<i64, DriverError> {
         let drivers = self.drivers.lock().unwrap();
         Ok(drivers.len() as i64)

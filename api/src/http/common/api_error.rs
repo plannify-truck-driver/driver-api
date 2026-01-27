@@ -235,6 +235,7 @@ impl From<WorkdayError> for ApiError {
     fn from(error: WorkdayError) -> Self {
         match error {
             WorkdayError::DatabaseError => ApiError::InternalServerError,
+            WorkdayError::Internal => ApiError::InternalServerError,
             WorkdayError::WorkdayAlreadyExists => ApiError::Conflict {
                 error_code: "WORKDAY_ALREADY_EXISTS".to_string(),
             },

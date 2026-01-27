@@ -17,7 +17,9 @@ use crate::{
         update::repositories::{
             postgres::PostgresUpdateRepository, redis::RedisUpdateCacheRepository,
         },
-        workday::repositories::postgres::PostgresWorkdayRepository,
+        workday::repositories::{
+            postgres::PostgresWorkdayRepository, redis::RedisWorkdayRepository,
+        },
     },
 };
 
@@ -28,6 +30,7 @@ pub type DriverService = Service<
     PostgresDriverRepository,
     RedisDriverCacheRepository,
     PostgresWorkdayRepository,
+    RedisWorkdayRepository,
     SmtpMailRepository,
     PostgresMailRepository,
     PostgresUpdateRepository,
@@ -38,10 +41,11 @@ pub type DriverService = Service<
 pub struct DriverRepositories {
     pub pool: PgPool,
     pub health_repository: PostgresHealthRepository,
-    pub driver_repository: PostgresDriverRepository,
+    pub driver_database_repository: PostgresDriverRepository,
     pub driver_cache_repository: RedisDriverCacheRepository,
     pub employee_repository: PostgresEmployeeRepository,
-    pub workday_repository: PostgresWorkdayRepository,
+    pub workday_database_repository: PostgresWorkdayRepository,
+    pub workday_cache_repository: RedisWorkdayRepository,
     pub mail_smtp_repository: SmtpMailRepository,
     pub mail_database_repository: PostgresMailRepository,
     pub update_database_repository: PostgresUpdateRepository,
@@ -77,10 +81,11 @@ pub async fn create_repositories(
     };
 
     let health_repository = PostgresHealthRepository::new(pg_pool.clone(), redis_manager.clone());
-    let driver_repository = PostgresDriverRepository::new(pg_pool.clone());
+    let driver_database_repository = PostgresDriverRepository::new(pg_pool.clone());
     let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager.clone());
     let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
-    let workday_repository = PostgresWorkdayRepository::new(pg_pool.clone());
+    let workday_database_repository = PostgresWorkdayRepository::new(pg_pool.clone());
+    let workday_cache_repository = RedisWorkdayRepository::new(redis_manager.clone());
     let mail_smtp_repository = SmtpMailRepository::new(
         mail_client,
         transport,
@@ -95,10 +100,11 @@ pub async fn create_repositories(
     Ok(DriverRepositories {
         pool: pg_pool,
         health_repository,
-        driver_repository,
+        driver_database_repository,
         driver_cache_repository,
         employee_repository,
-        workday_repository,
+        workday_database_repository,
+        workday_cache_repository,
         mail_smtp_repository,
         mail_database_repository,
         update_database_repository,
@@ -110,9 +116,10 @@ impl From<DriverRepositories> for DriverService {
     fn from(val: DriverRepositories) -> Self {
         Service::new(
             val.health_repository,
-            val.driver_repository,
+            val.driver_database_repository,
             val.driver_cache_repository,
-            val.workday_repository,
+            val.workday_database_repository,
+            val.workday_cache_repository,
             val.mail_smtp_repository,
             val.mail_database_repository,
             val.update_database_repository,

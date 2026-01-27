@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     future::Future,
     sync::{Arc, Mutex},
 };
@@ -8,12 +9,30 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::entities::{
-        CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow,
+        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayGarbageRow, WorkdayRow,
     },
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
-pub trait WorkdayRepository: Send + Sync {
+pub enum WorkdayCacheKeyType {
+    Monthly { month: i32, year: i32 },
+}
+
+impl WorkdayCacheKeyType {
+    pub fn as_str(&self) -> String {
+        match self {
+            WorkdayCacheKeyType::Monthly { month, year } => format!("monthly:{}-{}", month, year),
+        }
+    }
+
+    pub fn to_ttl(&self) -> u64 {
+        match self {
+            WorkdayCacheKeyType::Monthly { month: _, year: _ } => 3600 * 6,
+        }
+    }
+}
+
+pub trait WorkdayDatabaseRepository: Send + Sync {
     fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -79,13 +98,45 @@ pub trait WorkdayRepository: Send + Sync {
     ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
 }
 
+pub trait WorkdayCacheRepository: Send + Sync {
+    fn generate_redis_key(&self, driver_id: Uuid, suffix: &str) -> String;
+
+    fn get_key_by_type(&self, driver_id: Uuid, key_type: WorkdayCacheKeyType) -> (String, u64) {
+        (
+            self.generate_redis_key(driver_id, &key_type.as_str()),
+            key_type.to_ttl(),
+        )
+    }
+
+    fn get_workdays_by_month(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> impl Future<Output = Result<Option<Vec<Workday>>, WorkdayError>> + Send;
+
+    fn set_workdays_by_month(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+        workdays: Vec<Workday>,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn delete_workdays_by_month(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+}
 pub trait WorkdayService: Send + Sync {
     fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> impl Future<Output = Result<Vec<WorkdayRow>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Vec<Workday>, WorkdayError>> + Send;
 
     fn get_workdays_by_period(
         &self,
@@ -144,12 +195,12 @@ pub trait WorkdayService: Send + Sync {
 }
 
 #[derive(Clone)]
-pub struct MockWorkdayRepository {
+pub struct MockWorkdayDatabaseRepository {
     workdays: Arc<Mutex<Vec<WorkdayRow>>>,
     workdays_garbage: Arc<Mutex<Vec<WorkdayGarbageRow>>>,
 }
 
-impl MockWorkdayRepository {
+impl MockWorkdayDatabaseRepository {
     pub fn new() -> Self {
         Self {
             workdays: Arc::new(Mutex::new(Vec::new())),
@@ -158,13 +209,13 @@ impl MockWorkdayRepository {
     }
 }
 
-impl Default for MockWorkdayRepository {
+impl Default for MockWorkdayDatabaseRepository {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl WorkdayRepository for MockWorkdayRepository {
+impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -357,5 +408,77 @@ impl WorkdayRepository for MockWorkdayRepository {
             .map(|w| w.date.month() as i32) // Example logic
             .collect();
         Ok(documents)
+    }
+}
+
+type MockWorkdayCacheType = HashMap<String, Vec<Workday>>;
+
+#[derive(Clone)]
+pub struct MockWorkdayCacheRepository {
+    workdays: Arc<Mutex<MockWorkdayCacheType>>,
+}
+
+impl MockWorkdayCacheRepository {
+    pub fn new() -> Self {
+        Self {
+            workdays: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+}
+
+impl Default for MockWorkdayCacheRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl WorkdayCacheRepository for MockWorkdayCacheRepository {
+    fn generate_redis_key(&self, driver_id: Uuid, suffix: &str) -> String {
+        format!("driver:{}:workdays:{}", driver_id, suffix)
+    }
+
+    async fn get_workdays_by_month(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> Result<Option<Vec<Workday>>, WorkdayError> {
+        let workdays = self.workdays.lock().unwrap();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Monthly { month, year });
+        if !workdays.contains_key(&key) {
+            return Ok(None);
+        }
+        let result = workdays.get(&key).cloned().unwrap_or_default();
+        Ok(Some(result))
+    }
+
+    async fn set_workdays_by_month(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+        workdays: Vec<Workday>,
+    ) -> Result<(), WorkdayError> {
+        let mut stored_workdays = self.workdays.lock().unwrap();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Monthly { month, year });
+
+        stored_workdays.insert(key, workdays);
+        Ok(())
+    }
+
+    async fn delete_workdays_by_month(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> Result<(), WorkdayError> {
+        let mut stored_workdays = self.workdays.lock().unwrap();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Monthly { month, year });
+
+        stored_workdays.remove(&key);
+        Ok(())
     }
 }

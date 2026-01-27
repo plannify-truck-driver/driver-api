@@ -6,12 +6,12 @@ use crate::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverRestPeriod, DriverRow,
                 LoginDriverRequest,
             },
-            port::{DriverCacheRepository, DriverRepository, DriverService},
+            port::{DriverCacheRepository, DriverDatabaseRepository, DriverService},
         },
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
-        workday::port::WorkdayRepository,
+        workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
     infrastructure::driver::repositories::error::DriverError,
 };
@@ -23,12 +23,13 @@ use argon2::{
 use tracing::error;
 use uuid::Uuid;
 
-impl<H, D, DC, W, MS, MD, UD, UC> DriverService for Service<H, D, DC, W, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC> DriverService for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
 where
     H: HealthRepository,
-    D: DriverRepository,
+    DD: DriverDatabaseRepository,
     DC: DriverCacheRepository,
-    W: WorkdayRepository,
+    WD: WorkdayDatabaseRepository,
+    WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
@@ -60,11 +61,14 @@ where
         email_list_deny: Vec<String>,
     ) -> Result<DriverRow, DriverError> {
         let limitation = self
-            .driver_repository
+            .driver_database_repository
             .get_actual_driver_limitation()
             .await?;
         if let Some(limitation_info) = limitation {
-            let current_drivers = self.driver_repository.get_number_of_drivers().await?;
+            let current_drivers = self
+                .driver_database_repository
+                .get_number_of_drivers()
+                .await?;
             if current_drivers >= limitation_info.maximum_limit as i64 {
                 return Err(DriverError::DriverLimitReached {
                     start_at: limitation_info.start_at.to_rfc3339(),
@@ -104,7 +108,10 @@ where
             })?;
         create_request.password = password_hash.to_string();
 
-        let driver = self.driver_repository.create_driver(create_request).await?;
+        let driver = self
+            .driver_database_repository
+            .create_driver(create_request)
+            .await?;
 
         Ok(driver)
     }
@@ -115,7 +122,7 @@ where
     ) -> Result<DriverRow, DriverError> {
         let email = login_request.email.trim().to_lowercase();
         let driver = self
-            .driver_repository
+            .driver_database_repository
             .get_driver_by_email(email)
             .await
             .map_err(|_| DriverError::InvalidCredentials)?;
@@ -142,7 +149,7 @@ where
         }
 
         let suspension = self
-            .driver_repository
+            .driver_database_repository
             .get_current_driver_suspension(driver.pk_driver_id)
             .await?;
 
@@ -192,7 +199,9 @@ where
             })?;
 
         driver.refresh_token_hash = Some(token_hash.to_string());
-        self.driver_repository.update_driver(driver).await?;
+        self.driver_database_repository
+            .update_driver(driver)
+            .await?;
 
         Ok((access_token, refresh_token_cookie))
     }
@@ -202,7 +211,7 @@ where
         driver_id: Uuid,
     ) -> Result<Vec<DriverRestPeriod>, DriverError> {
         let rest_periods = self
-            .driver_repository
+            .driver_database_repository
             .get_driver_rest_periods(driver_id)
             .await?;
         Ok(rest_periods)
@@ -268,13 +277,13 @@ where
             }
         }
 
-        self.driver_repository
+        self.driver_database_repository
             .set_driver_rest_periods(driver_id, rest_periods_service)
             .await
     }
 
     async fn delete_driver_rest_periods(&self, driver_id: Uuid) -> Result<(), DriverError> {
-        self.driver_repository
+        self.driver_database_repository
             .delete_driver_rest_periods(driver_id)
             .await
     }
