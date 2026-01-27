@@ -113,11 +113,11 @@ jobs:
 
       - name: Pull and run migrations
         run: |
-          docker pull ghcr.io/plannify-truck-driver/common-services:0.1.9
+          docker pull ghcr.io/plannify-truck-driver/common-services:0.1.10
           docker run --rm \
             --network host \
             -e DATABASE_URL=${{ env.DATABASE_URL }} \
-            ghcr.io/plannify-truck-driver/common-services:0.1.9
+            ghcr.io/plannify-truck-driver/common-services:0.1.10
       - name: Seed test dataset
         run: |
           PGPASSWORD=plannify_password \
