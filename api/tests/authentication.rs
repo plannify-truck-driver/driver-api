@@ -187,7 +187,7 @@ async fn test_signup_with_entity_limitations(ctx: &mut context::TestContext) {
     let employee = employee.unwrap();
 
     let limitation = DriverLimitationRow {
-        pk_maximum_entity_limit_id: 0,
+        pk_maximum_entity_limit_id: 100,
         entity_type: EntityType::DRIVER,
         maximum_limit: 0,
         fk_created_employee_id: employee.pk_employee_id,

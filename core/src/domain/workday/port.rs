@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     future::Future,
     sync::{Arc, Mutex},
 };
@@ -410,15 +411,17 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
     }
 }
 
+type MockWorkdayCacheType = HashMap<String, Vec<Workday>>;
+
 #[derive(Clone)]
 pub struct MockWorkdayCacheRepository {
-    workdays: Arc<Mutex<Vec<Workday>>>,
+    workdays: Arc<Mutex<MockWorkdayCacheType>>,
 }
 
 impl MockWorkdayCacheRepository {
     pub fn new() -> Self {
         Self {
-            workdays: Arc::new(Mutex::new(Vec::new())),
+            workdays: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -436,55 +439,46 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
 
     async fn get_workdays_by_month(
         &self,
-        _driver_id: Uuid,
-        _month: i32,
-        _year: i32,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
     ) -> Result<Option<Vec<Workday>>, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
-        let result: Vec<Workday> = workdays
-            .iter()
-            // The cache stores Workday structs and there is no fk_driver_id field
-            // .filter(|w| {
-            //     w.fk_driver_id == driver_id
-            //         && w.date.month() as i32 == month
-            //         && w.date.year() == year
-            // })
-            .cloned()
-            .collect();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Monthly { month, year });
+        if !workdays.contains_key(&key) {
+            return Ok(None);
+        }
+        let result = workdays.get(&key).cloned().unwrap_or_default();
         Ok(Some(result))
     }
 
     async fn set_workdays_by_month(
         &self,
-        _driver_id: Uuid,
-        _month: i32,
-        _year: i32,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
         workdays: Vec<Workday>,
     ) -> Result<(), WorkdayError> {
         let mut stored_workdays = self.workdays.lock().unwrap();
-        // The cache stores Workday structs and there is no fk_driver_id field
-        // stored_workdays.retain(|w| {
-        //     !(w.fk_driver_id == driver_id
-        //         && w.date.month() as i32 == month
-        //         && w.date.year() == year)
-        // });
-        stored_workdays.extend(workdays);
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Monthly { month, year });
+
+        stored_workdays.insert(key, workdays);
         Ok(())
     }
 
     async fn delete_workdays_by_month(
         &self,
-        _driver_id: Uuid,
-        _month: i32,
-        _year: i32,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
     ) -> Result<(), WorkdayError> {
-        let _workdays = self.workdays.lock().unwrap();
-        // The cache stores Workday structs and there is no fk_driver_id field
-        // workdays.retain(|w| {
-        //     !(w.fk_driver_id == driver_id
-        //         && w.date.month() as i32 == month
-        //         && w.date.year() == year)
-        // });
+        let mut stored_workdays = self.workdays.lock().unwrap();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Monthly { month, year });
+
+        stored_workdays.remove(&key);
         Ok(())
     }
 }
