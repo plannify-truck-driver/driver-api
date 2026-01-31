@@ -1,0 +1,3 @@
+[submodule "common-services"]
+	path = common-services
+	url = git@github.com:plannify-truck-driver/common-services.git
