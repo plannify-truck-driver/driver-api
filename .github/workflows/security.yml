@@ -110,6 +110,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
+      - name: Install Protobuf Compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -124,6 +130,7 @@ jobs:
             --network host \
             -e DATABASE_URL=${{ env.DATABASE_URL }} \
             ghcr.io/plannify-truck-driver/common-services:0.1.11
+
       - name: Seed test dataset
         run: |
           PGPASSWORD=plannify_password \
