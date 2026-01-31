@@ -51,7 +51,7 @@ prost = "0.14"
 bytes = "1.9"
 
 [build-dependencies]
-tonic-prost-build = "0.14"
+tonic-prost-build = { version = "0.14", features = ["vendored"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
