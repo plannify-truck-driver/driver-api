@@ -29,8 +29,5 @@ validator = { version = "0.20", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.18.1", features = ["serde", "v4"] }
 
-# gRPC
-tonic = "0.14.3"
-
 # Documentation
 utoipa = { version = "5.4.0", features = ["uuid", "chrono"] }

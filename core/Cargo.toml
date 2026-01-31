@@ -45,13 +45,13 @@ lettre = { workspace = true }
 tera = "1.20.1"
 
 # gRPC
-tonic = { workspace = true }
+tonic = "0.14.3"
 tonic-prost = "0.14"
 prost = "0.14"
 bytes = "1.9"
 
 [build-dependencies]
-tonic-prost-build = { version = "0.14", features = ["vendored"] }
+tonic-prost-build = "0.14"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
