@@ -9,6 +9,7 @@ use crate::{
     PostgresHealthRepository, Service,
     domain::common::CoreError,
     infrastructure::{
+        document::repositories::grpc::GrpcDocumentRepository,
         driver::repositories::{
             postgres::PostgresDriverRepository, redis::RedisDriverCacheRepository,
         },
@@ -35,6 +36,7 @@ pub type DriverService = Service<
     PostgresMailRepository,
     PostgresUpdateRepository,
     RedisUpdateCacheRepository,
+    GrpcDocumentRepository,
 >;
 
 #[derive(Clone)]
@@ -50,6 +52,7 @@ pub struct DriverRepositories {
     pub mail_database_repository: PostgresMailRepository,
     pub update_database_repository: PostgresUpdateRepository,
     pub update_cache_repository: RedisUpdateCacheRepository,
+    pub document_external_repository: GrpcDocumentRepository,
 }
 
 pub async fn create_repositories(
@@ -59,6 +62,7 @@ pub async fn create_repositories(
     transport: SmtpTransport,
     frontend_url: String,
     is_test_environment: bool,
+    pdf_service_endpoint: &str,
 ) -> Result<DriverRepositories, CoreError> {
     let pg_pool = PgPoolOptions::new()
         .max_connections(5)
@@ -97,6 +101,10 @@ pub async fn create_repositories(
     let update_database_repository = PostgresUpdateRepository::new(pg_pool.clone());
     let update_cache_repository = RedisUpdateCacheRepository::new(redis_manager);
 
+    let document_external_repository = GrpcDocumentRepository::connect(pdf_service_endpoint)
+        .await
+        .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
+
     Ok(DriverRepositories {
         pool: pg_pool,
         health_repository,
@@ -109,6 +117,7 @@ pub async fn create_repositories(
         mail_database_repository,
         update_database_repository,
         update_cache_repository,
+        document_external_repository,
     })
 }
 
@@ -124,6 +133,7 @@ impl From<DriverRepositories> for DriverService {
             val.mail_database_repository,
             val.update_database_repository,
             val.update_cache_repository,
+            val.document_external_repository,
         )
     }
 }

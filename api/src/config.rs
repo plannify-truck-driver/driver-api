@@ -138,6 +138,14 @@ pub struct CommonConfig {
         name = "frontend_url"
     )]
     pub frontend_url: String,
+
+    #[arg(
+        long = "pdf-service-endpoint",
+        env = "PDF_SERVICE_ENDPOINT",
+        default_value = "http://localhost:50051",
+        name = "pdf_service_endpoint"
+    )]
+    pub pdf_service_endpoint: String,
 }
 
 #[derive(Clone, Parser, Debug, Default)]
