@@ -53,7 +53,10 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|_| DriverError::DriverNotFound)
+        .map_err(|e| {
+            error!("Driver not found by ID ({}): {:?}", driver_id, e);
+            DriverError::DriverNotFound
+        })
     }
 
     async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {
@@ -68,7 +71,10 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|_| DriverError::DriverNotFound)
+        .map_err(|e| {
+            error!("Driver not found by email ({}): {:?}", email, e);
+            DriverError::DriverNotFound
+        })
     }
 
     async fn create_driver(
@@ -91,7 +97,13 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|_| DriverError::DriverAlreadyExists)
+        .map_err(|e| {
+            error!(
+                "Failed to create driver with email: {}: {:?}",
+                create_request.email, e
+            );
+            DriverError::DriverAlreadyExists
+        })
     }
 
     async fn update_driver(&self, driver: DriverRow) -> Result<DriverRow, DriverError> {
@@ -136,7 +148,10 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|_| DriverError::DriverNotFound)
+        .map_err(|e| {
+            error!("Failed to update driver {}: {:?}", driver.pk_driver_id, e);
+            DriverError::DriverNotFound
+        })
     }
 
     async fn delete_driver(&self, driver_id: Uuid) -> Result<(), DriverError> {
@@ -164,6 +179,10 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })?;
 
         if result.rows_affected() == 0 {
+            error!(
+                "Driver not found when trying to delete with ID: {}",
+                driver_id
+            );
             Err(DriverError::DriverNotFound)
         } else {
             Ok(())
@@ -235,9 +254,19 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(|_| DriverError::DatabaseError)?;
+        .map_err(|e| {
+            error!(
+                "Failed to delete driver limitation {}: {:?}",
+                limitation_id, e
+            );
+            DriverError::DatabaseError
+        })?;
 
         if result.rows_affected() == 0 {
+            error!(
+                "Driver limitation not found when trying to delete with ID: {}",
+                limitation_id
+            );
             Err(DriverError::DriverLimitationNotFound)
         } else {
             Ok(())
@@ -310,9 +339,19 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(|_| DriverError::DatabaseError)?;
+        .map_err(|e| {
+            error!(
+                "Failed to delete driver suspension {}: {:?}",
+                suspension_id, e
+            );
+            DriverError::DatabaseError
+        })?;
 
         if result.rows_affected() == 0 {
+            error!(
+                "Driver suspension not found when trying to delete with ID: {}",
+                suspension_id
+            );
             Err(DriverError::DriverSuspensionNotFound)
         } else {
             Ok(())

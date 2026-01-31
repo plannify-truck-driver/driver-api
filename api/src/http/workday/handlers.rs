@@ -300,7 +300,7 @@ pub async fn get_workday_documents_by_year(
         ("bearer_auth" = [])
     ),
     responses(
-        (status = 200, description = "PDF file", content_type = "application/pdf"),
+        (status = 200, description = "PDF file", body = [u8]),
         (status = 404, description = "No document for this month", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
