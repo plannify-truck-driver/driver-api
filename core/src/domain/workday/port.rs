@@ -4,6 +4,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use bytes::Bytes;
+
 use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use uuid::Uuid;
 
@@ -27,7 +29,7 @@ impl WorkdayCacheKeyType {
 
     pub fn to_ttl(&self) -> u64 {
         match self {
-            WorkdayCacheKeyType::Monthly { month: _, year: _ } => 3600 * 6,
+            WorkdayCacheKeyType::Monthly { month: _, year: _ } => 3600 * 24,
         }
     }
 }
@@ -192,6 +194,13 @@ pub trait WorkdayService: Send + Sync {
         driver_id: Uuid,
         year: i32,
     ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
+
+    fn get_workday_document_by_month(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> impl Future<Output = Result<Option<Bytes>, WorkdayError>> + Send;
 }
 
 #[derive(Clone)]

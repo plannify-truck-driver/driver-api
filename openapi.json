@@ -14,10 +14,10 @@
   },
   "servers": [
     {
-      "url": "https://api-dev.plannify.be/driver/v1"
+      "url": "http://localhost:8080"
     },
     {
-      "url": "http://localhost:8080"
+      "url": "https://api-dev.plannify.be/driver/v1"
     }
   ],
   "paths": {
@@ -171,10 +171,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/DriverRestPeriod"
-                }
+                "$ref": "#/components/schemas/CreateDriverRestPeriodsRequest"
               }
             }
           },
@@ -576,6 +573,79 @@
         ]
       }
     },
+    "/workdays/documents/{year}/{month}": {
+      "get": {
+        "tags": [
+          "workdays/documents"
+        ],
+        "description": "Download monthly workday report as PDF",
+        "operationId": "get_workday_document_by_month",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "description": "Year",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "month",
+            "in": "path",
+            "description": "Month (1-12)",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF file",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No document for this month",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/workdays/garbage": {
       "get": {
         "tags": [
@@ -820,6 +890,39 @@
         "properties": {
           "access_token": {
             "type": "string"
+          }
+        }
+      },
+      "CreateDriverRestPeriodRequest": {
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "rest"
+        ],
+        "properties": {
+          "end": {
+            "type": "string"
+          },
+          "rest": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateDriverRestPeriodsRequest": {
+        "type": "object",
+        "required": [
+          "rest_periods"
+        ],
+        "properties": {
+          "rest_periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDriverRestPeriodRequest"
+            }
           }
         }
       },

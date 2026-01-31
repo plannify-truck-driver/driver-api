@@ -1,4 +1,5 @@
 use crate::domain::{
+    document::port::DocumentExternalRepository,
     driver::port::{DriverCacheRepository, DriverDatabaseRepository},
     health::port::HealthRepository,
     mail::port::{MailDatabaseRepository, MailSmtpRepository},
@@ -7,7 +8,7 @@ use crate::domain::{
 };
 
 #[derive(Clone)]
-pub struct Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
+pub struct Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -18,6 +19,7 @@ where
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
+    DE: DocumentExternalRepository,
 {
     pub(crate) health_repository: H,
     pub(crate) driver_database_repository: DD,
@@ -28,10 +30,11 @@ where
     pub(crate) mail_database_repository: MD,
     pub(crate) update_database_repository: UD,
     pub(crate) update_cache_repository: UC,
+    pub(crate) document_external_repository: DE,
 }
 
 #[allow(clippy::too_many_arguments)]
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC> Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -42,6 +45,7 @@ where
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
+    DE: DocumentExternalRepository,
 {
     pub fn new(
         health_repository: H,
@@ -53,6 +57,7 @@ where
         mail_database_repository: MD,
         update_database_repository: UD,
         update_cache_repository: UC,
+        document_external_repository: DE,
     ) -> Self {
         Self {
             health_repository,
@@ -64,6 +69,7 @@ where
             mail_database_repository,
             update_database_repository,
             update_cache_repository,
+            document_external_repository,
         }
     }
 }

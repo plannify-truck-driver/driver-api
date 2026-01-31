@@ -4,6 +4,7 @@ use uuid::Uuid;
 use crate::{
     Service,
     domain::{
+        document::port::DocumentExternalRepository,
         driver::port::{DriverCacheRepository, DriverDatabaseRepository},
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
@@ -18,8 +19,8 @@ use crate::{
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC> WorkdayService
-    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> WorkdayService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -30,6 +31,7 @@ where
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
+    DE: DocumentExternalRepository,
 {
     async fn get_workdays_by_month(
         &self,
@@ -175,5 +177,38 @@ where
         self.workday_database_repository
             .get_workday_documents_by_year(driver_id, year)
             .await
+    }
+
+    async fn get_workday_document_by_month(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> Result<Option<bytes::Bytes>, WorkdayError> {
+        let workdays = self
+            .workday_database_repository
+            .get_workdays_by_month(driver_id, month, year)
+            .await?
+            .into_iter()
+            .map(|w| w.to_workday())
+            .collect::<Vec<_>>();
+
+        let driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await
+            .map_err(|_| WorkdayError::Internal)?;
+
+        self.document_external_repository
+            .get_workday_documents_by_month(
+                driver.firstname,
+                driver.lastname,
+                driver.language,
+                month,
+                year,
+                workdays,
+            )
+            .await
+            .map_err(|_| WorkdayError::Internal)
     }
 }

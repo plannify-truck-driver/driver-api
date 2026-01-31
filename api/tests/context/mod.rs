@@ -44,6 +44,7 @@ impl AsyncTestContext for TestContext {
             health_port: 8081,
             origins: vec!["0.0.0.0/0".to_string()],
             frontend_url: "http://localhost:3000".to_string(),
+            pdf_service_endpoint: "http://localhost:4000".to_string(),
         };
 
         let check_content = CheckContentConfig {
@@ -67,6 +68,7 @@ impl AsyncTestContext for TestContext {
             config.smtp.to_transport(),
             config.common.frontend_url.clone(),
             true,
+            &config.common.pdf_service_endpoint,
         )
         .await
         .expect("Failed to create repositories");

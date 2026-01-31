@@ -38,6 +38,7 @@ impl From<DriverRepositories> for AppState {
             repositories.mail_database_repository,
             repositories.update_database_repository,
             repositories.update_cache_repository,
+            repositories.document_external_repository,
         );
         let config = Config::default();
         let jwt_config = &config.jwt;

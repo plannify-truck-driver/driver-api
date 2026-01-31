@@ -1,6 +1,7 @@
 use crate::{
     Service,
     domain::{
+        document::port::DocumentExternalRepository,
         driver::port::{DriverCacheRepository, DriverDatabaseRepository},
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
@@ -13,7 +14,8 @@ use crate::{
     infrastructure::update::repositories::error::UpdateError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC> UpdateService for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> UpdateService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -24,6 +26,7 @@ where
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
+    DE: DocumentExternalRepository,
 {
     async fn get_updates_by_version(
         &self,

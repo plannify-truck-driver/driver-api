@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package plannify;
+
+enum Language {
+  ENGLISH = 0;
+  FRENCH = 1;
+}
+
+message Workday {
+  string date = 1;
+  string start_time = 2;
+  optional string end_time = 3;
+  string rest_time = 4;
+  bool overnight = 5;
+}
+
+message GenerateMonthlyWorkdayReportRequest {
+  string driver_firstname = 1;
+  string driver_lastname = 2;
+  Language language = 3;
+  uint32 month = 4;
+  uint32 year = 5;
+  repeated Workday workdays = 6;
+}
+
+message GenerateMonthlyWorkdayReportResponse {
+  bytes pdf_content = 1;
+}
+
+// Service for generating monthly workday reports for drivers
+service WorkdayService {
+  // Generates a monthly workday report PDF for a driver based on their workday records
+  rpc GenerateMonthlyWorkdayReport (GenerateMonthlyWorkdayReportRequest) returns (GenerateMonthlyWorkdayReportResponse) {}
+}
