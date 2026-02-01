@@ -5,11 +5,11 @@ use crate::http::{
     workday::handlers::{
         __path_create_workday, __path_delete_workday, __path_delete_workday_garbage,
         __path_get_all_workday_garbage, __path_get_all_workdays_month,
-        __path_get_all_workdays_period, __path_get_workday_documents,
-        __path_get_workday_documents_by_year, __path_update_workday, create_workday,
-        delete_workday, delete_workday_garbage, get_all_workday_garbage, get_all_workdays_month,
-        get_all_workdays_period, get_workday_documents, get_workday_documents_by_year,
-        update_workday,
+        __path_get_all_workdays_period, __path_get_workday_document_by_month,
+        __path_get_workday_documents, __path_get_workday_documents_by_year, __path_update_workday,
+        create_workday, delete_workday, delete_workday_garbage, get_all_workday_garbage,
+        get_all_workdays_month, get_all_workdays_period, get_workday_document_by_month,
+        get_workday_documents, get_workday_documents_by_year, update_workday,
     },
 };
 
@@ -24,4 +24,5 @@ pub fn workday_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(delete_workday_garbage))
         .routes(routes!(get_workday_documents))
         .routes(routes!(get_workday_documents_by_year))
+        .routes(routes!(get_workday_document_by_month))
 }

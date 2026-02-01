@@ -23,7 +23,8 @@ use argon2::{
 use tracing::error;
 use uuid::Uuid;
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC> DriverService for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> DriverService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -34,6 +35,7 @@ where
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
+    DE: crate::domain::document::port::DocumentExternalRepository,
 {
     fn to_title_case(name: String) -> String {
         name.trim()

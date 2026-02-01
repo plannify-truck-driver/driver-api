@@ -4,6 +4,7 @@ use crate::{
     Service,
     domain::{
         common::constants::EnumDriverMailType,
+        document::port::DocumentExternalRepository,
         driver::{
             entities::DriverRow,
             port::{DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository},
@@ -19,7 +20,8 @@ use crate::{
     infrastructure::mail::repositories::error::MailError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC> MailService for Service<H, DD, DC, WD, WC, MS, MD, UD, UC>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> MailService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -30,6 +32,7 @@ where
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
+    DE: DocumentExternalRepository,
 {
     async fn send_creation_email(&self, driver: DriverRow) -> Result<(), MailError> {
         let verify_value = self

@@ -1,6 +1,9 @@
 use axum::{
     Extension,
+    body::Body,
     extract::{Path, State},
+    http::{HeaderValue, StatusCode, header},
+    response::IntoResponse,
 };
 use chrono::NaiveDate;
 use plannify_driver_api_core::domain::workday::{
@@ -282,4 +285,58 @@ pub async fn get_workday_documents_by_year(
         .await?;
 
     Ok(Response::ok(documents))
+}
+
+#[utoipa::path(
+    get,
+    path = "/workdays/documents/{year}/{month}",
+    tag = "workdays/documents",
+    description = "Download monthly workday report as PDF",
+    params(
+        ("year" = i32, Path, description = "Year"),
+        ("month" = i32, Path, description = "Month (1-12)")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "PDF file", body = [u8]),
+        (status = 404, description = "No document for this month", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_workday_document_by_month(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+    Path((year, month)): Path<(i32, i32)>,
+) -> Result<impl IntoResponse, ApiError> {
+    if !(1..=12).contains(&month) {
+        return Err(ApiError::BadRequest {
+            error_code: "INVALID_MONTH".to_string(),
+            content: None,
+        });
+    }
+
+    let pdf = state
+        .service
+        .get_workday_document_by_month(user_identity.user_id, month, year)
+        .await?;
+
+    let pdf = pdf.ok_or_else(|| ApiError::NotFound {
+        error_code: "DOCUMENT_NOT_FOUND".to_string(),
+    })?;
+
+    let filename = format!("workdays-{}-{:02}.pdf", year, month);
+    let mut headers = axum::http::HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/pdf"),
+    );
+    headers.insert(
+        header::CONTENT_DISPOSITION,
+        HeaderValue::try_from(format!("attachment; filename=\"{}\"", filename))
+            .unwrap_or(HeaderValue::from_static("attachment")),
+    );
+
+    Ok((StatusCode::OK, (headers, Body::from(pdf.to_vec()))))
 }

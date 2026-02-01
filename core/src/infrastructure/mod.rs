@@ -1,3 +1,4 @@
+pub mod document;
 pub mod driver;
 pub mod employee;
 pub mod health;
