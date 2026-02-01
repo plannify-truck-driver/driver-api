@@ -185,13 +185,7 @@ where
         month: i32,
         year: i32,
     ) -> Result<Option<bytes::Bytes>, WorkdayError> {
-        let workdays = self
-            .workday_database_repository
-            .get_workdays_by_month(driver_id, month, year)
-            .await?
-            .into_iter()
-            .map(|w| w.to_workday())
-            .collect::<Vec<_>>();
+        let workdays = self.get_workdays_by_month(driver_id, month, year).await?;
 
         let driver = self
             .driver_database_repository
