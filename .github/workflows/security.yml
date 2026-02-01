@@ -98,6 +98,15 @@ jobs:
         ports:
           - 6379:6379
 
+      pdf-service:
+        image: ghcr.io/plannify-truck-driver/pdf-service:0.1.4
+        env:
+          HOST: "0.0.0.0"
+          PORT: 4000
+          WEBSITE_URL: "http://localhost:3000"
+        ports:
+          - 4000:4000
+
     env:
       DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
       SQLX_OFFLINE: true
