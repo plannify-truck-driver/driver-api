@@ -6,6 +6,7 @@ RUN \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     pkg-config \
+    protobuf-compiler \
     libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
