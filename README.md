@@ -10,6 +10,10 @@ cp .env.template .env
 
 Up the docker compose from [Common services](https://github.com/plannify-truck-driver/common-services)
 
+```bash
+docker compose -f ./common-services/docker-compose.yaml up -d
+```
+
 ## Usage
 
 ### Running the API

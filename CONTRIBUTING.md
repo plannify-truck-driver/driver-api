@@ -1,6 +1,6 @@
-# Contributing to User Service
+# Contributing to the Driver API
 
-Thank you for your interest in contributing to User Service! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to the Driver API! This document provides guidelines and instructions for contributing.
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ Before contributing, make sure you have the following installed:
 2. **Clone your fork locally**
 
    ```bash
-   git clone git@github.com:plannify-truck-driver/driver-api.git
+   git clone git@github.com:<your-username>/driver-api.git
    cd driver-api
    ```
 
@@ -37,13 +37,12 @@ Before contributing, make sure you have the following installed:
 5. **Create a branch for your changes**
 
    ```bash
-   git checkout -b feature/your-feature-name
+   git checkout -b feat/your-feature-name
    # or
    git checkout -b fix/your-bug-fix
    ```
 
 6. **Make your changes**
-
    - Write clear, readable code
    - Follow the existing code style
    - Add tests for new functionality
@@ -67,11 +66,10 @@ Before contributing, make sure you have the following installed:
 9. **Push your branch**
 
    ```bash
-   git push origin feature/your-feature-name
+   git push origin feat/your-feature-name
    ```
 
 10. **Create a Pull Request**
-
     - Open a Pull Request against `main`
     - **Create the PR as a Draft** until all checks pass
     - Fill out the PR template completely
