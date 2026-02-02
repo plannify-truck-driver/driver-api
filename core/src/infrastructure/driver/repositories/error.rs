@@ -39,6 +39,12 @@ pub enum DriverError {
         end_at: Option<String>,
     },
 
+    #[error("Account already verified")]
+    InvalidVerificationKey,
+
+    #[error("Account already verified")]
+    AccountAlreadyVerified,
+
     #[error("Invalid rest period")]
     InvalidRestPeriod { details: String },
 

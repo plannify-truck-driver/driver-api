@@ -84,7 +84,12 @@ impl MailSmtpRepository for SmtpMailRepository {
         context.insert("full_name", driver.firstname.as_str());
         context.insert(
             "token_url",
-            &format!("{}/{}", self.frontend_url, verify_value.as_str()),
+            &format!(
+                "{}/token/verify-account?token={}&id={}",
+                self.frontend_url,
+                verify_value.as_str(),
+                driver.pk_driver_id
+            ),
         );
         context.insert("duration", &(verify_ttl / 60).to_string());
 

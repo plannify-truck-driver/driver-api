@@ -123,6 +123,57 @@
         "security": []
       }
     },
+    "/authentication/token/verify-account": {
+      "post": {
+        "tags": [
+          "authentication"
+        ],
+        "operationId": "verify_driver_account",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyDriverAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Driver account verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDriverResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/rest-periods": {
       "get": {
         "tags": [
@@ -1165,6 +1216,22 @@
             "type": "string"
           },
           "start_time": {
+            "type": "string"
+          }
+        }
+      },
+      "VerifyDriverAccountRequest": {
+        "type": "object",
+        "required": [
+          "driver_id",
+          "token"
+        ],
+        "properties": {
+          "driver_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
             "type": "string"
           }
         }

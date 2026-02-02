@@ -6,7 +6,9 @@ use crate::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverRestPeriod, DriverRow,
                 LoginDriverRequest,
             },
-            port::{DriverCacheRepository, DriverDatabaseRepository, DriverService},
+            port::{
+                DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository, DriverService,
+            },
         },
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
@@ -164,6 +166,39 @@ where
                 end_at: suspension_info.end_at.map(|dt| dt.to_rfc3339()),
             });
         }
+
+        Ok(driver)
+    }
+
+    async fn verify_driver_account(
+        &self,
+        driver_id: Uuid,
+        token: String,
+    ) -> Result<DriverRow, DriverError> {
+        let mut driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await
+            .map_err(|_| DriverError::InvalidVerificationKey)?;
+
+        let (redis_key, _) = self
+            .driver_cache_repository
+            .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::VerifyEmail);
+        let verify_value = self.driver_cache_repository.get_redis(redis_key).await?;
+
+        if verify_value != Some(token) {
+            return Err(DriverError::InvalidVerificationKey);
+        }
+
+        if driver.verified_at.is_some() {
+            return Err(DriverError::AccountAlreadyVerified);
+        }
+
+        driver.verified_at = Some(chrono::Utc::now());
+
+        self.driver_database_repository
+            .update_driver(driver.clone())
+            .await?;
 
         Ok(driver)
     }

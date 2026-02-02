@@ -1,7 +1,10 @@
 use axum::{extract::State, http::header::SET_COOKIE, response::AppendHeaders};
 use plannify_driver_api_core::domain::{
     driver::{
-        entities::{CreateDriverRequest, CreateDriverResponse, DriverRow, LoginDriverRequest},
+        entities::{
+            CreateDriverRequest, CreateDriverResponse, DriverRow, LoginDriverRequest,
+            VerifyDriverAccountRequest,
+        },
         port::DriverService,
     },
     mail::port::MailService,
@@ -96,6 +99,57 @@ pub async fn login(
     ApiError,
 > {
     let driver = state.service.login_driver(request).await?;
+
+    let auth_validator = &state.auth_validator;
+    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
+        auth_validator.create_tokens(driver).map_err(|e| {
+            error!(
+                "Failed to create tokens for driver {}: {:?}",
+                driver.pk_driver_id, e
+            );
+            DriverError::Internal
+        })
+    };
+
+    let (access_token, refresh_token_cookie) = state
+        .service
+        .generate_tokens(driver, create_tokens_fn, state.config.jwt.refresh_ttl)
+        .await?;
+
+    let headers = [(SET_COOKIE, refresh_token_cookie)];
+
+    Ok((
+        AppendHeaders(headers),
+        Response::ok(CreateDriverResponse { access_token }),
+    ))
+}
+
+#[utoipa::path(
+    post,
+    path = "/authentication/token/verify-account",
+    tag = "authentication",
+    security(),
+    request_body = VerifyDriverAccountRequest,
+    responses(
+        (status = 200, description = "Driver account verified successfully", body = CreateDriverResponse),
+        (status = 401, description = "Invalid credentials", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn verify_driver_account(
+    State(state): State<AppState>,
+    ValidatedJson(request): ValidatedJson<VerifyDriverAccountRequest>,
+) -> Result<
+    (
+        AppendHeaders<[(axum::http::HeaderName, String); 1]>,
+        Response<CreateDriverResponse>,
+    ),
+    ApiError,
+> {
+    let driver = state
+        .service
+        .verify_driver_account(request.driver_id, request.token)
+        .await?;
 
     let auth_validator = &state.auth_validator;
     let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
