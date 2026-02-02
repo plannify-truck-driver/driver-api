@@ -1,4 +1,9 @@
+use std::time::Duration;
+
 use axum::{
+    BoxError,
+    error_handling::HandleErrorLayer,
+    http::StatusCode,
     http::{
         HeaderValue, Method,
         header::{AUTHORIZATION, CONTENT_TYPE},
@@ -6,6 +11,7 @@ use axum::{
     middleware::{from_extractor_with_state, from_fn},
 };
 use plannify_driver_api_core::{application::create_repositories, domain::common::CoreError};
+use tower::{ServiceBuilder, buffer::BufferLayer, limit::RateLimitLayer};
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use utoipa::OpenApi;
@@ -97,6 +103,20 @@ impl App {
             .merge(authentication_routes())
             .merge(update_routes())
             .layer(cors)
+            .layer(
+                ServiceBuilder::new()
+                    .layer(HandleErrorLayer::new(|err: BoxError| async move {
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            format!("Unhandled error: {}", err),
+                        )
+                    }))
+                    .layer(BufferLayer::new(1024))
+                    .layer(RateLimitLayer::new(
+                        config.common.rate_limit_requests,
+                        Duration::from_secs(1),
+                    )),
+            )
             .split_for_parts();
 
         // Override API documentation info
