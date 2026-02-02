@@ -218,6 +218,14 @@ impl From<DriverError> for ApiError {
                     content: Some(Value::Mapping(content)),
                 }
             }
+            DriverError::InvalidVerificationKey => ApiError::BadRequest {
+                error_code: "INVALID_VERIFICATION_KEY".to_string(),
+                content: None,
+            },
+            DriverError::AccountAlreadyVerified => ApiError::BadRequest {
+                error_code: "ACCOUNT_ALREADY_VERIFIED".to_string(),
+                content: None,
+            },
             DriverError::InvalidRestPeriod { details } => {
                 let mut content = Mapping::new();
                 content.insert(Value::String("details".to_string()), Value::String(details));

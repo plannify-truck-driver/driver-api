@@ -224,3 +224,11 @@ pub struct CreateDriverRestPeriodsRequest {
     ))]
     pub rest_periods: Vec<CreateDriverRestPeriodRequest>,
 }
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct VerifyDriverAccountRequest {
+    pub driver_id: Uuid,
+
+    #[validate(length(min = 1, message = "verified token must be provided"))]
+    pub token: String,
+}

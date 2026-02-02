@@ -106,6 +106,12 @@ pub trait DriverService: Send + Sync {
         login_request: LoginDriverRequest,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 
+    fn verify_driver_account(
+        &self,
+        driver_id: Uuid,
+        token: String,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
     fn generate_tokens<F>(
         &self,
         driver: DriverRow,
@@ -363,8 +369,8 @@ impl DriverCacheKeyType {
 
     pub fn to_ttl(&self) -> u64 {
         match self {
-            DriverCacheKeyType::VerifyEmail => 3600,
-            DriverCacheKeyType::ResetPassword => 3600,
+            DriverCacheKeyType::VerifyEmail => 15 * 60,
+            DriverCacheKeyType::ResetPassword => 15 * 60,
         }
     }
 }
