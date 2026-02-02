@@ -132,6 +132,14 @@ pub struct CommonConfig {
     pub origins: Vec<String>,
 
     #[arg(
+        long = "rate-limit-requests-per-second",
+        env = "RATE_LIMIT_REQUESTS_PER_SECOND",
+        default_value = "100",
+        name = "rate_limit_requests_per_second"
+    )]
+    pub rate_limit_requests: u64,
+
+    #[arg(
         long = "frontend-url",
         env = "FRONTEND_URL",
         default_value = "https://app.plannify.be",

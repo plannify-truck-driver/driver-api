@@ -43,6 +43,7 @@ impl AsyncTestContext for TestContext {
             api_port: 8080,
             health_port: 8081,
             origins: vec!["0.0.0.0/0".to_string()],
+            rate_limit_requests: 100,
             frontend_url: "http://localhost:3000".to_string(),
             pdf_service_endpoint: "http://localhost:4000".to_string(),
         };
