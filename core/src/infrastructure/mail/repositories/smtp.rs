@@ -85,7 +85,7 @@ impl MailSmtpRepository for SmtpMailRepository {
         context.insert(
             "token_url",
             &format!(
-                "{}/token/verify-account?token={}&id={}",
+                "{}/authentication/token/verify-account?token={}&id={}",
                 self.frontend_url,
                 verify_value.as_str(),
                 driver.pk_driver_id
