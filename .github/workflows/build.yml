@@ -56,7 +56,6 @@ jobs:
         with:
           context: .
           platforms: ${{ matrix.runner.platform }}
-          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # cache-from: type=local,src=${{ runner.temp }}/.buildx-cache
