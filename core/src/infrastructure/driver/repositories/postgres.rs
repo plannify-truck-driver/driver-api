@@ -364,7 +364,7 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
     ) -> Result<Vec<DriverRestPeriod>, DriverError> {
         let driver = self.get_driver_by_id(driver_id).await?;
 
-        let driver = driver.ok_or_else(|| DriverError::DriverNotFound)?;
+        let driver = driver.ok_or(DriverError::DriverNotFound)?;
 
         if let Some(rest_json) = driver.rest_json {
             let rest_periods: Vec<DriverRestPeriod> =

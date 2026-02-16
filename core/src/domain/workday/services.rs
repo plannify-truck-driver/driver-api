@@ -193,7 +193,7 @@ where
             .await
             .map_err(|_| WorkdayError::Internal)?;
 
-        let driver = driver.ok_or_else(|| WorkdayError::Internal)?;
+        let driver = driver.ok_or(WorkdayError::Internal)?;
 
         self.document_external_repository
             .get_workday_documents_by_month(

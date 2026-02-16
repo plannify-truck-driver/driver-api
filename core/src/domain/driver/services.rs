@@ -190,7 +190,7 @@ where
             .await
             .map_err(|_| DriverError::InvalidVerificationKey)?;
 
-        let mut driver = driver.ok_or_else(|| DriverError::InvalidVerificationKey)?;
+        let mut driver = driver.ok_or(DriverError::InvalidVerificationKey)?;
 
         let (redis_key, _) = self
             .driver_cache_repository
