@@ -59,9 +59,23 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=local,src=${{ runner.temp }}/.buildx-cache
+          # cache-from: type=local,src=${{ runner.temp }}/.buildx-cache
           cache-to: type=local,dest=${{ runner.temp }}/.buildx-cache-new,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=${{ inputs.push || github.ref_name == github.event.repository.default_branch }}
+
+      - name: upload digest
+        if: inputs.push || github.ref_name == github.event.repository.default_branch
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ runner.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: move cache
+        run: |
+          rm -rf ${{ runner.temp }}/.buildx-cache
+          mv ${{ runner.temp }}/.buildx-cache-new ${{ runner.temp }}/.buildx-cache
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
