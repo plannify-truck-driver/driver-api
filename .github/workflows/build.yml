@@ -20,7 +20,7 @@ jobs:
         runner:
           - name: self-hosted
             platform: linux/amd64
-          - name: ubuntu-24.04-arm
+          - name: self-hosted
             platform: linux/arm64
 
     steps:
@@ -58,7 +58,7 @@ jobs:
           platforms: ${{ matrix.runner.platform }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # cache-from: type=local,src=${{ runner.temp }}/.buildx-cache
+          cache-from: type=local,src=${{ runner.temp }}/.buildx-cache
           cache-to: type=local,dest=${{ runner.temp }}/.buildx-cache-new,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=${{ inputs.push || github.ref_name == github.event.repository.default_branch }}
 
