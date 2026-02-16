@@ -72,6 +72,47 @@
         "security": []
       }
     },
+    "/authentication/refresh": {
+      "get": {
+        "tags": [
+          "authentication"
+        ],
+        "operationId": "refresh_token",
+        "responses": {
+          "200": {
+            "description": "Driver auth refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDriverResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/authentication/signup": {
       "post": {
         "tags": [
