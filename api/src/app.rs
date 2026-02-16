@@ -23,9 +23,11 @@ use crate::{
     config::{Config, Environment},
     health_routes,
     http::{
-        authentication::routes::authentication_routes,
-        common::middleware::tracing::tracing_middleware, driver::routes::driver_routes,
-        update::routes::update_routes, workday::routes::workday_routes,
+        authentication::routes::{authentication_routes, refresh_cookie_routes},
+        common::middleware::{auth::AuthRefreshMiddleware, tracing::tracing_middleware},
+        driver::routes::driver_routes,
+        update::routes::update_routes,
+        workday::routes::workday_routes,
     },
 };
 
@@ -95,6 +97,11 @@ impl App {
         state.auth_validator = auth_validator.clone();
 
         let (app_router, mut api) = OpenApiRouter::<AppState>::new()
+            .merge(refresh_cookie_routes())
+            .route_layer(from_extractor_with_state::<
+                AuthRefreshMiddleware,
+                AuthValidator,
+            >(auth_validator.clone()))
             .merge(driver_routes())
             .merge(workday_routes())
             .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(

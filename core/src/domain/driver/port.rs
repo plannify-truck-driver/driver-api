@@ -24,7 +24,7 @@ pub trait DriverDatabaseRepository: Send + Sync {
     fn get_driver_by_id(
         &self,
         driver_id: Uuid,
-    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+    ) -> impl Future<Output = Result<Option<DriverRow>, DriverError>> + Send;
 
     fn get_driver_by_email(
         &self,
@@ -106,6 +106,11 @@ pub trait DriverService: Send + Sync {
         login_request: LoginDriverRequest,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 
+    fn get_driver_by_id(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Option<DriverRow>, DriverError>> + Send;
+
     fn verify_driver_account(
         &self,
         driver_id: Uuid,
@@ -117,6 +122,7 @@ pub trait DriverService: Send + Sync {
         driver: DriverRow,
         create_tokens: F,
         refresh_ttl: u64,
+        domain_name: &str,
     ) -> impl Future<Output = Result<(String, String), DriverError>> + Send
     where
         F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync;
@@ -167,13 +173,11 @@ impl DriverDatabaseRepository for MockDriverDatabaseRepository {
         Ok(drivers.len() as i64)
     }
 
-    async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
+    async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<Option<DriverRow>, DriverError> {
         let drivers = self.drivers.lock().unwrap();
         let driver = drivers.iter().find(|d| d.pk_driver_id == driver_id);
-        match driver {
-            Some(d) => Ok(d.clone()),
-            None => Err(DriverError::DriverNotFound),
-        }
+
+        Ok(driver.cloned())
     }
 
     async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {

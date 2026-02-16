@@ -69,6 +69,7 @@ impl AuthValidator {
 pub trait TokenValidator: Send + Sync {
     fn create_tokens(&self, driver: &DriverRow) -> Result<(String, String), ApiError>;
     fn validate_token(&self, token: &str) -> Result<UserIdentity, ApiError>;
+    fn validate_refresh_token(&self, token: &str) -> Result<UserIdentity, ApiError>;
 }
 
 impl TokenValidator for AuthValidator {
@@ -150,6 +151,32 @@ impl TokenValidator for AuthValidator {
         if !claims.driver.verified {
             return Err(ApiError::Unauthorized {
                 error_code: "DRIVER_NOT_VERIFIED".to_string(),
+            });
+        }
+
+        Ok(UserIdentity {
+            user_id: claims.sub,
+        })
+    }
+
+    fn validate_refresh_token(&self, token: &str) -> Result<UserIdentity, ApiError> {
+        let token_data = decode::<RefreshClaims>(
+            token,
+            &DecodingKey::from_secret(self.secret_key.as_bytes()),
+            &Validation::new(Algorithm::HS256),
+        )
+        .map_err(|e| {
+            error!("Failed to decode refresh token: {:?}", e);
+            ApiError::Unauthorized {
+                error_code: "UNAUTHORIZED".to_string(),
+            }
+        })?;
+
+        let claims = token_data.claims;
+
+        if claims.is_expired() {
+            return Err(ApiError::Unauthorized {
+                error_code: "REFRESH_TOKEN_EXPIRED".to_string(),
             });
         }
 

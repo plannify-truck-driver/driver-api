@@ -170,16 +170,27 @@ where
         Ok(driver)
     }
 
+    async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<Option<DriverRow>, DriverError> {
+        let driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?;
+
+        Ok(driver)
+    }
+
     async fn verify_driver_account(
         &self,
         driver_id: Uuid,
         token: String,
     ) -> Result<DriverRow, DriverError> {
-        let mut driver = self
+        let driver = self
             .driver_database_repository
             .get_driver_by_id(driver_id)
             .await
             .map_err(|_| DriverError::InvalidVerificationKey)?;
+
+        let mut driver = driver.ok_or(DriverError::InvalidVerificationKey)?;
 
         let (redis_key, _) = self
             .driver_cache_repository
@@ -208,14 +219,23 @@ where
         mut driver: DriverRow,
         create_tokens: F,
         refresh_ttl: u64,
+        domain_name: &str,
     ) -> Result<(String, String), DriverError>
     where
         F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync,
     {
         let (access_token, refresh_token) = create_tokens(&driver)?;
+
+        let domain = domain_name
+            .trim_start_matches("http://")
+            .trim_start_matches("https://")
+            .split(":")
+            .next()
+            .unwrap_or(domain_name);
+
         let refresh_token_cookie = format!(
-            "refresh_token={}; Path=/; Domain=.plannify.be; HttpOnly; Secure; SameSite=None; Max-Age={}",
-            refresh_token, refresh_ttl
+            "refresh_token={}; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
+            refresh_token, domain, refresh_ttl
         );
 
         let salt = SaltString::generate(&mut OsRng);

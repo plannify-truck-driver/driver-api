@@ -41,7 +41,7 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
-    async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
+    async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<Option<DriverRow>, DriverError> {
         sqlx::query_as!(
             DriverRow,
             r#"
@@ -51,7 +51,7 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
             "#,
             driver_id,
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
         .map_err(|e| {
             error!("Driver not found by ID ({}): {:?}", driver_id, e);
@@ -363,6 +363,9 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         driver_id: Uuid,
     ) -> Result<Vec<DriverRestPeriod>, DriverError> {
         let driver = self.get_driver_by_id(driver_id).await?;
+
+        let driver = driver.ok_or(DriverError::DriverNotFound)?;
+
         if let Some(rest_json) = driver.rest_json {
             let rest_periods: Vec<DriverRestPeriod> =
                 serde_json::from_value(rest_json).map_err(|e| {

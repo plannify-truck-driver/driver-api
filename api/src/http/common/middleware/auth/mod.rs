@@ -55,3 +55,40 @@ where
         Ok(Self)
     }
 }
+
+pub struct AuthRefreshMiddleware;
+
+impl<AuthValidator> FromRequestParts<AuthValidator> for AuthRefreshMiddleware
+where
+    AuthValidator: Send + Sync + TokenValidator,
+{
+    type Rejection = ApiError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AuthValidator,
+    ) -> Result<Self, Self::Rejection> {
+        let cookie_jar = CookieJar::from_request_parts(parts, state)
+            .await
+            .map_err(|e| {
+                error!("Failed to extract cookies: {:?}", e);
+                ApiError::Unauthorized {
+                    error_code: "UNAUTHORIZED".to_string(),
+                }
+            })?;
+
+        // try to get token from cookies
+        let auth_cookie = cookie_jar.get("refresh_token");
+        let token = auth_cookie
+            .ok_or_else(|| ApiError::Unauthorized {
+                error_code: "UNAUTHORIZED".to_string(),
+            })?
+            .value()
+            .to_string();
+
+        let user_identity = state.validate_refresh_token(&token)?;
+
+        parts.extensions.insert(user_identity);
+        Ok(Self)
+    }
+}
