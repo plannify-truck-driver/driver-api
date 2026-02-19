@@ -218,6 +218,7 @@ where
         &self,
         mut driver: DriverRow,
         create_tokens: F,
+        access_ttl: u64,
         refresh_ttl: u64,
         domain_name: &str,
     ) -> Result<(String, String, String), DriverError>
@@ -235,7 +236,7 @@ where
 
         let access_token_cookie = format!(
             "access_token={}; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
-            access_token, domain, refresh_ttl
+            access_token, domain, access_ttl
         );
 
         let refresh_token_cookie = format!(

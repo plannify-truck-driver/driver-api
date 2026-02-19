@@ -68,6 +68,7 @@ pub async fn signup(
         .generate_tokens(
             driver,
             create_tokens_fn,
+            state.config.jwt.access_ttl,
             state.config.jwt.refresh_ttl,
             state.config.common.frontend_url.as_str(),
         )
@@ -124,6 +125,7 @@ pub async fn login(
         .generate_tokens(
             driver,
             create_tokens_fn,
+            state.config.jwt.access_ttl,
             state.config.jwt.refresh_ttl,
             state.config.common.frontend_url.as_str(),
         )
@@ -183,6 +185,7 @@ pub async fn verify_driver_account(
         .generate_tokens(
             driver,
             create_tokens_fn,
+            state.config.jwt.access_ttl,
             state.config.jwt.refresh_ttl,
             state.config.common.frontend_url.as_str(),
         )
@@ -245,6 +248,7 @@ pub async fn refresh_token(
         .generate_tokens(
             driver,
             create_tokens_fn,
+            state.config.jwt.access_ttl,
             state.config.jwt.refresh_ttl,
             state.config.common.frontend_url.as_str(),
         )
