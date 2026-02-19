@@ -68,19 +68,19 @@ pub async fn create_repositories(
         .max_connections(5)
         .connect(database_url)
         .await
-        .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
+        .map_err(|e| CoreError::ServiceUnavailable(format!("Failed to connect to database: {}", e)))?;
 
     let redis_client =
-        Client::open(redis_url).map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
+        Client::open(redis_url).map_err(|e| CoreError::ServiceUnavailable(format!("Failed to connect to redis: {}", e)))?;
     let redis_manager: ConnectionManager = ConnectionManager::new(redis_client)
         .await
-        .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
+        .map_err(|e| CoreError::ServiceUnavailable(format!("Failed to initialize redis connection manager: {}", e)))?;
 
     let tera = match Tera::new("core/templates/mails/**/*.html") {
         Ok(t) => t,
         Err(e) => {
             error!("Templating parsing error: {}", e);
-            return Err(CoreError::ServiceUnavailable(e.to_string()));
+            return Err(CoreError::ServiceUnavailable(format!("Failed to initialize mail templates: {}", e)));
         }
     };
 
@@ -103,7 +103,7 @@ pub async fn create_repositories(
 
     let document_external_repository = GrpcDocumentRepository::connect(pdf_service_endpoint)
         .await
-        .map_err(|e| CoreError::ServiceUnavailable(e.to_string()))?;
+        .map_err(|e| CoreError::ServiceUnavailable(format!("Failed to connect to document service: {}", e)))?;
 
     Ok(DriverRepositories {
         pool: pg_pool,
