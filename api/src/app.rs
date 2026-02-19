@@ -96,17 +96,25 @@ impl App {
         let auth_validator = AuthValidator::new(&config.clone().jwt);
         state.auth_validator = auth_validator.clone();
 
-        let (app_router, mut api) = OpenApiRouter::<AppState>::new()
+        // Build router with refresh routes (requires refresh token cookie)
+        let refresh_router = OpenApiRouter::<AppState>::new()
             .merge(refresh_cookie_routes())
             .route_layer(from_extractor_with_state::<
                 AuthRefreshMiddleware,
                 AuthValidator,
-            >(auth_validator.clone()))
+            >(auth_validator.clone()));
+
+        // Build router with protected routes (requires access token bearer)
+        let protected_router = OpenApiRouter::<AppState>::new()
             .merge(driver_routes())
             .merge(workday_routes())
             .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
                 auth_validator.clone(),
-            ))
+            ));
+
+        let (app_router, mut api) = OpenApiRouter::<AppState>::new()
+            .merge(refresh_router)
+            .merge(protected_router)
             .merge(authentication_routes())
             .merge(update_routes())
             .layer(cors)

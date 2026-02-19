@@ -80,9 +80,11 @@ where
         // try to get token from cookies
         let auth_cookie = cookie_jar.get("refresh_token");
         let token = auth_cookie
-            .ok_or_else(|| ApiError::Unauthorized {
+            .ok_or_else(|| {
+                error!("Refresh token not found in cookies");
+                ApiError::Unauthorized {
                 error_code: "UNAUTHORIZED".to_string(),
-            })?
+            }})?
             .value()
             .to_string();
 
