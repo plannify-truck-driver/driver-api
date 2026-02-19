@@ -40,7 +40,7 @@ pub async fn signup(
     ValidatedJson(request): ValidatedJson<CreateDriverRequest>,
 ) -> Result<
     (
-        AppendHeaders<[(axum::http::HeaderName, String); 1]>,
+        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
         Response<CreateDriverResponse>,
     ),
     ApiError,
@@ -63,7 +63,7 @@ pub async fn signup(
         })
     };
 
-    let (access_token, refresh_token_cookie) = state
+    let (access_token, access_token_cookie, refresh_token_cookie) = state
         .service
         .generate_tokens(
             driver,
@@ -73,7 +73,10 @@ pub async fn signup(
         )
         .await?;
 
-    let headers = [(SET_COOKIE, refresh_token_cookie)];
+    let headers = [
+        (SET_COOKIE, access_token_cookie),
+        (SET_COOKIE, refresh_token_cookie),
+    ];
 
     Ok((
         AppendHeaders(headers),
@@ -98,7 +101,7 @@ pub async fn login(
     ValidatedJson(request): ValidatedJson<LoginDriverRequest>,
 ) -> Result<
     (
-        AppendHeaders<[(axum::http::HeaderName, String); 1]>,
+        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
         Response<CreateDriverResponse>,
     ),
     ApiError,
@@ -116,7 +119,7 @@ pub async fn login(
         })
     };
 
-    let (access_token, refresh_token_cookie) = state
+    let (access_token, access_token_cookie, refresh_token_cookie) = state
         .service
         .generate_tokens(
             driver,
@@ -126,7 +129,10 @@ pub async fn login(
         )
         .await?;
 
-    let headers = [(SET_COOKIE, refresh_token_cookie)];
+    let headers = [
+        (SET_COOKIE, access_token_cookie),
+        (SET_COOKIE, refresh_token_cookie),
+    ];
 
     Ok((
         AppendHeaders(headers),
@@ -151,7 +157,7 @@ pub async fn verify_driver_account(
     ValidatedJson(request): ValidatedJson<VerifyDriverAccountRequest>,
 ) -> Result<
     (
-        AppendHeaders<[(axum::http::HeaderName, String); 1]>,
+        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
         Response<CreateDriverResponse>,
     ),
     ApiError,
@@ -172,7 +178,7 @@ pub async fn verify_driver_account(
         })
     };
 
-    let (access_token, refresh_token_cookie) = state
+    let (access_token, access_token_cookie, refresh_token_cookie) = state
         .service
         .generate_tokens(
             driver,
@@ -182,7 +188,10 @@ pub async fn verify_driver_account(
         )
         .await?;
 
-    let headers = [(SET_COOKIE, refresh_token_cookie)];
+    let headers = [
+        (SET_COOKIE, access_token_cookie),
+        (SET_COOKIE, refresh_token_cookie),
+    ];
 
     Ok((
         AppendHeaders(headers),
@@ -206,7 +215,7 @@ pub async fn refresh_token(
     Extension(user_identity): Extension<UserIdentity>,
 ) -> Result<
     (
-        AppendHeaders<[(axum::http::HeaderName, String); 1]>,
+        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
         Response<CreateDriverResponse>,
     ),
     ApiError,
@@ -231,7 +240,7 @@ pub async fn refresh_token(
         })
     };
 
-    let (access_token, refresh_token_cookie) = state
+    let (access_token, access_token_cookie, refresh_token_cookie) = state
         .service
         .generate_tokens(
             driver,
@@ -241,7 +250,10 @@ pub async fn refresh_token(
         )
         .await?;
 
-    let headers = [(SET_COOKIE, refresh_token_cookie)];
+    let headers = [
+        (SET_COOKIE, access_token_cookie),
+        (SET_COOKIE, refresh_token_cookie),
+    ];
 
     Ok((
         AppendHeaders(headers),

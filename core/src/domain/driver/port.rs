@@ -123,7 +123,7 @@ pub trait DriverService: Send + Sync {
         create_tokens: F,
         refresh_ttl: u64,
         domain_name: &str,
-    ) -> impl Future<Output = Result<(String, String), DriverError>> + Send
+    ) -> impl Future<Output = Result<(String, String, String), DriverError>> + Send
     where
         F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync;
 

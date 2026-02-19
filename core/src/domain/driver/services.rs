@@ -220,7 +220,7 @@ where
         create_tokens: F,
         refresh_ttl: u64,
         domain_name: &str,
-    ) -> Result<(String, String), DriverError>
+    ) -> Result<(String, String, String), DriverError>
     where
         F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync,
     {
@@ -232,6 +232,11 @@ where
             .split(":")
             .next()
             .unwrap_or(domain_name);
+
+        let access_token_cookie = format!(
+            "access_token={}; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
+            access_token, domain, refresh_ttl
+        );
 
         let refresh_token_cookie = format!(
             "refresh_token={}; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
@@ -260,7 +265,7 @@ where
             .update_driver(driver)
             .await?;
 
-        Ok((access_token, refresh_token_cookie))
+        Ok((access_token, access_token_cookie, refresh_token_cookie))
     }
 
     async fn delete_refresh_token(&self, domain_name: &str) -> Result<String, DriverError> {
