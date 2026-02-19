@@ -23,7 +23,9 @@ use crate::{
     config::{Config, Environment},
     health_routes,
     http::{
-        authentication::routes::{authentication_routes, refresh_cookie_routes, unauthenticated_routes},
+        authentication::routes::{
+            authentication_routes, refresh_cookie_routes, unauthenticated_routes,
+        },
         common::middleware::{auth::AuthRefreshMiddleware, tracing::tracing_middleware},
         driver::routes::driver_routes,
         update::routes::update_routes,

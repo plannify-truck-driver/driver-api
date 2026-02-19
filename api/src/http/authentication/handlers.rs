@@ -274,6 +274,6 @@ pub async fn delete_refresh_token(
 
     Ok((
         AppendHeaders([(SET_COOKIE, refresh_token_cookie)]),
-        Response::ok(())
+        Response::ok(()),
     ))
 }

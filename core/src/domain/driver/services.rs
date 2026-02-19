@@ -263,10 +263,7 @@ where
         Ok((access_token, refresh_token_cookie))
     }
 
-    async fn delete_refresh_token(
-        &self,
-        domain_name: &str,
-    ) -> Result<String, DriverError> {
+    async fn delete_refresh_token(&self, domain_name: &str) -> Result<String, DriverError> {
         let domain = domain_name
             .trim_start_matches("http://")
             .trim_start_matches("https://")

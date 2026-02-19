@@ -83,8 +83,9 @@ where
             .ok_or_else(|| {
                 error!("Refresh token not found in cookies");
                 ApiError::Unauthorized {
-                error_code: "UNAUTHORIZED".to_string(),
-            }})?
+                    error_code: "UNAUTHORIZED".to_string(),
+                }
+            })?
             .value()
             .to_string();
 
