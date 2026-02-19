@@ -263,6 +263,25 @@ where
         Ok((access_token, refresh_token_cookie))
     }
 
+    async fn delete_refresh_token(
+        &self,
+        domain_name: &str,
+    ) -> Result<String, DriverError> {
+        let domain = domain_name
+            .trim_start_matches("http://")
+            .trim_start_matches("https://")
+            .split(":")
+            .next()
+            .unwrap_or(domain_name);
+
+        let refresh_token_cookie = format!(
+            "refresh_token=''; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
+            domain, 0
+        );
+
+        Ok(refresh_token_cookie)
+    }
+
     async fn get_driver_rest_periods(
         &self,
         driver_id: Uuid,

@@ -23,7 +23,7 @@ use crate::{
     config::{Config, Environment},
     health_routes,
     http::{
-        authentication::routes::{authentication_routes, refresh_cookie_routes},
+        authentication::routes::{authentication_routes, refresh_cookie_routes, unauthenticated_routes},
         common::middleware::{auth::AuthRefreshMiddleware, tracing::tracing_middleware},
         driver::routes::driver_routes,
         update::routes::update_routes,
@@ -116,6 +116,7 @@ impl App {
             .merge(refresh_router)
             .merge(protected_router)
             .merge(authentication_routes())
+            .merge(unauthenticated_routes())
             .merge(update_routes())
             .layer(cors)
             .layer(

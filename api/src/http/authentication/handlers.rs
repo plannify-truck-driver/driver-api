@@ -135,6 +135,62 @@ pub async fn login(
 }
 
 #[utoipa::path(
+    post,
+    path = "/authentication/token/verify-account",
+    tag = "authentication",
+    security(),
+    request_body = VerifyDriverAccountRequest,
+    responses(
+        (status = 200, description = "Driver account verified successfully", body = CreateDriverResponse),
+        (status = 401, description = "Invalid credentials", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn verify_driver_account(
+    State(state): State<AppState>,
+    ValidatedJson(request): ValidatedJson<VerifyDriverAccountRequest>,
+) -> Result<
+    (
+        AppendHeaders<[(axum::http::HeaderName, String); 1]>,
+        Response<CreateDriverResponse>,
+    ),
+    ApiError,
+> {
+    let driver = state
+        .service
+        .verify_driver_account(request.driver_id, request.token)
+        .await?;
+
+    let auth_validator = &state.auth_validator;
+    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
+        auth_validator.create_tokens(driver).map_err(|e| {
+            error!(
+                "Failed to create tokens for driver {}: {:?}",
+                driver.pk_driver_id, e
+            );
+            DriverError::Internal
+        })
+    };
+
+    let (access_token, refresh_token_cookie) = state
+        .service
+        .generate_tokens(
+            driver,
+            create_tokens_fn,
+            state.config.jwt.refresh_ttl,
+            state.config.common.frontend_url.as_str(),
+        )
+        .await?;
+
+    let headers = [(SET_COOKIE, refresh_token_cookie)];
+
+    Ok((
+        AppendHeaders(headers),
+        Response::ok(CreateDriverResponse { access_token }),
+    ))
+}
+
+#[utoipa::path(
     get,
     path = "/authentication/refresh",
     tag = "authentication",
@@ -194,57 +250,30 @@ pub async fn refresh_token(
 }
 
 #[utoipa::path(
-    post,
-    path = "/authentication/token/verify-account",
+    delete,
+    path = "/authentication/refresh",
     tag = "authentication",
-    security(),
-    request_body = VerifyDriverAccountRequest,
     responses(
-        (status = 200, description = "Driver account verified successfully", body = CreateDriverResponse),
-        (status = 401, description = "Invalid credentials", body = ErrorBody),
+        (status = 200, description = "Driver auth deleted successfully"),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
-pub async fn verify_driver_account(
+pub async fn delete_refresh_token(
     State(state): State<AppState>,
-    ValidatedJson(request): ValidatedJson<VerifyDriverAccountRequest>,
 ) -> Result<
     (
         AppendHeaders<[(axum::http::HeaderName, String); 1]>,
-        Response<CreateDriverResponse>,
+        Response<()>,
     ),
     ApiError,
 > {
-    let driver = state
+    let refresh_token_cookie = state
         .service
-        .verify_driver_account(request.driver_id, request.token)
+        .delete_refresh_token(state.config.common.frontend_url.as_str())
         .await?;
-
-    let auth_validator = &state.auth_validator;
-    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
-        auth_validator.create_tokens(driver).map_err(|e| {
-            error!(
-                "Failed to create tokens for driver {}: {:?}",
-                driver.pk_driver_id, e
-            );
-            DriverError::Internal
-        })
-    };
-
-    let (access_token, refresh_token_cookie) = state
-        .service
-        .generate_tokens(
-            driver,
-            create_tokens_fn,
-            state.config.jwt.refresh_ttl,
-            state.config.common.frontend_url.as_str(),
-        )
-        .await?;
-
-    let headers = [(SET_COOKIE, refresh_token_cookie)];
 
     Ok((
-        AppendHeaders(headers),
-        Response::ok(CreateDriverResponse { access_token }),
+        AppendHeaders([(SET_COOKIE, refresh_token_cookie)]),
+        Response::ok(())
     ))
 }

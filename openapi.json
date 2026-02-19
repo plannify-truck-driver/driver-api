@@ -111,6 +111,27 @@
           }
         },
         "security": []
+      },
+      "delete": {
+        "tags": [
+          "authentication"
+        ],
+        "operationId": "delete_refresh_token",
+        "responses": {
+          "200": {
+            "description": "Driver auth deleted successfully"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/authentication/signup": {
