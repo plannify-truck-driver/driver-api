@@ -227,12 +227,22 @@ where
     {
         let (access_token, refresh_token) = create_tokens(&driver)?;
 
-        let domain = domain_name
+        let domain_host = domain_name
             .trim_start_matches("http://")
             .trim_start_matches("https://")
             .split(":")
             .next()
             .unwrap_or(domain_name);
+        let domain_parts: Vec<&str> = domain_host.split('.').collect();
+        let domain = if domain_parts.len() >= 2 {
+            format!(
+                ".{}.{}",
+                domain_parts[domain_parts.len() - 2],
+                domain_parts[domain_parts.len() - 1]
+            )
+        } else {
+            domain_host.to_string()
+        };
 
         let access_token_cookie = format!(
             "access_token={}; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
@@ -272,12 +282,26 @@ where
     }
 
     async fn delete_refresh_token(&self, domain_name: &str) -> Result<String, DriverError> {
-        let domain = domain_name
+        let domain_host = domain_name
             .trim_start_matches("http://")
             .trim_start_matches("https://")
             .split(":")
             .next()
             .unwrap_or(domain_name);
+        let domain_parts: Vec<&str> = domain_host.split('.').collect();
+        let mut domain = if domain_parts.len() >= 2 {
+            format!(
+                "{}.{}",
+                domain_parts[domain_parts.len() - 2],
+                domain_parts[domain_parts.len() - 1]
+            )
+        } else {
+            domain_host.to_string()
+        };
+
+        if domain != "localhost" {
+            domain = format!(".{}", domain);
+        }
 
         let refresh_token_cookie = format!(
             "refresh_token=''; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
