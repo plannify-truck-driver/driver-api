@@ -18,9 +18,9 @@ jobs:
     strategy:
       matrix:
         runner:
-          - name: self-hosted
+          - name: ubuntu-24.04
             platform: linux/amd64
-          - name: self-hosted
+          - name: ubuntu-24.04-arm
             platform: linux/arm64
 
     steps:
@@ -63,6 +63,14 @@ jobs:
           cache-from: type=local,src=${{ runner.temp }}/.buildx-cache
           cache-to: type=local,dest=${{ runner.temp }}/.buildx-cache-new,mode=max
 
+      - name: prepare digest
+        id: digest
+        if: inputs.push || github.ref_name == github.event.repository.default_branch
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
       - name: upload digest
         if: inputs.push || github.ref_name == github.event.repository.default_branch
         uses: actions/upload-artifact@v4
@@ -77,16 +85,6 @@ jobs:
           rm -rf ${{ runner.temp }}/.buildx-cache
           mv ${{ runner.temp }}/.buildx-cache-new ${{ runner.temp }}/.buildx-cache
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}"
-          format: "table"
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -99,3 +97,17 @@ jobs:
             ```bash
             docker pull ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}
             ```
+
+  analyze-cve:
+    runs-on: ubuntu-24.04
+    needs: build-and-push
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
