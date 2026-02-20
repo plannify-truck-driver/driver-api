@@ -249,8 +249,6 @@ where
             access_token, domain, access_ttl
         );
 
-        info!("Generated access token cookie for driver {}: {}", driver.pk_driver_id, access_token_cookie);
-
         let refresh_token_cookie = format!(
             "refresh_token={}; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
             refresh_token, domain, refresh_ttl
