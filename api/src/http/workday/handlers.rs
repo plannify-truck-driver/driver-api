@@ -82,7 +82,7 @@ pub async fn get_all_workdays_period(
         .await?;
 
     let response_workdays: PaginatedResponse<Workday> = PaginatedResponse {
-        data: workdays.iter().map(|w| w.to_workday()).collect(),
+        data: workdays,
         total: total_count,
         page: query.page,
     };

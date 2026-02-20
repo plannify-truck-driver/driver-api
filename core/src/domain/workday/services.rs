@@ -67,10 +67,26 @@ where
         end_date: NaiveDate,
         page: u32,
         limit: u32,
-    ) -> Result<(Vec<WorkdayRow>, u32), WorkdayError> {
-        self.workday_database_repository
+    ) -> Result<(Vec<Workday>, u32), WorkdayError> {
+        let cached_workdays = self
+            .workday_cache_repository
             .get_workdays_by_period(driver_id, start_date, end_date, page, limit)
-            .await
+            .await?;
+        if let Some((cached_workdays, total_count)) = cached_workdays {
+            return Ok((cached_workdays, total_count));
+        }
+
+        let (workdays, total_count) = self
+            .workday_database_repository
+            .get_workdays_by_period(driver_id, start_date, end_date, page, limit)
+            .await?;
+        let workdays_transformed: Vec<Workday> = workdays.iter().map(|w| w.to_workday()).collect();
+
+        self.workday_cache_repository
+            .set_workdays_by_period(driver_id, start_date, end_date, page, limit, workdays_transformed.clone(), total_count)
+            .await?;
+
+        Ok((workdays_transformed, total_count))
     }
 
     async fn create_workday(

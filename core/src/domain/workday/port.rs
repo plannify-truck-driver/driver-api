@@ -18,18 +18,28 @@ use crate::{
 
 pub enum WorkdayCacheKeyType {
     Monthly { month: i32, year: i32 },
+    Period {
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        page: u32,
+        limit: u32,
+    },
 }
 
 impl WorkdayCacheKeyType {
     pub fn as_str(&self) -> String {
         match self {
             WorkdayCacheKeyType::Monthly { month, year } => format!("monthly:{}-{}", month, year),
+            WorkdayCacheKeyType::Period { start_date, end_date, page, limit } => {
+                format!("period:{}-{}-{}-{}", start_date, end_date, page, limit)
+            }
         }
     }
 
     pub fn to_ttl(&self) -> u64 {
         match self {
             WorkdayCacheKeyType::Monthly { month: _, year: _ } => 3600 * 24,
+            WorkdayCacheKeyType::Period { .. } => 3600 * 24,
         }
     }
 }
@@ -131,6 +141,35 @@ pub trait WorkdayCacheRepository: Send + Sync {
         month: i32,
         year: i32,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn get_workdays_by_period(
+        &self,
+        driver_id: Uuid,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        page: u32,
+        limit: u32,
+    ) -> impl Future<Output = Result<Option<(Vec<Workday>, u32)>, WorkdayError>> + Send;
+
+    fn set_workdays_by_period(
+        &self,
+        driver_id: Uuid,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        page: u32,
+        limit: u32,
+        workdays: Vec<Workday>,
+        total_count: u32,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn delete_workdays_by_period(
+        &self,
+        driver_id: Uuid,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        page: u32,
+        limit: u32,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 }
 pub trait WorkdayService: Send + Sync {
     fn get_workdays_by_month(
@@ -147,7 +186,7 @@ pub trait WorkdayService: Send + Sync {
         end_date: NaiveDate,
         page: u32,
         limit: u32,
-    ) -> impl Future<Output = Result<(Vec<WorkdayRow>, u32), WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<(Vec<Workday>, u32), WorkdayError>> + Send;
 
     fn create_workday(
         &self,
@@ -487,6 +526,56 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
         let (key, _) =
             self.get_key_by_type(driver_id, WorkdayCacheKeyType::Monthly { month, year });
 
+        stored_workdays.remove(&key);
+        Ok(())
+    }
+
+    async fn get_workdays_by_period(
+            &self,
+            driver_id: Uuid,
+            start_date: NaiveDate,
+            end_date: NaiveDate,
+            page: u32,
+            limit: u32,
+        ) -> Result<Option<(Vec<Workday>, u32)>, WorkdayError> {
+        let workdays = self.workdays.lock().unwrap();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Period { start_date, end_date, page, limit });
+        if !workdays.contains_key(&key) {
+            return Ok(None);
+        }
+        let result = workdays.get(&key).cloned().unwrap_or_default();
+        Ok(Some((result, 0)))
+    }
+
+    async fn set_workdays_by_period(
+            &self,
+            driver_id: Uuid,
+            start_date: NaiveDate,
+            end_date: NaiveDate,
+            page: u32,
+            limit: u32,
+            workdays: Vec<Workday>,
+            _total_count: u32,
+        ) -> Result<(), WorkdayError> {
+        let mut stored_workdays = self.workdays.lock().unwrap();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Period { start_date, end_date, page, limit });
+        stored_workdays.insert(key, workdays);
+        Ok(())
+    }
+
+    async fn delete_workdays_by_period(
+            &self,
+            driver_id: Uuid,
+            start_date: NaiveDate,
+            end_date: NaiveDate,
+            page: u32,
+            limit: u32,
+        ) -> Result<(), WorkdayError> {
+        let mut stored_workdays = self.workdays.lock().unwrap();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Period { start_date, end_date, page, limit });
         stored_workdays.remove(&key);
         Ok(())
     }
