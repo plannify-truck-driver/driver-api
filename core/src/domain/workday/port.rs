@@ -120,6 +120,8 @@ pub trait WorkdayCacheRepository: Send + Sync {
         )
     }
 
+    fn delete_key(&self, driver_id: Uuid, prefix: &str) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
     fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -483,6 +485,13 @@ impl Default for MockWorkdayCacheRepository {
 impl WorkdayCacheRepository for MockWorkdayCacheRepository {
     fn generate_redis_key(&self, driver_id: Uuid, suffix: &str) -> String {
         format!("driver:{}:workdays:{}", driver_id, suffix)
+    }
+
+    async fn delete_key(&self, driver_id: Uuid, prefix: &str) -> Result<(), WorkdayError> {
+        let mut workdays = self.workdays.lock().unwrap();
+        let key_prefix = format!("driver:{}:{}", driver_id, prefix);
+        workdays.retain(|k, _| !k.starts_with(&key_prefix));
+        Ok(())
     }
 
     async fn get_workdays_by_month(

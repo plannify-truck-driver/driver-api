@@ -28,6 +28,24 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         format!("driver:{}:workdays:{}", driver_id, suffix)
     }
 
+    async fn delete_key(&self, driver_id: Uuid, prefix: &str) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+        let key_pattern = format!("driver:{}:{}*", driver_id, prefix);
+        let keys: Vec<String> = conn.keys(key_pattern.clone()).await.map_err(|e| {
+            error!("Failed to get keys for pattern {}: {:?}", key_pattern, e);
+            WorkdayError::Internal
+        })?;
+
+        if !keys.is_empty() {
+            let _: () = conn.del(keys).await.map_err(|e| {
+                error!("Failed to delete keys for pattern {}: {:?}", key_pattern, e);
+                WorkdayError::Internal
+            })?;
+        }
+
+        Ok(())
+    }
+
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,

@@ -102,6 +102,9 @@ where
         self.workday_cache_repository
             .delete_workdays_by_month(driver_id, workday.date.month() as i32, workday.date.year())
             .await?;
+        self.workday_cache_repository
+            .delete_key(driver_id, "workdays:period")
+            .await?;
 
         Ok(workday)
     }
@@ -119,6 +122,9 @@ where
         self.workday_cache_repository
             .delete_workdays_by_month(driver_id, workday.date.month() as i32, workday.date.year())
             .await?;
+        self.workday_cache_repository
+            .delete_key(driver_id, "workdays:period")
+            .await?;
 
         Ok(workday)
     }
@@ -130,6 +136,9 @@ where
 
         self.workday_cache_repository
             .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
+            .await?;
+        self.workday_cache_repository
+            .delete_key(driver_id, "workdays:period")
             .await?;
 
         Ok(())
@@ -159,6 +168,9 @@ where
         self.workday_cache_repository
             .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
             .await?;
+        self.workday_cache_repository
+            .delete_key(driver_id, "workdays:period")
+            .await?;
 
         Ok(workday_garbage)
     }
@@ -174,6 +186,9 @@ where
 
         self.workday_cache_repository
             .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
+            .await?;
+        self.workday_cache_repository
+            .delete_key(driver_id, "workdays:period")
             .await?;
 
         Ok(())
