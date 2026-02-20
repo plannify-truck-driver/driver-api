@@ -22,7 +22,7 @@ use argon2::{
     password_hash::PasswordHash,
     password_hash::{PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
-use tracing::error;
+use tracing::{error, info};
 use uuid::Uuid;
 
 impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> DriverService
@@ -238,6 +238,8 @@ where
             "access_token={}; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
             access_token, domain, access_ttl
         );
+
+        info!("Generated access token cookie for driver {}: {}", driver.pk_driver_id, access_token_cookie);
 
         let refresh_token_cookie = format!(
             "refresh_token={}; Path=/; Domain={}; HttpOnly; Secure; SameSite=Lax; Max-Age={}",
