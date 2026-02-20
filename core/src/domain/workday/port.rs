@@ -165,6 +165,7 @@ pub trait WorkdayCacheRepository: Send + Sync {
         limit: u32,
     ) -> impl Future<Output = Result<Option<(Vec<Workday>, u32)>, WorkdayError>> + Send;
 
+    #[allow(clippy::too_many_arguments)]
     fn set_workdays_by_period(
         &self,
         driver_id: Uuid,
