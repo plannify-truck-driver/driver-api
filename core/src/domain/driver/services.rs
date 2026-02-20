@@ -22,7 +22,7 @@ use argon2::{
     password_hash::PasswordHash,
     password_hash::{PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
-use tracing::{error, info};
+use tracing::error;
 use uuid::Uuid;
 
 impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> DriverService
