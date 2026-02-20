@@ -83,7 +83,15 @@ where
         let workdays_transformed: Vec<Workday> = workdays.iter().map(|w| w.to_workday()).collect();
 
         self.workday_cache_repository
-            .set_workdays_by_period(driver_id, start_date, end_date, page, limit, workdays_transformed.clone(), total_count)
+            .set_workdays_by_period(
+                driver_id,
+                start_date,
+                end_date,
+                page,
+                limit,
+                workdays_transformed.clone(),
+                total_count,
+            )
             .await?;
 
         Ok((workdays_transformed, total_count))
