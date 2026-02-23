@@ -26,6 +26,35 @@ use crate::{
 
 #[utoipa::path(
     get,
+    path = "/workdays/{date}",
+    tag = "workdays",
+    description = "Retrieve a workday for a specific date",
+    params(
+        ("date" = NaiveDate, Path, description = "The date of the workday to retrieve")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Workday retrieved successfully", body = Option<Workday>),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_workday_by_date(
+    Path(date): Path<NaiveDate>,
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<Option<Workday>>, ApiError> {
+    let workday = state
+        .service
+        .get_workday_by_date(user_identity.user_id, date)
+        .await?;
+
+    Ok(Response::ok(workday))
+}
+
+#[utoipa::path(
+    get,
     path = "/workdays/month",
     tag = "workdays",
     description = "Retrieve workdays for a specific month and year",

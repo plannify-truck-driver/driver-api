@@ -909,6 +909,59 @@
       }
     },
     "/workdays/{date}": {
+      "get": {
+        "tags": [
+          "workdays"
+        ],
+        "description": "Retrieve a workday for a specific date",
+        "operationId": "get_workday_by_date",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "The date of the workday to retrieve",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workday retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Workday"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
       "delete": {
         "tags": [
           "workdays"

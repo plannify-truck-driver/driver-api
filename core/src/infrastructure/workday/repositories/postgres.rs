@@ -23,6 +23,34 @@ impl PostgresWorkdayRepository {
 }
 
 impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
+    async fn get_workday_by_date(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> Result<Option<WorkdayRow>, WorkdayError> {
+        sqlx::query_as!(
+            WorkdayRow,
+            r#"
+            SELECT *
+            FROM workdays
+            WHERE date = $1
+            AND fk_driver_id = $2
+            AND date NOT IN (
+                SELECT workday_date FROM workday_garbage
+                WHERE fk_driver_id = $2
+            )
+            "#,
+            date,
+            driver_id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get workday by date: {:?}", e);
+            WorkdayError::DatabaseError
+        })
+    }
+
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,

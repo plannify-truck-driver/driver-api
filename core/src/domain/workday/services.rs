@@ -33,6 +33,19 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
 {
+    async fn get_workday_by_date(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> Result<Option<Workday>, WorkdayError> {
+        let workday = self
+            .workday_database_repository
+            .get_workday_by_date(driver_id, date)
+            .await?;
+
+        Ok(workday.map(|w| w.to_workday()))
+    }
+
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,

@@ -53,6 +53,12 @@ impl WorkdayCacheKeyType {
 }
 
 pub trait WorkdayDatabaseRepository: Send + Sync {
+    fn get_workday_by_date(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> impl Future<Output = Result<Option<WorkdayRow>, WorkdayError>> + Send;
+
     fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -187,6 +193,12 @@ pub trait WorkdayCacheRepository: Send + Sync {
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 }
 pub trait WorkdayService: Send + Sync {
+    fn get_workday_by_date(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> impl Future<Output = Result<Option<Workday>, WorkdayError>> + Send;
+
     fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -279,6 +291,19 @@ impl Default for MockWorkdayDatabaseRepository {
 }
 
 impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
+    async fn get_workday_by_date(
+        &self,
+        driver_id: Uuid,
+        date: NaiveDate,
+    ) -> Result<Option<WorkdayRow>, WorkdayError> {
+        let workdays = self.workdays.lock().unwrap();
+        let result = workdays
+            .iter()
+            .find(|w| w.fk_driver_id == driver_id && w.date == date)
+            .cloned();
+        Ok(result)
+    }
+
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
