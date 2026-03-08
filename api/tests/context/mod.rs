@@ -81,7 +81,7 @@ impl AsyncTestContext for TestContext {
             .await
             .expect("Failed to set state");
 
-        // Generate fallback user ID (will be overridden by actual Keycloak user ID if available)
+        // Generate fallback user ID
         let fallback_user_id =
             Uuid::parse_str("123e4567-e89b-12d3-a456-426614174000").expect("Invalid UUID");
 

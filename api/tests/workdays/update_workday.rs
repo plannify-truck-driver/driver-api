@@ -1,9 +1,12 @@
 use api::http::common::api_error::ErrorBody;
 use axum::http::StatusCode;
-use plannify_driver_api_core::domain::workday::{entities::{UpdateWorkdayRequest, Workday}, port::WorkdayDatabaseRepository};
+use plannify_driver_api_core::domain::workday::{
+    entities::{UpdateWorkdayRequest, Workday},
+    port::WorkdayDatabaseRepository,
+};
+use serde_json::json;
 use serial_test::serial;
 use test_context::test_context;
-use serde_json::json;
 
 use crate::{context, workdays::verify_workday_content};
 

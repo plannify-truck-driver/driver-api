@@ -1,4 +1,4 @@
-use api::http::common::{api_error::ErrorBody};
+use api::http::common::api_error::ErrorBody;
 use axum::http::StatusCode;
 use plannify_driver_api_core::domain::workday::entities::Workday;
 use serial_test::serial;

@@ -1,4 +1,4 @@
-use api::http::common::{api_error::ErrorBody};
+use api::http::common::api_error::ErrorBody;
 use axum::http::StatusCode;
 use serial_test::serial;
 use test_context::test_context;
