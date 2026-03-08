@@ -36,7 +36,8 @@ use crate::{
         ("bearer_auth" = [])
     ),
     responses(
-        (status = 200, description = "Workday retrieved successfully", body = Option<Workday>),
+        (status = 200, description = "Workday retrieved successfully", body = Workday),
+        (status = 404, description = "Workday not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -44,7 +45,7 @@ pub async fn get_workday_by_date(
     Path(date): Path<NaiveDate>,
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
-) -> Result<Response<Option<Workday>>, ApiError> {
+) -> Result<Response<Workday>, ApiError> {
     let workday = state
         .service
         .get_workday_by_date(user_identity.user_id, date)

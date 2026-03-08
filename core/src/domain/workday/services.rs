@@ -37,13 +37,17 @@ where
         &self,
         driver_id: Uuid,
         date: NaiveDate,
-    ) -> Result<Option<Workday>, WorkdayError> {
+    ) -> Result<Workday, WorkdayError> {
         let workday = self
             .workday_database_repository
             .get_workday_by_date(driver_id, date)
             .await?;
 
-        Ok(workday.map(|w| w.to_workday()))
+        if let Some(existing_workday) = workday {
+            Ok(existing_workday.to_workday())
+        } else {
+            Err(WorkdayError::WorkdayNotFound)
+        }
     }
 
     async fn get_workdays_by_month(

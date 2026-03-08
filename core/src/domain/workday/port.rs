@@ -197,7 +197,7 @@ pub trait WorkdayService: Send + Sync {
         &self,
         driver_id: Uuid,
         date: NaiveDate,
-    ) -> impl Future<Output = Result<Option<Workday>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Workday, WorkdayError>> + Send;
 
     fn get_workdays_by_month(
         &self,
