@@ -11,7 +11,8 @@ use crate::{
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::{
             entities::{
-                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayGarbageRow, WorkdayRow,
+                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument,
+                WorkdayGarbageRow, WorkdayRow,
             },
             port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
         },
@@ -229,7 +230,7 @@ where
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> Result<Vec<i32>, WorkdayError> {
+    ) -> Result<Vec<WorkdayDocument>, WorkdayError> {
         self.workday_database_repository
             .get_workday_documents_by_year(driver_id, year)
             .await

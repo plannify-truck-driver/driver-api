@@ -659,11 +659,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "integer",
-                    "format": "int32"
-                  }
+                  "$ref": "#/components/schemas/Vec"
                 }
               }
             }
@@ -933,14 +929,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "null"
-                    },
-                    {
-                      "$ref": "#/components/schemas/Workday"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/Workday"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workday not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -1332,6 +1331,35 @@
           },
           "start_time": {
             "type": "string"
+          }
+        }
+      },
+      "Vec": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "month",
+            "year"
+          ],
+          "properties": {
+            "generated_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "month": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "year": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
           }
         }
       },

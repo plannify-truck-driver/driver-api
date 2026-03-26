@@ -5,7 +5,10 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::{
-        entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayGarbageRow, WorkdayRow},
+        entities::{
+            CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument, WorkdayGarbageRow,
+            WorkdayRow,
+        },
         port::WorkdayDatabaseRepository,
     },
     infrastructure::workday::repositories::error::WorkdayError,
@@ -354,18 +357,20 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> Result<Vec<i32>, WorkdayError> {
+    ) -> Result<Vec<WorkdayDocument>, WorkdayError> {
         let records = sqlx::query!(
             r#"
-            SELECT EXTRACT(MONTH FROM date)::INTEGER as month
-            FROM workdays
+            SELECT EXTRACT(MONTH FROM w.date)::INTEGER as month,
+            EXTRACT(YEAR FROM w.date)::INTEGER as year,
+            NULL::INTEGER as generated_at
+            FROM workdays w
             WHERE fk_driver_id = $1
-            AND EXTRACT(YEAR FROM date)::INTEGER = $2
-            AND date NOT IN (
+            AND EXTRACT(YEAR FROM w.date)::INTEGER = $2
+            AND w.date NOT IN (
                 SELECT workday_date FROM workday_garbage
                 WHERE fk_driver_id = $1
             )
-            GROUP BY month
+            GROUP BY month, year
             "#,
             driver_id,
             year
@@ -377,6 +382,15 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
             WorkdayError::DatabaseError
         })?;
 
-        Ok(records.into_iter().filter_map(|r| r.month).collect())
+        Ok(records
+            .into_iter()
+            .filter_map(|r| {
+                Some(WorkdayDocument {
+                    month: r.month? as u32,
+                    year: r.year? as u32,
+                    generated_at: None,
+                })
+            })
+            .collect())
     }
 }

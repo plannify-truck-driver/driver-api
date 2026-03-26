@@ -8,8 +8,8 @@ use axum::{
 use chrono::NaiveDate;
 use plannify_driver_api_core::domain::workday::{
     entities::{
-        CreateWorkdayRequest, GetWorkdaysByMonthParams, GetWorkdaysByPeriodParams,
-        UpdateWorkdayRequest, Workday, WorkdayGarbage,
+        CreateWorkdayRequest, GetWorkdayDocumentsByYearResponse, GetWorkdaysByMonthParams,
+        GetWorkdaysByPeriodParams, UpdateWorkdayRequest, Workday, WorkdayGarbage,
     },
     port::WorkdayService,
 };
@@ -300,7 +300,7 @@ pub async fn get_workday_documents(
         ("bearer_auth" = [])
     ),
     responses(
-        (status = 200, description = "Workday document months retrieved successfully", body = Vec<i32>),
+        (status = 200, description = "Workday document months retrieved successfully", body = GetWorkdayDocumentsByYearResponse),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -308,7 +308,7 @@ pub async fn get_workday_documents_by_year(
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
     Path(year): Path<i32>,
-) -> Result<Response<Vec<i32>>, ApiError> {
+) -> Result<Response<GetWorkdayDocumentsByYearResponse>, ApiError> {
     let documents = state
         .service
         .get_workday_documents_by_year(user_identity.user_id, year)

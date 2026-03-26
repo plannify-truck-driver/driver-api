@@ -11,7 +11,8 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::entities::{
-        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayGarbageRow, WorkdayRow,
+        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument, WorkdayGarbageRow,
+        WorkdayRow,
     },
     infrastructure::workday::repositories::error::WorkdayError,
 };
@@ -121,7 +122,7 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Vec<WorkdayDocument>, WorkdayError>> + Send;
 }
 
 pub trait WorkdayCacheRepository: Send + Sync {
@@ -259,7 +260,7 @@ pub trait WorkdayService: Send + Sync {
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Vec<WorkdayDocument>, WorkdayError>> + Send;
 
     fn get_workday_document_by_month(
         &self,
@@ -488,12 +489,16 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> Result<Vec<i32>, WorkdayError> {
+    ) -> Result<Vec<WorkdayDocument>, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
-        let documents: Vec<i32> = workdays
+        let documents: Vec<WorkdayDocument> = workdays
             .iter()
             .filter(|w| w.fk_driver_id == driver_id && w.date.year() == year)
-            .map(|w| w.date.month() as i32) // Example logic
+            .map(|w| WorkdayDocument {
+                month: w.date.month(),
+                year: w.date.year() as u32,
+                generated_at: None,
+            }) // Example logic
             .collect();
         Ok(documents)
     }

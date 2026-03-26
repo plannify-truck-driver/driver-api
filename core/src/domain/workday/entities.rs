@@ -140,3 +140,12 @@ impl WorkdayGarbageRow {
         }
     }
 }
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct WorkdayDocument {
+    pub month: u32,
+    pub year: u32,
+    pub generated_at: Option<DateTime<Utc>>,
+}
+
+pub type GetWorkdayDocumentsByYearResponse = Vec<WorkdayDocument>;
