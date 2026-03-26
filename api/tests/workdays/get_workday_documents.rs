@@ -1,9 +1,10 @@
 use api::http::common::api_error::ErrorBody;
 use axum::http::StatusCode;
+use plannify_driver_api_core::domain::workday::entities::WorkdayDocument;
 use serial_test::serial;
 use test_context::test_context;
 
-use crate::context;
+use crate::{context, workdays::verify_workday_document_content};
 
 #[test_context(context::TestContext)]
 #[tokio::test]
@@ -78,21 +79,29 @@ async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestConte
 
     res.assert_status(StatusCode::OK);
 
-    let body: Vec<i32> = res.json();
+    let body: Vec<WorkdayDocument> = res.json();
 
     assert_eq!(
         body.len(),
         2,
         "there should be exactly two months available"
     );
-    assert!(
-        body.contains(&1),
-        "January should be in the available months"
-    );
-    assert!(
-        body.contains(&2),
-        "February should be in the available months"
-    );
+
+    let expected_workday_document_1 = WorkdayDocument {
+        month: 1,
+        year: 2026,
+        generated_at: None,
+    };
+    let workday_document_1 = body[0];
+    verify_workday_document_content(workday_document_1, expected_workday_document_1);
+
+    let expected_workday_document_2 = WorkdayDocument {
+        month: 2,
+        year: 2026,
+        generated_at: None,
+    };
+    let workday_document_2 = body[1];
+    verify_workday_document_content(workday_document_2, expected_workday_document_2);
 }
 
 #[test_context(context::TestContext)]

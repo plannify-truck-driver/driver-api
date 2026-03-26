@@ -141,7 +141,7 @@ impl WorkdayGarbageRow {
     }
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, ToSchema)]
 pub struct WorkdayDocument {
     pub month: u32,
     pub year: u32,
