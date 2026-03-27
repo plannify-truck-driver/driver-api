@@ -36,20 +36,38 @@ pub async fn tracing_middleware(
     response
 }
 
-fn extract_driver_id(request: &Request, jwt_secret: Option<String>) -> Option<String> {
-    let jwt_secret = jwt_secret.as_ref()?;
-
-    let auth_header = request
+fn extract_token_from_request(request: &Request) -> Option<String> {
+    // Check Authorization header first
+    if let Some(token) = request
         .headers()
         .get("Authorization")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .map(|v| v.trim().to_string())
+    {
+        return Some(token);
+    }
+
+    // Fall back to access_token cookie
+    let cookie_header = request
+        .headers()
+        .get("Cookie")
         .and_then(|v| v.to_str().ok())?;
 
-    let token = auth_header.strip_prefix("Bearer ")?.trim();
+    cookie_header
+        .split(';')
+        .map(|s| s.trim())
+        .find(|s| s.starts_with("access_token="))
+        .and_then(|s| s.strip_prefix("access_token="))
+        .map(|v| v.to_string())
+}
 
-    // Try to decode the token without verification (just to get the claims)
-    // In production, you might want to properly validate with your secret key
+fn extract_driver_id(request: &Request, jwt_secret: Option<String>) -> Option<String> {
+    let jwt_secret = jwt_secret.as_ref()?;
+    let token = extract_token_from_request(request)?;
+
     let token_data = decode::<AccessClaims>(
-        token,
+        &token,
         &DecodingKey::from_secret(jwt_secret.as_bytes()),
         &Validation::new(Algorithm::HS256),
     )
