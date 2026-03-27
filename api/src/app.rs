@@ -6,7 +6,7 @@ use axum::{
     http::StatusCode,
     http::{
         HeaderValue, Method,
-        header::{AUTHORIZATION, CONTENT_TYPE},
+        header::{AUTHORIZATION, CONTENT_DISPOSITION, CONTENT_TYPE},
     },
     middleware::{from_extractor_with_state, from_fn},
 };
@@ -93,7 +93,8 @@ impl App {
             ])
             .allow_origin(cors_origins)
             .allow_credentials(true)
-            .allow_headers([AUTHORIZATION, CONTENT_TYPE]);
+            .allow_headers([AUTHORIZATION, CONTENT_TYPE])
+            .expose_headers([CONTENT_DISPOSITION]);
 
         let auth_validator = AuthValidator::new(&config.clone().jwt);
         state.auth_validator = auth_validator.clone();
