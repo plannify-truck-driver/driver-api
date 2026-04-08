@@ -35,6 +35,9 @@ pub struct Config {
     #[command(flatten)]
     pub check_content: CheckContentConfig,
 
+    #[command(flatten)]
+    pub s3: S3Config,
+
     #[arg(
         long = "environment",
         env = "ENVIRONMENT",
@@ -186,6 +189,37 @@ pub struct OtelConfig {
         name = "otel_service_name"
     )]
     pub service_name: String,
+}
+
+#[derive(Clone, Parser, Debug, Default)]
+pub struct S3Config {
+    #[arg(
+        long = "s3-access-key",
+        env = "S3_ACCESS_KEY",
+        name = "s3_access_key"
+    )]
+    pub access_key: String,
+
+    #[arg(
+        long = "s3-secret-key",
+        env = "S3_SECRET_KEY",
+        name = "s3_secret_key"
+    )]
+    pub secret_key: String,
+
+    #[arg(
+        long = "s3-endpoint",
+        env = "S3_ENDPOINT",
+        name = "s3_endpoint"
+    )]
+    pub endpoint: String,
+
+    #[arg(
+        long = "s3-bucket-name",
+        env = "S3_BUCKET_NAME",
+        name = "s3_bucket_name"
+    )]
+    pub bucket_name: String,
 }
 
 #[derive(Clone, Debug, ValueEnum, Default, PartialEq)]
