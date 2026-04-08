@@ -13,7 +13,6 @@ use crate::{
     },
 };
 
-
 #[tracing::instrument(
     name = "get_all_updates_by_version",
     skip_all,

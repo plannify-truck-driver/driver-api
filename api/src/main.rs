@@ -31,8 +31,8 @@ async fn main() -> Result<(), ApiError> {
     // 4. Initialiser le subscriber avec les deux layers
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
-        .with(tracing_subscriber::fmt::layer())  // logs console
-        .with(otel_layer)                         // traces → otel-collector
+        .with(tracing_subscriber::fmt::layer()) // logs console
+        .with(otel_layer) // traces → otel-collector
         .init();
 
     tracing::info!("OpenTelemetry initialisé");

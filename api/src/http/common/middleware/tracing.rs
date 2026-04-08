@@ -1,4 +1,8 @@
-use axum::{extract::{MatchedPath, Request}, middleware::Next, response::Response};
+use axum::{
+    extract::{MatchedPath, Request},
+    middleware::Next,
+    response::Response,
+};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
 use std::time::Instant;
 use tracing::Instrument;

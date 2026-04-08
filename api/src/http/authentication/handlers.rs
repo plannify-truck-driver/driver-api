@@ -295,10 +295,7 @@ pub async fn refresh_token(
     ))
 }
 
-#[tracing::instrument(
-    name = "delete_refresh_token",
-    skip_all,
-)]
+#[tracing::instrument(name = "delete_refresh_token", skip_all)]
 #[utoipa::path(
     delete,
     path = "/authentication/refresh",

@@ -318,10 +318,7 @@ where
         Ok((access_token, access_token_cookie, refresh_token_cookie))
     }
 
-    #[tracing::instrument(
-        name = "driver_service.delete_refresh_token",
-        skip(self),
-    )]
+    #[tracing::instrument(name = "driver_service.delete_refresh_token", skip(self))]
     async fn delete_refresh_token(&self, domain_name: &str) -> Result<String, DriverError> {
         let domain_host = domain_name
             .trim_start_matches("http://")
