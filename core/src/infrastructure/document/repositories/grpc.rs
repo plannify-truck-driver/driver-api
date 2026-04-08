@@ -1,6 +1,5 @@
 use bytes::Bytes;
 use tonic::transport::Channel;
-use tracing::instrument;
 
 use crate::domain::{document::port::DocumentExternalRepository, workday::entities::Workday};
 use crate::infrastructure::document::repositories::{
@@ -56,7 +55,18 @@ fn language_to_proto(language: &str) -> ProtoLanguage {
 }
 
 impl DocumentExternalRepository for GrpcDocumentRepository {
-    #[instrument(skip(self, workdays))]
+    #[tracing::instrument(
+        name = "grpc.documents.get_workday_report",
+        skip(self),
+        fields(
+            driver_firstname = %driver_firstname,
+            driver_lastname = %driver_lastname,
+            language = %language,
+            month = %month,
+            year = %year,
+            workday_count = %workdays.len(),
+        )
+    )]
     async fn get_workday_documents_by_month(
         &self,
         driver_firstname: String,

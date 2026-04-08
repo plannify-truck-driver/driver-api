@@ -18,6 +18,14 @@ impl PostgresEmployeeRepository {
 }
 
 impl EmployeeRepository for PostgresEmployeeRepository {
+    #[tracing::instrument(
+        name = "db.employees.get_first_employee",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT",
+        )
+    )]
     async fn get_first_employee(&self) -> Result<Option<EmployeeRow>, EmployeeError> {
         error!("Function get_first_employee called");
 

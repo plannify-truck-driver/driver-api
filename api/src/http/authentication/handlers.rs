@@ -23,6 +23,15 @@ use crate::{
     },
 };
 
+#[tracing::instrument(
+    name = "signup",
+    skip_all,
+    fields(
+        firstname = %request.firstname,
+        lastname = %request.lastname,
+        email = %request.email,
+    )
+)]
 #[utoipa::path(
     post,
     path = "/authentication/signup",
@@ -85,6 +94,13 @@ pub async fn signup(
     ))
 }
 
+#[tracing::instrument(
+    name = "login",
+    skip_all,
+    fields(
+        email = %request.email,
+    )
+)]
 #[utoipa::path(
     post,
     path = "/authentication/login",
@@ -142,6 +158,13 @@ pub async fn login(
     ))
 }
 
+#[tracing::instrument(
+    name = "verify_driver_account",
+    skip_all,
+    fields(
+        driver_id = %request.driver_id,
+    )
+)]
 #[utoipa::path(
     post,
     path = "/authentication/token/verify-account",
@@ -202,6 +225,13 @@ pub async fn verify_driver_account(
     ))
 }
 
+#[tracing::instrument(
+    name = "refresh_token",
+    skip_all,
+    fields(
+        driver_id = %user_identity.user_id,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/authentication/refresh",
@@ -265,6 +295,10 @@ pub async fn refresh_token(
     ))
 }
 
+#[tracing::instrument(
+    name = "delete_refresh_token",
+    skip_all,
+)]
 #[utoipa::path(
     delete,
     path = "/authentication/refresh",

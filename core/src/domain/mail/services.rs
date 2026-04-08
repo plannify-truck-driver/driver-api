@@ -34,6 +34,13 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
 {
+    #[tracing::instrument(
+        name = "mail_service.send_creation_email",
+        skip(self),
+        fields(
+            driver_id = %driver.pk_driver_id,
+        )
+    )]
     async fn send_creation_email(&self, driver: DriverRow) -> Result<(), MailError> {
         let verify_value = self
             .driver_cache_repository

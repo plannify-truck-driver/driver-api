@@ -1,7 +1,7 @@
-use axum::{extract::Request, middleware::Next, response::Response};
+use axum::{extract::{MatchedPath, Request}, middleware::Next, response::Response};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
 use std::time::Instant;
-use tracing::info;
+use tracing::Instrument;
 
 use crate::http::common::middleware::auth::entities::AccessClaims;
 
@@ -10,28 +10,38 @@ pub async fn tracing_middleware(
     next: Next,
     jwt_secret: Option<String>,
 ) -> Response {
-    let start = Instant::now();
     let method = request.method().clone();
-    let uri = request.uri().clone();
-    let path = uri.path().to_string();
-
+    let route = request
+        .extensions()
+        .get::<MatchedPath>()
+        .map(MatchedPath::as_str)
+        .unwrap_or_else(|| request.uri().path())
+        .to_string();
     let driver_id =
         extract_driver_id(&request, jwt_secret).unwrap_or_else(|| "unknown".to_string());
 
-    let response = next.run(request).await;
-
-    let duration = start.elapsed();
-    let status = response.status();
-    let status_code = status.as_u16();
-
-    info!(
+    let span = tracing::info_span!(
+        "http_request",
+        "otel.name" = %route,
         method = %method,
-        route = %path,
+        route = %route,
         driver_id = %driver_id,
-        status = status_code,
-        duration_ms = duration.as_millis(),
-        "API Response"
+        status = tracing::field::Empty,
+        duration_ms = tracing::field::Empty,
     );
+
+    let start = Instant::now();
+    let response = next.run(request).instrument(span.clone()).await;
+
+    let status = response.status().as_u16();
+    let duration_ms = start.elapsed().as_millis();
+
+    span.record("status", status);
+    span.record("duration_ms", duration_ms);
+
+    span.in_scope(|| {
+        tracing::info!(status, duration_ms, "API Response");
+    });
 
     response
 }

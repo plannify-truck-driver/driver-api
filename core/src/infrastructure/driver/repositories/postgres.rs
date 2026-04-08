@@ -25,6 +25,14 @@ impl PostgresDriverRepository {
 }
 
 impl DriverDatabaseRepository for PostgresDriverRepository {
+    #[tracing::instrument(
+        name = "db.drivers.get_number_of_drivers",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT COUNT",
+        )
+    )]
     async fn get_number_of_drivers(&self) -> Result<i64, DriverError> {
         sqlx::query!(
             r#"
@@ -41,6 +49,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.get_driver_by_id",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT",
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<Option<DriverRow>, DriverError> {
         sqlx::query_as!(
             DriverRow,
@@ -59,6 +76,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.get_driver_by_email",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT",
+            email = %email,
+        )
+    )]
     async fn get_driver_by_email(&self, email: String) -> Result<DriverRow, DriverError> {
         sqlx::query_as!(
             DriverRow,
@@ -77,6 +103,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.create_driver",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "INSERT",
+            email = %create_request.email,
+        )
+    )]
     async fn create_driver(
         &self,
         create_request: CreateDriverRequest,
@@ -106,6 +141,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.update_driver",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "UPDATE",
+            driver_id = %driver.pk_driver_id,
+        )
+    )]
     async fn update_driver(&self, driver: DriverRow) -> Result<DriverRow, DriverError> {
         sqlx::query_as!(
             DriverRow,
@@ -154,6 +198,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.delete_driver",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "DELETE",
+            driver_id = %driver_id,
+        )
+    )]
     async fn delete_driver(&self, driver_id: Uuid) -> Result<(), DriverError> {
         let result = sqlx::query!(
             r#"
@@ -189,6 +242,14 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         }
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.get_actual_driver_limitation",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT",
+        )
+    )]
     async fn get_actual_driver_limitation(
         &self,
     ) -> Result<Option<DriverLimitationRow>, DriverError> {
@@ -213,6 +274,14 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.create_driver_limitation",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "INSERT",
+        )
+    )]
     async fn create_driver_limitation(
         &self,
         limitation: DriverLimitationRow,
@@ -242,6 +311,14 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.delete_driver_limitation",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "DELETE",
+        )
+    )]
     async fn delete_driver_limitation(&self, limitation_id: i32) -> Result<(), DriverError> {
         error!("Deleting driver limitation");
 
@@ -273,6 +350,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         }
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.get_current_driver_suspension",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT",
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_current_driver_suspension(
         &self,
         driver_id: Uuid,
@@ -298,6 +384,14 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.create_driver_suspension",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "INSERT",
+        )
+    )]
     async fn create_driver_suspension(
         &self,
         suspension: DriverSuspensionRow,
@@ -328,6 +422,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.delete_driver_suspension",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "DELETE",
+            suspension_id = %suspension_id,
+        )
+    )]
     async fn delete_driver_suspension(&self, suspension_id: i32) -> Result<(), DriverError> {
         error!("Deleting driver suspension with ID: {}", suspension_id);
         let result = sqlx::query!(
@@ -358,6 +461,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         }
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.get_driver_rest_periods",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT",
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_driver_rest_periods(
         &self,
         driver_id: Uuid,
@@ -378,6 +490,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         }
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.set_driver_rest_periods",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "UPDATE",
+            driver_id = %driver_id,
+        )
+    )]
     async fn set_driver_rest_periods(
         &self,
         driver_id: Uuid,
@@ -407,6 +528,15 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "db.drivers.delete_driver_rest_periods",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "UPDATE",
+            driver_id = %driver_id,
+        )
+    )]
     async fn delete_driver_rest_periods(&self, driver_id: Uuid) -> Result<(), DriverError> {
         sqlx::query!(
             r#"
