@@ -342,6 +342,7 @@ where
             driver_id = %driver_id,
             month = %month,
             year = %year,
+            source = tracing::field::Empty,
         )
     )]
     async fn get_workday_document_by_month(
@@ -350,17 +351,57 @@ where
         month: i32,
         year: i32,
     ) -> Result<Option<bytes::Bytes>, WorkdayError> {
+        // Check cache:
+        //    - None        → cache miss, must query DB
+        //    - Some(None)  → cached absence, skip DB entirely
+        //    - Some(Some)  → cached record, fetch from S3
+        let cached_record = self
+            .workday_cache_repository
+            .get_workday_document_record(driver_id, month, year)
+            .await?;
+
+        let document_record = match cached_record {
+            Some(cached) => cached,
+            None => {
+                let db_record = self
+                    .workday_database_repository
+                    .get_workday_document_record(driver_id, month, year)
+                    .await?;
+
+                let _ = self
+                    .workday_cache_repository
+                    .set_workday_document_record(driver_id, month, year, db_record.clone())
+                    .await;
+
+                db_record
+            }
+        };
+
+        if let Some(record) = document_record {
+            tracing::Span::current().record("source", "s3");
+
+            let pdf = self
+                .storage_repository
+                .download(&record.file_path)
+                .await
+                .map_err(|_| WorkdayError::Internal)?;
+
+            return Ok(Some(pdf));
+        }
+
+        tracing::Span::current().record("source", "grpc");
+
         let workdays = self.get_workdays_by_month(driver_id, month, year).await?;
 
         let driver = self
             .driver_database_repository
             .get_driver_by_id(driver_id)
             .await
-            .map_err(|_| WorkdayError::Internal)?;
+            .map_err(|_| WorkdayError::Internal)?
+            .ok_or(WorkdayError::Internal)?;
 
-        let driver = driver.ok_or(WorkdayError::Internal)?;
-
-        self.document_external_repository
+        let pdf_opt = self
+            .document_external_repository
             .get_workday_documents_by_month(
                 driver.firstname,
                 driver.lastname,
@@ -370,6 +411,8 @@ where
                 workdays,
             )
             .await
-            .map_err(|_| WorkdayError::Internal)
+            .map_err(|_| WorkdayError::Internal)?;
+
+        Ok(pdf_opt)
     }
 }

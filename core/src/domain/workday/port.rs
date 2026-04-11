@@ -11,8 +11,8 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::entities::{
-        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument, WorkdayGarbageRow,
-        WorkdayRow,
+        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument,
+        WorkdayDocumentRow, WorkdayGarbageRow, WorkdayRow,
     },
     infrastructure::workday::repositories::error::WorkdayError,
 };
@@ -28,6 +28,10 @@ pub enum WorkdayCacheKeyType {
         page: u32,
         limit: u32,
     },
+    Document {
+        month: i32,
+        year: i32,
+    },
 }
 
 impl WorkdayCacheKeyType {
@@ -42,13 +46,17 @@ impl WorkdayCacheKeyType {
             } => {
                 format!("period:{}-{}-{}-{}", start_date, end_date, page, limit)
             }
+            WorkdayCacheKeyType::Document { month, year } => {
+                format!("documents:{}-{}", year, month)
+            }
         }
     }
 
     pub fn to_ttl(&self) -> u64 {
         match self {
-            WorkdayCacheKeyType::Monthly { month: _, year: _ } => 3600 * 24,
+            WorkdayCacheKeyType::Monthly { .. } => 3600 * 24,
             WorkdayCacheKeyType::Period { .. } => 3600 * 24,
+            WorkdayCacheKeyType::Document { .. } => 3600 * 24 * 7,
         }
     }
 }
@@ -123,6 +131,13 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         driver_id: Uuid,
         year: i32,
     ) -> impl Future<Output = Result<Vec<WorkdayDocument>, WorkdayError>> + Send;
+
+    fn get_workday_document_record(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> impl Future<Output = Result<Option<WorkdayDocumentRow>, WorkdayError>> + Send;
 }
 
 pub trait WorkdayCacheRepository: Send + Sync {
@@ -191,6 +206,21 @@ pub trait WorkdayCacheRepository: Send + Sync {
         end_date: NaiveDate,
         page: u32,
         limit: u32,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn get_workday_document_record(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> impl Future<Output = Result<Option<Option<WorkdayDocumentRow>>, WorkdayError>> + Send;
+
+    fn set_workday_document_record(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+        record: Option<WorkdayDocumentRow>,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 }
 pub trait WorkdayService: Send + Sync {
@@ -498,9 +528,18 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
                 month: w.date.month(),
                 year: w.date.year() as u32,
                 generated_at: None,
-            }) // Example logic
+            })
             .collect();
         Ok(documents)
+    }
+
+    async fn get_workday_document_record(
+        &self,
+        _driver_id: Uuid,
+        _month: i32,
+        _year: i32,
+    ) -> Result<Option<WorkdayDocumentRow>, WorkdayError> {
+        Ok(None)
     }
 }
 
@@ -650,6 +689,25 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
             },
         );
         stored_workdays.remove(&key);
+        Ok(())
+    }
+
+    async fn get_workday_document_record(
+        &self,
+        _driver_id: Uuid,
+        _month: i32,
+        _year: i32,
+    ) -> Result<Option<Option<WorkdayDocumentRow>>, WorkdayError> {
+        Ok(None)
+    }
+
+    async fn set_workday_document_record(
+        &self,
+        _driver_id: Uuid,
+        _month: i32,
+        _year: i32,
+        _record: Option<WorkdayDocumentRow>,
+    ) -> Result<(), WorkdayError> {
         Ok(())
     }
 }
