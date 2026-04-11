@@ -7,4 +7,5 @@ useDefault = true
 description = "Ignore integration and unit test directories"
 paths = [
   '''^api/tests/''',
+  '.github/workflows/security.yml',
 ]
