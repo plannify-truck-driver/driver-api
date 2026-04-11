@@ -14,14 +14,15 @@ use crate::{
             entities::MailStatus,
             port::{MailDatabaseRepository, MailService, MailSmtpRepository},
         },
+        storage::port::StorageRepository,
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
     infrastructure::mail::repositories::error::MailError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> MailService
-    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS> MailService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -33,6 +34,7 @@ where
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
+    DS: StorageRepository,
 {
     #[tracing::instrument(
         name = "mail_service.send_creation_email",

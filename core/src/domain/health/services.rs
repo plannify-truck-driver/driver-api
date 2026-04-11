@@ -8,14 +8,15 @@ use crate::{
             port::{HealthRepository, HealthService},
         },
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
+        storage::port::StorageRepository,
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
     infrastructure::health::repositories::error::HealthError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> HealthService
-    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS> HealthService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -27,6 +28,7 @@ where
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
+    DS: StorageRepository,
 {
     async fn check_health(&self) -> Result<IsHealthy, HealthError> {
         self.health_repository.ping().await.to_result()

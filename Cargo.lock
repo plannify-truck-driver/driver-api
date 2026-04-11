@@ -2994,6 +2994,7 @@ name = "plannify_driver_api_core"
 version = "0.1.0"
 dependencies = [
  "argon2",
+ "aws-sdk-s3",
  "bytes",
  "chrono",
  "lettre",

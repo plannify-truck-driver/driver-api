@@ -50,6 +50,9 @@ tonic-prost = "0.14"
 prost = "0.14"
 bytes = "1.9"
 
+# Storage
+aws-sdk-s3 = { workspace = true }
+
 [build-dependencies]
 tonic-prost-build = "0.14"
 

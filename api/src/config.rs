@@ -220,6 +220,14 @@ pub struct S3Config {
         name = "s3_bucket_name"
     )]
     pub bucket_name: String,
+
+    #[arg(
+        long = "s3-region",
+        env = "S3_REGION",
+        default_value = "garage",
+        name = "s3_region"
+    )]
+    pub region: String,
 }
 
 impl S3Config {

@@ -8,6 +8,7 @@ use crate::{
         driver::port::{DriverCacheRepository, DriverDatabaseRepository},
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
+        storage::port::StorageRepository,
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::{
             entities::{
@@ -20,8 +21,8 @@ use crate::{
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> WorkdayService
-    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS> WorkdayService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -33,6 +34,7 @@ where
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
+    DS: StorageRepository,
 {
     #[tracing::instrument(
         name = "workday_service.get_workday_by_date",

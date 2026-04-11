@@ -15,6 +15,7 @@ use crate::{
         },
         employee::repositories::postgres::PostgresEmployeeRepository,
         mail::repositories::{postgres::PostgresMailRepository, smtp::SmtpMailRepository},
+        storage::repositories::s3::S3StorageRepository,
         update::repositories::{
             postgres::PostgresUpdateRepository, redis::RedisUpdateCacheRepository,
         },
@@ -37,6 +38,7 @@ pub type DriverService = Service<
     PostgresUpdateRepository,
     RedisUpdateCacheRepository,
     GrpcDocumentRepository,
+    S3StorageRepository,
 >;
 
 #[derive(Clone)]
@@ -53,6 +55,7 @@ pub struct DriverRepositories {
     pub update_database_repository: PostgresUpdateRepository,
     pub update_cache_repository: RedisUpdateCacheRepository,
     pub document_external_repository: GrpcDocumentRepository,
+    pub storage_repository: S3StorageRepository,
 }
 
 pub async fn create_repositories(
@@ -63,6 +66,11 @@ pub async fn create_repositories(
     frontend_url: String,
     is_test_environment: bool,
     pdf_service_endpoint: &str,
+    s3_access_key: &str,
+    s3_secret_key: &str,
+    s3_endpoint: &str,
+    s3_region: &str,
+    s3_bucket_name: &str,
 ) -> Result<DriverRepositories, CoreError> {
     let pg_pool = PgPoolOptions::new()
         .max_connections(5)
@@ -93,7 +101,28 @@ pub async fn create_repositories(
         }
     };
 
-    let health_repository = PostgresHealthRepository::new(pg_pool.clone(), redis_manager.clone());
+    let s3_credentials = aws_sdk_s3::config::Credentials::new(
+        s3_access_key,
+        s3_secret_key,
+        None,
+        None,
+        "Static",
+    );
+    let s3_config = aws_sdk_s3::config::Builder::new()
+        .credentials_provider(s3_credentials)
+        .endpoint_url(s3_endpoint)
+        .region(aws_sdk_s3::config::Region::new(s3_region.to_string()))
+        .force_path_style(true)
+        .behavior_version(aws_sdk_s3::config::BehaviorVersion::latest())
+        .build();
+    let s3_client = aws_sdk_s3::Client::from_conf(s3_config);
+
+    let health_repository = PostgresHealthRepository::new(
+        pg_pool.clone(),
+        redis_manager.clone(),
+        s3_client.clone(),
+        s3_bucket_name.to_string(),
+    );
     let driver_database_repository = PostgresDriverRepository::new(pg_pool.clone());
     let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager.clone());
     let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
@@ -116,6 +145,9 @@ pub async fn create_repositories(
             CoreError::ServiceUnavailable(format!("Failed to connect to document service: {}", e))
         })?;
 
+    let storage_repository =
+        S3StorageRepository::new_from_client(s3_client, s3_bucket_name.to_string());
+
     Ok(DriverRepositories {
         pool: pg_pool,
         health_repository,
@@ -129,6 +161,7 @@ pub async fn create_repositories(
         update_database_repository,
         update_cache_repository,
         document_external_repository,
+        storage_repository,
     })
 }
 
@@ -145,6 +178,7 @@ impl From<DriverRepositories> for DriverService {
             val.update_database_repository,
             val.update_cache_repository,
             val.document_external_repository,
+            val.storage_repository,
         )
     }
 }

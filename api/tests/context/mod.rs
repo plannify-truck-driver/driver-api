@@ -53,6 +53,7 @@ impl AsyncTestContext for TestContext {
             access_key: "minioadmin".to_string(),
             secret_key: "minioadmin".to_string(),
             bucket_name: "plannify".to_string(),
+            region: "us-east-1".to_string(),
         };
 
         let otel_config = OtelConfig::default();
@@ -81,6 +82,11 @@ impl AsyncTestContext for TestContext {
             config.common.frontend_url.clone(),
             true,
             &config.common.pdf_service_endpoint,
+            &config.s3.access_key,
+            &config.s3.secret_key,
+            &config.s3.endpoint,
+            &config.s3.region,
+            &config.s3.bucket_name,
         )
         .await
         .expect("Failed to create repositories");

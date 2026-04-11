@@ -1,6 +1,7 @@
 use crate::{
     Service,
     domain::{
+        document::port::DocumentExternalRepository,
         driver::{
             entities::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverRestPeriod, DriverRow,
@@ -12,6 +13,7 @@ use crate::{
         },
         health::port::HealthRepository,
         mail::port::{MailDatabaseRepository, MailSmtpRepository},
+        storage::port::StorageRepository,
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
@@ -25,8 +27,8 @@ use argon2::{
 use tracing::error;
 use uuid::Uuid;
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> DriverService
-    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS> DriverService
+    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -37,7 +39,8 @@ where
     MD: MailDatabaseRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
-    DE: crate::domain::document::port::DocumentExternalRepository,
+    DE: DocumentExternalRepository,
+    DS: StorageRepository,
 {
     fn to_title_case(name: String) -> String {
         name.trim()
