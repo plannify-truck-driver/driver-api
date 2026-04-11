@@ -1,4 +1,4 @@
-use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, OtelConfig, SmtpConfig};
+use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, OtelConfig, S3Config, SmtpConfig};
 use api::{App, app::AppBuilder};
 use axum_test::TestServer;
 use plannify_driver_api_core::application::{DriverRepositories, create_repositories};
@@ -48,6 +48,13 @@ impl AsyncTestContext for TestContext {
             pdf_service_endpoint: "http://localhost:4000".to_string(),
         };
 
+        let s3_config = S3Config {
+            endpoint: "http://localhost:9000".to_string(),
+            access_key: "minioadmin".to_string(),
+            secret_key: "minioadmin".to_string(),
+            bucket_name: "plannify".to_string(),
+        };
+
         let otel_config = OtelConfig::default();
 
         let check_content = CheckContentConfig {
@@ -63,6 +70,7 @@ impl AsyncTestContext for TestContext {
             check_content,
             environment: Environment::Test,
             otel: otel_config,
+            s3: s3_config,
         };
 
         let repositories = create_repositories(
