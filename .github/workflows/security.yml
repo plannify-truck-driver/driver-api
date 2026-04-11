@@ -107,17 +107,6 @@ jobs:
         ports:
           - 4000:4000
 
-      garage:
-        image: dxflrs/garage:v2.2.0
-        env:
-          # On peut configurer Garage via des variables d'env sur les versions récentes
-          # Sinon, il faudra garder le docker run manuel mais avec des fixs.
-          GARAGE_ENVIRONMENT: test
-        ports:
-          - 3900:3900 # S3 API
-          - 3901:3901 # RPC
-          - 3902:3902 # Admin API
-
     env:
       DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
       SQLX_OFFLINE: true
@@ -156,37 +145,52 @@ jobs:
           PGPASSWORD=plannify_password \
             psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
 
-      - name: Start Garage (Manual fix if service fails)
-        # Si le service ci-dessus ne démarre pas car il manque le .toml
-        # On utilise cette méthode robuste :
+      - name: Start Garage S3
         run: |
-          docker run -d \
-            --name garage_test \
-            -p 3900:3900 \
-            -p 3902:3902 \
-            -e GARAGE_ALLOW_WORLD_READABLE_SECRETS=true \
-            dxflrs/garage:v2.2.0 /garage server --rpc-bind-addr 0.0.0.0:3901 --s3-api-bind-addr 0.0.0.0:3900 --metadata-dir /tmp/meta --data-dir /tmp/data
+          docker rm -f garage 2>/dev/null || true
 
-          # Attente de disponibilité
-          timeout 30s sh -c 'until curl -s http://localhost:3900; do sleep 2; done'
+          cp "$GITHUB_WORKSPACE/common-services/garage.toml" "$RUNNER_TEMP/garage.toml"
+          docker run -d \
+            --name garage \
+            -p 3900:3900 \
+            -p 3901:3901 \
+            -p 3903:3903 \
+            -v "$RUNNER_TEMP/garage.toml:/etc/garage.toml" \
+            docker.io/dxflrs/garage:v2.2.0
+
+          echo "Waiting for Garage to be ready..."
+          for i in $(seq 1 30); do
+            if docker exec garage /garage -c /etc/garage.toml status > /dev/null 2>&1; then
+              echo "Garage ready after ${i} attempts"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Garage failed to start in time"
+              docker logs garage
+              exit 1
+            fi
+            sleep 2
+          done
 
       - name: Initialize Garage
         run: |
-          # On utilise l'outil CLI à l'intérieur du container
-          EXEC="docker exec garage_test /garage"
+          NODE_ID=$(docker exec garage /garage -c /etc/garage.toml node id 2>&1 | head -1 | cut -d'@' -f1)
+          echo "Node ID: ${NODE_ID}"
 
-          NODE_ID=$($EXEC node id | head -1 | cut -d'@' -f1)
+          docker exec garage /garage -c /etc/garage.toml layout assign -z default -c 500M "${NODE_ID}"
+          docker exec garage /garage -c /etc/garage.toml layout apply --version 1
 
-          $EXEC layout assign -z default -c 500M "${NODE_ID}"
-          $EXEC layout apply --version 1
-          $EXEC bucket create plannify
+          docker exec garage /garage -c /etc/garage.toml bucket create plannify
 
-          # Import de la clé spécifique
-          $EXEC key import \
+          docker exec garage /garage -c /etc/garage.toml key import \
             GKec803dc6f30c7794b5898653 \
             1ddb1b32618caf699622d54b9d9cbb8d81866be9f9f6ce2255302a78491ec5c0
 
-          $EXEC bucket allow --read --write --owner plannify --key GKec803dc6f30c7794b5898653
+          docker exec garage /garage -c /etc/garage.toml bucket allow \
+            --read --write --owner plannify \
+            --key GKec803dc6f30c7794b5898653
+
+          echo "Garage initialization complete"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
