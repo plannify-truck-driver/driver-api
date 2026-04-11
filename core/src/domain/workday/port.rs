@@ -544,16 +544,19 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
 }
 
 type MockWorkdayCacheType = HashMap<String, Vec<Workday>>;
+type MockDocumentRecordCache = HashMap<(Uuid, i32, i32), Option<WorkdayDocumentRow>>;
 
 #[derive(Clone)]
 pub struct MockWorkdayCacheRepository {
     workdays: Arc<Mutex<MockWorkdayCacheType>>,
+    document_records: Arc<Mutex<MockDocumentRecordCache>>,
 }
 
 impl MockWorkdayCacheRepository {
     pub fn new() -> Self {
         Self {
             workdays: Arc::new(Mutex::new(HashMap::new())),
+            document_records: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -694,20 +697,24 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
 
     async fn get_workday_document_record(
         &self,
-        _driver_id: Uuid,
-        _month: i32,
-        _year: i32,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
     ) -> Result<Option<Option<WorkdayDocumentRow>>, WorkdayError> {
-        Ok(None)
+        let records = self.document_records.lock().unwrap();
+        // Key absent → cache miss (None); key present → Some(value) where value may be None (absence) or Some(row)
+        Ok(records.get(&(driver_id, month, year)).cloned())
     }
 
     async fn set_workday_document_record(
         &self,
-        _driver_id: Uuid,
-        _month: i32,
-        _year: i32,
-        _record: Option<WorkdayDocumentRow>,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+        record: Option<WorkdayDocumentRow>,
     ) -> Result<(), WorkdayError> {
+        let mut records = self.document_records.lock().unwrap();
+        records.insert((driver_id, month, year), record);
         Ok(())
     }
 }

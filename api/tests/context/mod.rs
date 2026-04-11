@@ -2,10 +2,24 @@ use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConf
 use api::{App, app::AppBuilder};
 use axum_test::TestServer;
 use plannify_driver_api_core::application::{DriverRepositories, create_repositories};
+use plannify_driver_api_core::domain::storage::port::StorageRepository;
 use test_context::AsyncTestContext;
 use uuid::Uuid;
 
 use super::helpers::auth::generate_mock_token;
+
+/// S3 objects that mirror the `workday_documents` rows in config/test-dataset.sql.
+/// Uploaded to Garage on setup and deleted on teardown.
+const S3_TEST_FILES: &[(&str, &str)] = &[
+    (
+        "drivers/123e4567-e89b-12d3-a456-426614174000/2026/02/workdays-2026-02.pdf",
+        "workdays-2026-02.pdf",
+    ),
+    (
+        "drivers/123e4567-e89b-12d3-a456-426614174000/2027/01/workdays-2027-01.pdf",
+        "workdays-2027-01.pdf",
+    ),
+];
 
 pub struct TestContext {
     pub app: App,
@@ -49,11 +63,11 @@ impl AsyncTestContext for TestContext {
         };
 
         let s3_config = S3Config {
-            endpoint: "http://localhost:9000".to_string(),
-            access_key: "minioadmin".to_string(),
-            secret_key: "minioadmin".to_string(),
+            endpoint: "http://localhost:3900".to_string(),
+            access_key: "GKec803dc6f30c7794b5898653".to_string(),
+            secret_key: "1ddb1b32618caf699622d54b9d9cbb8d81866be9f9f6ce2255302a78491ec5c0".to_string(),
             bucket_name: "plannify".to_string(),
-            region: "us-east-1".to_string(),
+            region: "garage".to_string(),
         };
 
         let otel_config = OtelConfig::default();
@@ -91,6 +105,17 @@ impl AsyncTestContext for TestContext {
         .await
         .expect("Failed to create repositories");
 
+        // Seed Garage with the PDF files referenced in config/test-dataset.sql
+        // (workday_documents rows). These are cleaned up in teardown().
+        for (s3_key, file_name) in S3_TEST_FILES {
+            let content = format!("%PDF-1.4 test file: {}", file_name);
+            repositories
+                .storage_repository
+                .upload(s3_key, content.into_bytes().into(), "application/pdf")
+                .await
+                .unwrap_or_else(|e| panic!("Failed to seed Garage object {}: {:?}", s3_key, e));
+        }
+
         let app = App::build(config.clone())
             .await
             .expect("Failed to build app")
@@ -125,6 +150,14 @@ impl AsyncTestContext for TestContext {
     }
 
     async fn teardown(self) {
+        for (s3_key, _) in S3_TEST_FILES {
+            self.repositories
+                .storage_repository
+                .delete(s3_key)
+                .await
+                .ok();
+        }
+
         self.app.shutdown().await;
     }
 }
