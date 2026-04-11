@@ -148,10 +148,11 @@ jobs:
 
       - name: Start Garage S3
         run: |
+          cp "$GITHUB_WORKSPACE/common-services/garage.toml" /tmp/garage.toml
           docker run -d \
             --name garage \
             --network host \
-            -v "${{ github.workspace }}/common-services/garage.toml:/etc/garage.toml" \
+            -v "/tmp/garage.toml:/etc/garage.toml" \
             docker.io/dxflrs/garage:v2.2.0
 
           echo "Waiting for Garage to be ready..."
