@@ -114,13 +114,13 @@ jobs:
           GARAGE_DATA_DIR: /var/lib/garage/data
           GARAGE_DB_ENGINE: sqlite
           GARAGE_REPLICATION_FACTOR: "1"
-          GARAGE_RPC_SECRET: 8aa313a024e00dceee7a7aa928c9fd534ff6d8fe6032b6bf3ec6e8ab90fca0a8
+          GARAGE_RPC_SECRET: ${{ secrets.GARAGE_RPC_SECRET }}
           GARAGE_RPC_BIND_ADDR: "[::]:3901"
           GARAGE_RPC_PUBLIC_ADDR: "127.0.0.1:3901"
           GARAGE_S3_API__S3_REGION: garage
           GARAGE_S3_API__API_BIND_ADDR: "[::]:3900"
           GARAGE_ADMIN__API_BIND_ADDR: "[::]:3903"
-          GARAGE_ADMIN__ADMIN_TOKEN: "QEP5Uwqit/qVoRqBV2pVoK86iW98koYuu1WumqzBFmA="
+          GARAGE_ADMIN__ADMIN_TOKEN: ${{ secrets.GARAGE_ADMIN_TOKEN }}
         options: >-
           --health-cmd "/garage status"
           --health-interval 5s
