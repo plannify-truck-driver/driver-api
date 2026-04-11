@@ -37,3 +37,6 @@ uuid = { version = "1.18.1", features = ["serde", "v4"] }
 
 # Documentation
 utoipa = { version = "5.4.0", features = ["uuid", "chrono"] }
+
+# Storage
+aws-sdk-s3 = "1.129.0"

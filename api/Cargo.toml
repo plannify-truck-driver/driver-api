@@ -53,6 +53,9 @@ tracing-opentelemetry = { workspace = true }
 # Email
 lettre = { workspace = true }
 
+# Storage
+aws-sdk-s3 = { workspace = true }
+
 [dev-dependencies]
 axum-test = "18.3.0"
 test-context = "0.5.4"

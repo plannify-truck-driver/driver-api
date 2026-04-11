@@ -222,6 +222,22 @@ pub struct S3Config {
     pub bucket_name: String,
 }
 
+impl S3Config {
+    pub fn to_client(&self) -> aws_sdk_s3::config::Builder {
+        let credentials = aws_sdk_s3::config::Credentials::new(
+            self.access_key.clone(),
+            self.secret_key.clone(),
+            None,
+            None,
+            "Static",
+        );
+
+        aws_sdk_s3::config::Builder::new()
+            .credentials_provider(credentials)
+            .endpoint_url(self.endpoint.clone())
+    }
+}
+
 #[derive(Clone, Debug, ValueEnum, Default, PartialEq)]
 pub enum Environment {
     #[default]
