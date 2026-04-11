@@ -58,6 +58,7 @@ pub struct DriverRepositories {
     pub storage_repository: S3StorageRepository,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn create_repositories(
     database_url: &str,
     redis_url: &str,
