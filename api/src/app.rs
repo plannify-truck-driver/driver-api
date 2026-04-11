@@ -12,7 +12,7 @@ use axum::{
 };
 use plannify_driver_api_core::{application::create_repositories, domain::common::CoreError};
 use tower::{ServiceBuilder, buffer::BufferLayer, limit::RateLimitLayer};
-use tower_http::cors::CorsLayer;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
@@ -136,6 +136,7 @@ impl App {
                         Duration::from_secs(1),
                     )),
             )
+            .layer(TraceLayer::new_for_http())
             .split_for_parts();
 
         // Override API documentation info

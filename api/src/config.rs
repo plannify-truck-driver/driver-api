@@ -41,6 +41,9 @@ pub struct Config {
         default_value = "development"
     )]
     pub environment: Environment,
+
+    #[command(flatten)]
+    pub otel: OtelConfig,
 }
 
 #[derive(Clone, Parser, Debug, Default)]
@@ -164,6 +167,25 @@ pub struct CheckContentConfig {
         value_delimiter = ','
     )]
     pub email_domain_denylist: Vec<String>,
+}
+
+#[derive(Clone, Parser, Debug, Default)]
+pub struct OtelConfig {
+    #[arg(
+        long = "otel-exporter-otlp-endpoint",
+        env = "OTEL_EXPORTER_OTLP_ENDPOINT",
+        default_value = "http://localhost:4317",
+        name = "otel_exporter_otlp_endpoint"
+    )]
+    pub exporter_otlp_endpoint: String,
+
+    #[arg(
+        long = "otel-service-name",
+        env = "OTEL_SERVICE_NAME",
+        default_value = "driver-api",
+        name = "otel_service_name"
+    )]
+    pub service_name: String,
 }
 
 #[derive(Clone, Debug, ValueEnum, Default, PartialEq)]

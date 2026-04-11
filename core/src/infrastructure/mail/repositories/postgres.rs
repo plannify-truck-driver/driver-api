@@ -27,6 +27,14 @@ impl PostgresMailRepository {
 }
 
 impl MailDatabaseRepository for PostgresMailRepository {
+    #[tracing::instrument(
+        name = "db.mails.create_mail",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "INSERT",
+        )
+    )]
     async fn create_mail(
         &self,
         driver: DriverRow,
@@ -63,6 +71,17 @@ impl MailDatabaseRepository for PostgresMailRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.mails.update_mail_status",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "UPDATE",
+            mail_id = %mail_id,
+            status = ?status,
+            sent_at = ?sent_at,
+        )
+    )]
     async fn update_mail_status(
         &self,
         mail_id: Uuid,

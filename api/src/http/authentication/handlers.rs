@@ -1,4 +1,20 @@
 use axum::{Extension, extract::State, http::header::SET_COOKIE, response::AppendHeaders};
+
+type AuthResponse = Result<
+    (
+        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
+        Response<CreateDriverResponse>,
+    ),
+    ApiError,
+>;
+
+type RefreshResponse = Result<
+    (
+        AppendHeaders<[(axum::http::HeaderName, String); 1]>,
+        Response<()>,
+    ),
+    ApiError,
+>;
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{
@@ -23,6 +39,15 @@ use crate::{
     },
 };
 
+#[tracing::instrument(
+    name = "signup",
+    skip_all,
+    fields(
+        firstname = %request.firstname,
+        lastname = %request.lastname,
+        email = %request.email,
+    )
+)]
 #[utoipa::path(
     post,
     path = "/authentication/signup",
@@ -38,13 +63,7 @@ use crate::{
 pub async fn signup(
     State(state): State<AppState>,
     ValidatedJson(request): ValidatedJson<CreateDriverRequest>,
-) -> Result<
-    (
-        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
-        Response<CreateDriverResponse>,
-    ),
-    ApiError,
-> {
+) -> AuthResponse {
     let driver = state
         .service
         .create_driver(request, state.config.check_content.email_domain_denylist)
@@ -85,6 +104,13 @@ pub async fn signup(
     ))
 }
 
+#[tracing::instrument(
+    name = "login",
+    skip_all,
+    fields(
+        email = %request.email,
+    )
+)]
 #[utoipa::path(
     post,
     path = "/authentication/login",
@@ -100,13 +126,7 @@ pub async fn signup(
 pub async fn login(
     State(state): State<AppState>,
     ValidatedJson(request): ValidatedJson<LoginDriverRequest>,
-) -> Result<
-    (
-        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
-        Response<CreateDriverResponse>,
-    ),
-    ApiError,
-> {
+) -> AuthResponse {
     let driver = state.service.login_driver(request).await?;
 
     let auth_validator = &state.auth_validator;
@@ -142,6 +162,13 @@ pub async fn login(
     ))
 }
 
+#[tracing::instrument(
+    name = "verify_driver_account",
+    skip_all,
+    fields(
+        driver_id = %request.driver_id,
+    )
+)]
 #[utoipa::path(
     post,
     path = "/authentication/token/verify-account",
@@ -157,13 +184,7 @@ pub async fn login(
 pub async fn verify_driver_account(
     State(state): State<AppState>,
     ValidatedJson(request): ValidatedJson<VerifyDriverAccountRequest>,
-) -> Result<
-    (
-        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
-        Response<CreateDriverResponse>,
-    ),
-    ApiError,
-> {
+) -> AuthResponse {
     let driver = state
         .service
         .verify_driver_account(request.driver_id, request.token)
@@ -202,6 +223,13 @@ pub async fn verify_driver_account(
     ))
 }
 
+#[tracing::instrument(
+    name = "refresh_token",
+    skip_all,
+    fields(
+        driver_id = %user_identity.user_id,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/authentication/refresh",
@@ -216,13 +244,7 @@ pub async fn verify_driver_account(
 pub async fn refresh_token(
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
-) -> Result<
-    (
-        AppendHeaders<[(axum::http::HeaderName, String); 2]>,
-        Response<CreateDriverResponse>,
-    ),
-    ApiError,
-> {
+) -> AuthResponse {
     let driver = state
         .service
         .get_driver_by_id(user_identity.user_id)
@@ -265,6 +287,7 @@ pub async fn refresh_token(
     ))
 }
 
+#[tracing::instrument(name = "delete_refresh_token", skip_all)]
 #[utoipa::path(
     delete,
     path = "/authentication/refresh",
@@ -274,15 +297,7 @@ pub async fn refresh_token(
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
-pub async fn delete_refresh_token(
-    State(state): State<AppState>,
-) -> Result<
-    (
-        AppendHeaders<[(axum::http::HeaderName, String); 1]>,
-        Response<()>,
-    ),
-    ApiError,
-> {
+pub async fn delete_refresh_token(State(state): State<AppState>) -> RefreshResponse {
     let refresh_token_cookie = state
         .service
         .delete_refresh_token(state.config.common.frontend_url.as_str())

@@ -24,6 +24,18 @@ impl UpdateCacheRepository for RedisUpdateCacheRepository {
         format!("updates:version:{}:page:{}:limit:{}", version, page, limit)
     }
 
+    #[tracing::instrument(
+        name = "cache.updates.get_by_version",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "GET",
+            version = %version,
+            page = %page,
+            limit = %limit,
+            cache.hit = tracing::field::Empty,
+        )
+    )]
     async fn get_updates_by_version(
         &self,
         version: String,
@@ -39,8 +51,11 @@ impl UpdateCacheRepository for RedisUpdateCacheRepository {
         })?;
 
         if json_string.is_none() {
+            tracing::Span::current().record("cache.hit", false);
             return Ok(None);
         }
+
+        tracing::Span::current().record("cache.hit", true);
 
         let updates = serde_json::from_str(&json_string.unwrap()).map_err(|e| {
             error!("Failed to deserialize updates: {:?}", e);
@@ -50,6 +65,17 @@ impl UpdateCacheRepository for RedisUpdateCacheRepository {
         Ok(updates)
     }
 
+    #[tracing::instrument(
+        name = "cache.updates.set_by_version",
+        skip(self, updates),
+        fields(
+            db.system = "redis",
+            db.operation = "SET",
+            version = %version,
+            page = %page,
+            limit = %limit,
+        )
+    )]
     async fn set_updates_by_version(
         &self,
         version: String,

@@ -17,6 +17,17 @@ impl PostgresUpdateRepository {
 }
 
 impl UpdateDatabaseRepository for PostgresUpdateRepository {
+    #[tracing::instrument(
+        name = "db.updates.get_by_version",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT",
+            version = %version,
+            page = %page,
+            limit = %limit,
+        )
+    )]
     async fn get_updates_by_version(
         &self,
         version: String,

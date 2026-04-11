@@ -26,6 +26,14 @@ impl PostgresWorkdayRepository {
 }
 
 impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
+    #[tracing::instrument(
+        name = "db.workdays.get_workday_by_date",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %date,
+        )
+    )]
     async fn get_workday_by_date(
         &self,
         driver_id: Uuid,
@@ -54,6 +62,15 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.get_workdays_by_month",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            month = %month,
+            year = %year,
+        )
+    )]
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -86,6 +103,15 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.get_workdays_by_period",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            start_date = %start_date,
+            end_date = %end_date,
+        )
+    )]
     async fn get_workdays_by_period(
         &self,
         driver_id: Uuid,
@@ -146,6 +172,14 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         Ok((workdays, total_count_record.count.unwrap_or(0) as u32))
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.create_workday",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %create_workday_request.date,
+        )
+    )]
     async fn create_workday(
         &self,
         driver_id: Uuid,
@@ -180,6 +214,14 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.update_workday",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %update_workday_request.date,
+        )
+    )]
     async fn update_workday(
         &self,
         driver_id: Uuid,
@@ -213,6 +255,14 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.delete_workday",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %date,
+        )
+    )]
     async fn delete_workday(&self, driver_id: Uuid, date: NaiveDate) -> Result<(), WorkdayError> {
         let result = sqlx::query!(
             r#"
@@ -241,6 +291,13 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.get_workdays_garbage",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_workdays_garbage(
         &self,
         driver_id: Uuid,
@@ -263,6 +320,14 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.create_workday_garbage",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %date,
+        )
+    )]
     async fn create_workday_garbage(
         &self,
         driver_id: Uuid,
@@ -301,6 +366,14 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         })
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.delete_workday_garbage",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %date,
+        )
+    )]
     async fn delete_workday_garbage(
         &self,
         driver_id: Uuid,
@@ -329,6 +402,13 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.get_workday_documents",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
         let records = sqlx::query!(
             r#"
@@ -353,6 +433,14 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         Ok(records.into_iter().filter_map(|r| r.year).collect())
     }
 
+    #[tracing::instrument(
+        name = "db.workdays.get_workday_documents_by_year",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            year = %year,
+        )
+    )]
     async fn get_workday_documents_by_year(
         &self,
         driver_id: Uuid,

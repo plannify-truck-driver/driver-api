@@ -1,4 +1,4 @@
-use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, SmtpConfig};
+use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, OtelConfig, SmtpConfig};
 use api::{App, app::AppBuilder};
 use axum_test::TestServer;
 use plannify_driver_api_core::application::{DriverRepositories, create_repositories};
@@ -48,6 +48,8 @@ impl AsyncTestContext for TestContext {
             pdf_service_endpoint: "http://localhost:4000".to_string(),
         };
 
+        let otel_config = OtelConfig::default();
+
         let check_content = CheckContentConfig {
             email_domain_denylist: vec!["example.fr".to_string(), "example.com".to_string()],
         };
@@ -60,6 +62,7 @@ impl AsyncTestContext for TestContext {
             common,
             check_content,
             environment: Environment::Test,
+            otel: otel_config,
         };
 
         let repositories = create_repositories(

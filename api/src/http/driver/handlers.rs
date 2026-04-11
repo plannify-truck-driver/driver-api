@@ -12,6 +12,14 @@ use crate::{
     },
 };
 
+#[tracing::instrument(
+    name = "get_all_rest_periods",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        result.count = tracing::field::Empty,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/rest-periods",
@@ -34,9 +42,19 @@ pub async fn get_all_rest_periods(
         .get_driver_rest_periods(user_identity.user_id)
         .await?;
 
+    tracing::Span::current().record("result.total", rest_periods.len());
+
     Ok(Response::ok(rest_periods))
 }
 
+#[tracing::instrument(
+    name = "set_rest_periods",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        result.count = tracing::field::Empty,
+    )
+)]
 #[utoipa::path(
     post,
     path = "/rest-periods",
@@ -57,14 +75,25 @@ pub async fn set_rest_periods(
     Extension(user_identity): Extension<UserIdentity>,
     ValidatedJson(request): ValidatedJson<CreateDriverRestPeriodsRequest>,
 ) -> Result<Response<()>, ApiError> {
+    let rest_periods_count = request.rest_periods.len();
+
     state
         .service
         .set_driver_rest_periods(user_identity.user_id, request.rest_periods)
         .await?;
 
+    tracing::Span::current().record("result.count", rest_periods_count);
+
     Ok(Response::created(()))
 }
 
+#[tracing::instrument(
+    name = "delete_rest_periods",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+    )
+)]
 #[utoipa::path(
     delete,
     path = "/rest-periods",

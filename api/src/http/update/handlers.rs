@@ -13,6 +13,16 @@ use crate::{
     },
 };
 
+#[tracing::instrument(
+    name = "get_all_updates_by_version",
+    skip_all,
+    fields(
+        version = %query.version,
+        page = %query.page,
+        limit = %query.limit,
+        result.total = tracing::field::Empty,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/updates",
@@ -32,6 +42,8 @@ pub async fn get_all_updates_by_version(
         .service
         .get_updates_by_version(query.version, query.page, query.limit)
         .await?;
+
+    tracing::Span::current().record("result.total", total);
 
     let response_updates: PaginatedResponse<Update> = PaginatedResponse {
         data: updates.iter().map(|u| u.to_update()).collect(),

@@ -37,6 +37,14 @@ impl SmtpMailRepository {
 }
 
 impl MailSmtpRepository for SmtpMailRepository {
+    #[tracing::instrument(
+        name = "smtp.mails.send_email",
+        skip(self),
+        fields(
+            to = ?to,
+            subject = ?subject,
+        )
+    )]
     fn send_email(&self, to: String, subject: String, body: String) -> Result<(), MailError> {
         if self.is_test_environment {
             warn!(
@@ -66,6 +74,13 @@ impl MailSmtpRepository for SmtpMailRepository {
         }
     }
 
+    #[tracing::instrument(
+        name = "smtp.mails.send_driver_creation_email",
+        skip(self),
+        fields(
+            driver_id = %driver.pk_driver_id,
+        )
+    )]
     async fn send_driver_creation_email(
         &self,
         driver: DriverRow,

@@ -59,6 +59,17 @@ where
             .join("-")
     }
 
+    #[tracing::instrument(
+        name = "driver_service.create_driver",
+        skip(self),
+        fields(
+            firstname = %create_request.firstname,
+            lastname = %create_request.lastname,
+            email = %create_request.email,
+            limitation_hit = tracing::field::Empty,
+            email_in_denylist = tracing::field::Empty,
+        )
+    )]
     async fn create_driver(
         &self,
         mut create_request: CreateDriverRequest,
@@ -68,6 +79,9 @@ where
             .driver_database_repository
             .get_actual_driver_limitation()
             .await?;
+
+        tracing::Span::current().record("limitation_hit", limitation.is_some());
+
         if let Some(limitation_info) = limitation {
             let current_drivers = self
                 .driver_database_repository
@@ -92,10 +106,14 @@ where
                 "Attempt to sign up with denylisted email domain ({}) : {}",
                 email_domain, create_request.email
             );
+            tracing::Span::current().record("email_in_denylist", true);
+
             return Err(DriverError::EmailDomainDenylisted {
                 domain: email_domain.to_string(),
             });
         }
+
+        tracing::Span::current().record("email_in_denylist", false);
 
         let salt = SaltString::generate(&mut OsRng);
         let params = Params::new(19 * 1024, 2, 1, None).map_err(|e| {
@@ -120,6 +138,13 @@ where
         Ok(driver)
     }
 
+    #[tracing::instrument(
+        name = "driver_service.login_driver",
+        skip(self),
+        fields(
+            email = %login_request.email,
+        )
+    )]
     async fn login_driver(
         &self,
         login_request: LoginDriverRequest,
@@ -170,6 +195,13 @@ where
         Ok(driver)
     }
 
+    #[tracing::instrument(
+        name = "driver_service.get_driver_by_id",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_driver_by_id(&self, driver_id: Uuid) -> Result<Option<DriverRow>, DriverError> {
         let driver = self
             .driver_database_repository
@@ -179,6 +211,13 @@ where
         Ok(driver)
     }
 
+    #[tracing::instrument(
+        name = "driver_service.verify_driver_account",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn verify_driver_account(
         &self,
         driver_id: Uuid,
@@ -279,6 +318,7 @@ where
         Ok((access_token, access_token_cookie, refresh_token_cookie))
     }
 
+    #[tracing::instrument(name = "driver_service.delete_refresh_token", skip(self))]
     async fn delete_refresh_token(&self, domain_name: &str) -> Result<String, DriverError> {
         let domain_host = domain_name
             .trim_start_matches("http://")
@@ -309,6 +349,13 @@ where
         Ok(refresh_token_cookie)
     }
 
+    #[tracing::instrument(
+        name = "driver_service.get_driver_rest_periods",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_driver_rest_periods(
         &self,
         driver_id: Uuid,
@@ -320,6 +367,13 @@ where
         Ok(rest_periods)
     }
 
+    #[tracing::instrument(
+        name = "driver_service.set_driver_rest_periods",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn set_driver_rest_periods(
         &self,
         driver_id: Uuid,
@@ -385,6 +439,13 @@ where
             .await
     }
 
+    #[tracing::instrument(
+        name = "driver_service.delete_driver_rest_periods",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn delete_driver_rest_periods(&self, driver_id: Uuid) -> Result<(), DriverError> {
         self.driver_database_repository
             .delete_driver_rest_periods(driver_id)

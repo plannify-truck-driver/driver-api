@@ -46,6 +46,15 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "cache.workdays.get_workdays_by_month",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            month = %month,
+            year = %year,
+        )
+    )]
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -73,6 +82,15 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         Ok(workdays)
     }
 
+    #[tracing::instrument(
+        name = "cache.workdays.set_workdays_by_month",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            month = %month,
+            year = %year,
+        )
+    )]
     async fn set_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -100,6 +118,15 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "cache.workdays.delete_workdays_by_month",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            month = %month,
+            year = %year,
+        )
+    )]
     async fn delete_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -118,6 +145,17 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "cache.workdays.get_workdays_by_month",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            start_date = %start_date,
+            end_date = %end_date,
+            page = %page,
+            limit = %limit,
+        )
+    )]
     async fn get_workdays_by_period(
         &self,
         driver_id: Uuid,
@@ -155,6 +193,17 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         Ok(Some(workdays_and_count))
     }
 
+    #[tracing::instrument(
+        name = "cache.workdays.set_workdays_by_period",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            start_date = %start_date,
+            end_date = %end_date,
+            page = %page,
+            limit = %limit,
+        )
+    )]
     async fn set_workdays_by_period(
         &self,
         driver_id: Uuid,
@@ -193,6 +242,17 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "cache.workdays.delete_workdays_by_period",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            start_date = %start_date,
+            end_date = %end_date,
+            page = %page,
+            limit = %limit,
+        )
+    )]
     async fn delete_workdays_by_period(
         &self,
         driver_id: Uuid,

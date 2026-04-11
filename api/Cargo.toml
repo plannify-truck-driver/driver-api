@@ -9,7 +9,7 @@ license.workspace = true
 # Axum framework
 axum = "0.8"
 tokio = { version = "1", features = ["full"] }
-tower-http = { version = "0.6.6", features = ["cors"] }
+tower-http = { version = "0.6.6", features = ["cors", "trace"] }
 tower = { version = "0.5.3", features = ["limit"]}
 axum-extra = { version = "0.12.2", features = ["cookie"] }
 
@@ -43,6 +43,12 @@ utoipa-scalar = { version = "0.3.0", features = ["axum"] }
 # Logging
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+# Tracing
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+tracing-opentelemetry = { workspace = true }
 
 # Email
 lettre = { workspace = true }

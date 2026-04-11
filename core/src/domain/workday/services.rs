@@ -34,6 +34,14 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
 {
+    #[tracing::instrument(
+        name = "workday_service.get_workday_by_date",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %date,
+        )
+    )]
     async fn get_workday_by_date(
         &self,
         driver_id: Uuid,
@@ -51,6 +59,15 @@ where
         }
     }
 
+    #[tracing::instrument(
+        name = "workday_service.get_workdays_by_month",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            month = %month,
+            year = %year,
+        )
+    )]
     async fn get_workdays_by_month(
         &self,
         driver_id: Uuid,
@@ -62,8 +79,11 @@ where
             .get_workdays_by_month(driver_id, month, year)
             .await?;
         if let Some(cached_workdays) = cached_workdays {
+            tracing::Span::current().record("cache.hit", true);
             return Ok(cached_workdays);
         }
+
+        tracing::Span::current().record("cache.hit", false);
 
         let workdays = self
             .workday_database_repository
@@ -78,6 +98,18 @@ where
         Ok(workdays_transformed)
     }
 
+    #[tracing::instrument(
+        name = "workday_service.get_workdays_by_period",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            start_date = %start_date,
+            end_date = %end_date,
+            page = %page,
+            limit = %limit,
+            cache.hit = tracing::field::Empty,
+        )
+    )]
     async fn get_workdays_by_period(
         &self,
         driver_id: Uuid,
@@ -91,8 +123,11 @@ where
             .get_workdays_by_period(driver_id, start_date, end_date, page, limit)
             .await?;
         if let Some((cached_workdays, total_count)) = cached_workdays {
+            tracing::Span::current().record("cache.hit", true);
             return Ok((cached_workdays, total_count));
         }
+
+        tracing::Span::current().record("cache.hit", false);
 
         let (workdays, total_count) = self
             .workday_database_repository
@@ -115,6 +150,14 @@ where
         Ok((workdays_transformed, total_count))
     }
 
+    #[tracing::instrument(
+        name = "workday_service.create_workday",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %create_workday_request.date,
+        )
+    )]
     async fn create_workday(
         &self,
         driver_id: Uuid,
@@ -135,6 +178,14 @@ where
         Ok(workday)
     }
 
+    #[tracing::instrument(
+        name = "workday_service.update_workday",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %update_workday_request.date,
+        )
+    )]
     async fn update_workday(
         &self,
         driver_id: Uuid,
@@ -155,6 +206,14 @@ where
         Ok(workday)
     }
 
+    #[tracing::instrument(
+        name = "workday_service.delete_workday",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %date,
+        )
+    )]
     async fn delete_workday(&self, driver_id: Uuid, date: NaiveDate) -> Result<(), WorkdayError> {
         self.workday_database_repository
             .delete_workday(driver_id, date)
@@ -170,6 +229,13 @@ where
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "workday_service.get_workdays_garbage",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_workdays_garbage(
         &self,
         driver_id: Uuid,
@@ -179,6 +245,14 @@ where
             .await
     }
 
+    #[tracing::instrument(
+        name = "workday_service.create_workday_garbage",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %date,
+        )
+    )]
     async fn create_workday_garbage(
         &self,
         driver_id: Uuid,
@@ -201,6 +275,14 @@ where
         Ok(workday_garbage)
     }
 
+    #[tracing::instrument(
+        name = "workday_service.delete_workday_garbage",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            date = %date,
+        )
+    )]
     async fn delete_workday_garbage(
         &self,
         driver_id: Uuid,
@@ -220,12 +302,27 @@ where
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "workday_service.get_workday_documents",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
     async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
         self.workday_database_repository
             .get_workday_documents(driver_id)
             .await
     }
 
+    #[tracing::instrument(
+        name = "workday_service.get_workday_documents_by_year",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            year = %year,
+        )
+    )]
     async fn get_workday_documents_by_year(
         &self,
         driver_id: Uuid,
@@ -236,6 +333,15 @@ where
             .await
     }
 
+    #[tracing::instrument(
+        name = "workday_service.get_workday_document_by_month",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            month = %month,
+            year = %year,
+        )
+    )]
     async fn get_workday_document_by_month(
         &self,
         driver_id: Uuid,

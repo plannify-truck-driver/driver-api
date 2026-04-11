@@ -24,6 +24,14 @@ use crate::{
     },
 };
 
+#[tracing::instrument(
+    name = "get_workday_by_date",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        date = %date,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/workdays/{date}",
@@ -54,6 +62,16 @@ pub async fn get_workday_by_date(
     Ok(Response::ok(workday))
 }
 
+#[tracing::instrument(
+    name = "get_all_workdays_month",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        month = %query.month,
+        year = %query.year,
+        count = tracing::field::Empty,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/workdays/month",
@@ -78,9 +96,23 @@ pub async fn get_all_workdays_month(
         .get_workdays_by_month(user_identity.user_id, query.month, query.year)
         .await?;
 
+    tracing::Span::current().record("count", workdays.len());
+
     Ok(Response::ok(workdays))
 }
 
+#[tracing::instrument(
+    name = "get_all_workdays_period",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        from = %query.from,
+        to = %query.to,
+        page = %query.page,
+        limit = %query.limit,
+        count = tracing::field::Empty,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/workdays",
@@ -111,6 +143,8 @@ pub async fn get_all_workdays_period(
         )
         .await?;
 
+    tracing::Span::current().record("count", workdays.len());
+
     let response_workdays: PaginatedResponse<Workday> = PaginatedResponse {
         data: workdays,
         total: total_count,
@@ -120,6 +154,14 @@ pub async fn get_all_workdays_period(
     Ok(Response::ok(response_workdays))
 }
 
+#[tracing::instrument(
+    name = "create_workday",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        date = %request.date,
+    )
+)]
 #[utoipa::path(
     post,
     path = "/workdays",
@@ -148,6 +190,14 @@ pub async fn create_workday(
     Ok(Response::created(workday.to_workday()))
 }
 
+#[tracing::instrument(
+    name = "update_workday",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        date = %request.date,
+    )
+)]
 #[utoipa::path(
     put,
     path = "/workdays",
@@ -176,6 +226,14 @@ pub async fn update_workday(
     Ok(Response::ok(workday.to_workday()))
 }
 
+#[tracing::instrument(
+    name = "delete_workday",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        date = %date,
+    )
+)]
 #[utoipa::path(
     delete,
     path = "/workdays/{date}",
@@ -206,6 +264,13 @@ pub async fn delete_workday(
     Ok(Response::ok(()))
 }
 
+#[tracing::instrument(
+    name = "get_all_workdays_garbage",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/workdays/garbage",
@@ -230,9 +295,19 @@ pub async fn get_all_workday_garbage(
     let response_workdays: Vec<WorkdayGarbage> =
         workdays.iter().map(|w| w.to_workday_garbage()).collect();
 
+    tracing::Span::current().record("count", response_workdays.len());
+
     Ok(Response::ok(response_workdays))
 }
 
+#[tracing::instrument(
+    name = "delete_workday_garbage",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        date = %date,
+    )
+)]
 #[utoipa::path(
     delete,
     path = "/workdays/garbage/{date}",
@@ -263,6 +338,13 @@ pub async fn delete_workday_garbage(
     Ok(Response::ok(()))
 }
 
+#[tracing::instrument(
+    name = "get_workday_documents",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/workdays/documents/year",
@@ -285,9 +367,19 @@ pub async fn get_workday_documents(
         .get_workday_documents(user_identity.user_id)
         .await?;
 
+    tracing::Span::current().record("count", documents.len());
+
     Ok(Response::ok(documents))
 }
 
+#[tracing::instrument(
+    name = "get_workday_documents_by_year",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        year = %year,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/workdays/documents/{year}",
@@ -314,9 +406,20 @@ pub async fn get_workday_documents_by_year(
         .get_workday_documents_by_year(user_identity.user_id, year)
         .await?;
 
+    tracing::Span::current().record("count", documents.len());
+
     Ok(Response::ok(documents))
 }
 
+#[tracing::instrument(
+    name = "get_workday_document_by_month",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+        year = %year,
+        month = %month,
+    )
+)]
 #[utoipa::path(
     get,
     path = "/workdays/documents/{year}/{month}",

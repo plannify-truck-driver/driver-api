@@ -45,6 +45,14 @@ impl DriverCacheRepository for RedisDriverCacheRepository {
         format!("driver:{}:{}", driver_id, suffix)
     }
 
+    #[tracing::instrument(
+        name = "cache.drivers.set_redis",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "SET",
+        )
+    )]
     async fn set_redis(
         &self,
         key: String,
@@ -63,6 +71,14 @@ impl DriverCacheRepository for RedisDriverCacheRepository {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "cache.drivers.get_redis",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "GET",
+        )
+    )]
     async fn get_redis(&self, key: String) -> Result<Option<String>, DriverError> {
         let mut conn = self.connection.clone();
         let result: Option<String> = conn.get(key.clone()).await.map_err(|e| {

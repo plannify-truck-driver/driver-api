@@ -28,6 +28,16 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
 {
+    #[tracing::instrument(
+        name = "update_service.get_updates_by_version",
+        skip(self),
+        fields(
+            version = %version,
+            page = %page,
+            limit = %limit,
+            cache.hit = tracing::field::Empty,
+        )
+    )]
     async fn get_updates_by_version(
         &self,
         version: String,
@@ -39,9 +49,12 @@ where
             .get_updates_by_version(version.clone(), page, limit)
             .await?;
         if let Some(cached_updates) = cached_updates {
+            tracing::Span::current().record("cache.hit", true);
             let total = cached_updates.len() as u32;
             return Ok((cached_updates, total));
         }
+
+        tracing::Span::current().record("cache.hit", false);
 
         let (updates, count) = self
             .update_database_repository

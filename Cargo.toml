@@ -16,6 +16,12 @@ thiserror = "2.0.17"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+# Tracing
+opentelemetry = "0.27"
+opentelemetry-otlp = { version = "0.27", features = ["tonic"] }
+opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
+tracing-opentelemetry = "0.28"
+
 # Mailing
 lettre = { version = "0.11.19", features = ["builder", "serde", "tokio1", "tokio1-native-tls"] }
 
