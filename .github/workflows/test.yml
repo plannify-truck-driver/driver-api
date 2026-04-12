@@ -86,11 +86,10 @@ jobs:
       # ── Build & test ──────────────────────────────────────────────────────────
 
       - name: Install protoc
-        run: apt-get install -y protobuf-compiler
+        run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-
 
       - name: Run integration tests
         run: cargo test -p api
@@ -104,11 +103,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install protoc
-        run: apt-get install -y protobuf-compiler
+        run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-
 
       - name: Run unit tests
         run: cargo test --lib
