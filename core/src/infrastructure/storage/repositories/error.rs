@@ -5,8 +5,8 @@ pub enum StorageError {
     #[error("Object not found")]
     ObjectNotFound,
 
-    #[error("Failed to upload object")]
-    UploadError,
+    #[error("Failed to upload object: {0}")]
+    UploadError(String),
 
     #[error("Failed to download object")]
     DownloadError,

@@ -310,7 +310,7 @@ impl From<StorageError> for ApiError {
             StorageError::ObjectNotFound => ApiError::NotFound {
                 error_code: "OBJECT_NOT_FOUND".to_string(),
             },
-            StorageError::UploadError => ApiError::InternalServerError,
+            StorageError::UploadError(_) => ApiError::InternalServerError,
             StorageError::DownloadError => ApiError::InternalServerError,
             StorageError::DeleteError => ApiError::InternalServerError,
             StorageError::PresignedUrlError => ApiError::InternalServerError,

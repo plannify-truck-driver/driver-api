@@ -81,11 +81,8 @@ impl StorageRepository for S3StorageRepository {
             .send()
             .await
             .map_err(|e| {
-                error!(
-                    error = %e,
-                    "aws.s3.PutObject failed"
-                );
-                StorageError::UploadError
+                error!(error = %e, "aws.s3.PutObject failed");
+                StorageError::UploadError(e.to_string())
             })?;
 
         Ok(())
