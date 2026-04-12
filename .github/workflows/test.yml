@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  SQLX_OFFLINE: true
 
 jobs:
   integration-tests:
@@ -16,7 +17,6 @@ jobs:
       contents: read
     env:
       DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
-      SQLX_OFFLINE: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,35 +25,9 @@ jobs:
           ssh-key: ${{ secrets.SUBMODULE_DEPLOY_KEY }}
 
       - name: Start services
-        run: |
-          cd common-services
-          docker compose up -d
+        run: docker compose -f common-services/docker-compose.yaml up -d
 
-      - name: Wait for Garage initialization
-        run: |
-          echo "Waiting for garage_init to complete..."
-          TIMEOUT=120
-          START=$(date +%s)
-          while true; do
-            STATUS=$(docker inspect --format='{{.State.Status}}' garage_init 2>/dev/null || echo "not_found")
-            EXIT_CODE=$(docker inspect --format='{{.State.ExitCode}}' garage_init 2>/dev/null || echo "-1")
-
-            if [ "$STATUS" = "exited" ] && [ "$EXIT_CODE" = "0" ]; then
-              echo "Garage initialized successfully"
-              break
-            fi
-
-            NOW=$(date +%s)
-            if [ $((NOW - START)) -ge $TIMEOUT ]; then
-              echo "Timeout waiting for Garage initialization"
-              docker logs garage_init
-              docker logs garage
-              exit 1
-            fi
-
-            echo "  status=$STATUS exit_code=$EXIT_CODE — retrying in 5s..."
-            sleep 5
-          done
+      # ── Database ──────────────────────────────────────────────────────────────
 
       - name: Wait for PostgreSQL
         run: |
@@ -72,21 +46,33 @@ jobs:
         run: |
           PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
 
-      - name: Verify Garage state
-        run: |
-          echo "=== garage-init logs ==="
-          docker logs garage_init 2>&1 || true
-          echo "=== garage key list ==="
-          docker exec garage /garage -c /etc/garage.toml key list 2>&1 || true
-          echo "=== garage bucket list ==="
-          docker exec garage /garage -c /etc/garage.toml bucket list 2>&1 || true
-          echo "=== S3 connectivity test ==="
-          source common-services/garage.env
-          AWS_ACCESS_KEY_ID="${S3_ACCESS_KEY}" \
-          AWS_SECRET_ACCESS_KEY="${S3_SECRET_KEY}" \
-          aws --endpoint-url "${S3_ENDPOINT}" --region "${S3_REGION}" s3 ls "s3://${S3_BUCKET}" 2>&1
+      # ── Garage S3 ─────────────────────────────────────────────────────────────
 
-      - name: Inject S3 credentials into .env
+      - name: Wait for Garage initialization
+        run: |
+          TIMEOUT=120
+          START=$(date +%s)
+          while true; do
+            STATUS=$(docker inspect --format='{{.State.Status}}' garage_init 2>/dev/null || echo "not_found")
+            EXIT_CODE=$(docker inspect --format='{{.State.ExitCode}}' garage_init 2>/dev/null || echo "-1")
+
+            if [ "$STATUS" = "exited" ] && [ "$EXIT_CODE" = "0" ]; then
+              echo "Garage initialized successfully"
+              break
+            fi
+
+            if [ $(( $(date +%s) - START )) -ge $TIMEOUT ]; then
+              echo "Timeout waiting for Garage initialization"
+              docker logs garage_init
+              docker logs garage
+              exit 1
+            fi
+
+            echo "  status=$STATUS exit_code=$EXIT_CODE — retrying in 5s..."
+            sleep 5
+          done
+
+      - name: Expose S3 credentials
         run: |
           source common-services/garage.env
           echo "S3_ACCESS_KEY=${S3_ACCESS_KEY}" >> "$GITHUB_ENV"
@@ -94,6 +80,8 @@ jobs:
           echo "S3_ENDPOINT=${S3_ENDPOINT}" >> "$GITHUB_ENV"
           echo "S3_REGION=${S3_REGION}" >> "$GITHUB_ENV"
           echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}" >> "$GITHUB_ENV"
+
+      # ── Build & test ──────────────────────────────────────────────────────────
 
       - name: Install protoc
         run: sudo apt-get install -y protobuf-compiler
