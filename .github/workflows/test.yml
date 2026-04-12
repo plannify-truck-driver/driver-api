@@ -14,7 +14,7 @@ env:
 
 jobs:
   integration-tests:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
     env:
@@ -86,7 +86,7 @@ jobs:
       # ── Build & test ──────────────────────────────────────────────────────────
 
       - name: Install protoc
-        run: sudo apt-get install -y protobuf-compiler
+        run: apt-get install -y protobuf-compiler
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -98,7 +98,7 @@ jobs:
         run: cargo test -p api
 
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
     steps:
@@ -106,7 +106,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install protoc
-        run: sudo apt-get install -y protobuf-compiler
+        run: apt-get install -y protobuf-compiler
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
