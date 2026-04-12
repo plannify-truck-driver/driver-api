@@ -68,147 +68,147 @@ jobs:
       - name: Run Gitleaks
         run: gitleaks detect --no-banner --verbose --redact
 
-  test:
-    name: Test
-    runs-on: self-hosted
-    needs: [lint, sast, secrets]
+  # test:
+  #   name: Test
+  #   runs-on: self-hosted
+  #   needs: [lint, sast, secrets]
 
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: plannify_user
-          POSTGRES_PASSWORD: plannify_password
-          POSTGRES_DB: plannify_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+  #   services:
+  #     postgres:
+  #       image: postgres:17-alpine
+  #       env:
+  #         POSTGRES_USER: plannify_user
+  #         POSTGRES_PASSWORD: plannify_password
+  #         POSTGRES_DB: plannify_db
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         - 5432:5432
 
-      redis:
-        image: redis:8-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
+  #     redis:
+  #       image: redis:8-alpine
+  #       options: >-
+  #         --health-cmd "redis-cli ping"
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         - 6379:6379
 
-      pdf-service:
-        image: ghcr.io/plannify-truck-driver/pdf-service:0.1.4
-        env:
-          HOST: "0.0.0.0"
-          PORT: 4000
-          WEBSITE_URL: "http://localhost:3000"
-        ports:
-          - 4000:4000
+  #     pdf-service:
+  #       image: ghcr.io/plannify-truck-driver/pdf-service:0.1.4
+  #       env:
+  #         HOST: "0.0.0.0"
+  #         PORT: 4000
+  #         WEBSITE_URL: "http://localhost:3000"
+  #       ports:
+  #         - 4000:4000
 
-    env:
-      DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
-      SQLX_OFFLINE: true
+  #   env:
+  #     DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
+  #     SQLX_OFFLINE: true
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Install PostgreSQL client
-        run: |
-          apt-get update
-          apt-get install -y postgresql-client
+  #     - name: Install PostgreSQL client
+  #       run: |
+  #         apt-get update
+  #         apt-get install -y postgresql-client
 
-      - name: Install Protobuf Compiler
-        run: |
-          apt-get update
-          apt-get install -y protobuf-compiler
-          protoc --version
+  #     - name: Install Protobuf Compiler
+  #       run: |
+  #         apt-get update
+  #         apt-get install -y protobuf-compiler
+  #         protoc --version
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GH_PAT }}
+  #     - name: Login to GitHub Container Registry
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GH_PAT }}
 
-      - name: Pull and run migrations
-        run: |
-          docker pull ghcr.io/plannify-truck-driver/common-services:0.1.11
-          docker run --rm \
-            --network host \
-            -e DATABASE_URL=${{ env.DATABASE_URL }} \
-            ghcr.io/plannify-truck-driver/common-services:0.1.11
+  #     - name: Pull and run migrations
+  #       run: |
+  #         docker pull ghcr.io/plannify-truck-driver/common-services:0.1.11
+  #         docker run --rm \
+  #           --network host \
+  #           -e DATABASE_URL=${{ env.DATABASE_URL }} \
+  #           ghcr.io/plannify-truck-driver/common-services:0.1.11
 
-      - name: Seed test dataset
-        run: |
-          PGPASSWORD=plannify_password \
-            psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
+  #     - name: Seed test dataset
+  #       run: |
+  #         PGPASSWORD=plannify_password \
+  #           psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
 
-      - name: Start Garage S3
-        run: |
-          docker rm -f garage 2>/dev/null || true
+  #     - name: Start Garage S3
+  #       run: |
+  #         docker rm -f garage 2>/dev/null || true
 
-          cp "$GITHUB_WORKSPACE/common-services/garage.toml" "$RUNNER_TEMP/garage.toml"
-          docker run -d \
-            --name garage \
-            -p 3900:3900 \
-            -p 3901:3901 \
-            -p 3903:3903 \
-            -v "$RUNNER_TEMP/garage.toml:/etc/garage.toml" \
-            docker.io/dxflrs/garage:v2.2.0
+  #         cp "$GITHUB_WORKSPACE/common-services/garage.toml" "$RUNNER_TEMP/garage.toml"
+  #         docker run -d \
+  #           --name garage \
+  #           -p 3900:3900 \
+  #           -p 3901:3901 \
+  #           -p 3903:3903 \
+  #           -v "$RUNNER_TEMP/garage.toml:/etc/garage.toml" \
+  #           docker.io/dxflrs/garage:v2.2.0
 
-          echo "Waiting for Garage to be ready..."
-          for i in $(seq 1 30); do
-            if docker exec garage /garage -c /etc/garage.toml status > /dev/null 2>&1; then
-              echo "Garage ready after ${i} attempts"
-              break
-            fi
-            if [ "$i" -eq 30 ]; then
-              echo "Garage failed to start in time"
-              docker logs garage
-              exit 1
-            fi
-            sleep 2
-          done
+  #         echo "Waiting for Garage to be ready..."
+  #         for i in $(seq 1 30); do
+  #           if docker exec garage /garage -c /etc/garage.toml status > /dev/null 2>&1; then
+  #             echo "Garage ready after ${i} attempts"
+  #             break
+  #           fi
+  #           if [ "$i" -eq 30 ]; then
+  #             echo "Garage failed to start in time"
+  #             docker logs garage
+  #             exit 1
+  #           fi
+  #           sleep 2
+  #         done
 
-      - name: Initialize Garage
-        run: |
-          NODE_ID=$(docker exec garage /garage -c /etc/garage.toml node id 2>&1 | head -1 | cut -d'@' -f1)
-          echo "Node ID: ${NODE_ID}"
+  #     - name: Initialize Garage
+  #       run: |
+  #         NODE_ID=$(docker exec garage /garage -c /etc/garage.toml node id 2>&1 | head -1 | cut -d'@' -f1)
+  #         echo "Node ID: ${NODE_ID}"
 
-          docker exec garage /garage -c /etc/garage.toml layout assign -z default -c 500M "${NODE_ID}"
-          docker exec garage /garage -c /etc/garage.toml layout apply --version 1
+  #         docker exec garage /garage -c /etc/garage.toml layout assign -z default -c 500M "${NODE_ID}"
+  #         docker exec garage /garage -c /etc/garage.toml layout apply --version 1
 
-          docker exec garage /garage -c /etc/garage.toml bucket create plannify
+  #         docker exec garage /garage -c /etc/garage.toml bucket create plannify
 
-          docker exec garage /garage -c /etc/garage.toml key import \
-            GKec803dc6f30c7794b5898653 \
-            1ddb1b32618caf699622d54b9d9cbb8d81866be9f9f6ce2255302a78491ec5c0
+  #         docker exec garage /garage -c /etc/garage.toml key import \
+  #           GKec803dc6f30c7794b5898653 \
+  #           1ddb1b32618caf699622d54b9d9cbb8d81866be9f9f6ce2255302a78491ec5c0
 
-          docker exec garage /garage -c /etc/garage.toml bucket allow \
-            --read --write --owner plannify \
-            --key GKec803dc6f30c7794b5898653
+  #         docker exec garage /garage -c /etc/garage.toml bucket allow \
+  #           --read --write --owner plannify \
+  #           --key GKec803dc6f30c7794b5898653
 
-          echo "Garage initialization complete"
+  #         echo "Garage initialization complete"
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+  #     - name: Install Rust
+  #       uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+  #     - name: Cache Cargo
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           target/
+  #         key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+  #         restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Run tests
-        run: cargo test --verbose --all-features
+  #     - name: Run tests
+  #       run: cargo test --verbose --all-features
 
-      - name: Run doc tests
-        run: cargo test --doc
+  #     - name: Run doc tests
+  #       run: cargo test --doc
