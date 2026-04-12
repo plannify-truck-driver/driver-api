@@ -55,6 +55,23 @@ jobs:
             sleep 5
           done
 
+      - name: Wait for PostgreSQL
+        run: |
+          until PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -c '\q' 2>/dev/null; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Run database migrations
+        run: |
+          for f in $(ls common-services/database-migrations/*.sql | sort); do
+            PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -f "$f"
+          done
+
+      - name: Seed test dataset
+        run: |
+          PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
+
       - name: Verify Garage state
         run: |
           echo "=== garage-init logs ==="
