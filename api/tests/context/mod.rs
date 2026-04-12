@@ -63,11 +63,11 @@ impl AsyncTestContext for TestContext {
         };
 
         let s3_config = S3Config {
-            endpoint: "http://localhost:3900".to_string(),
-            access_key: "GKec803dc6f30c7794b5898653".to_string(),
-            secret_key: "1ddb1b32618caf699622d54b9d9cbb8d81866be9f9f6ce2255302a78491ec5c0".to_string(),
-            bucket_name: "plannify".to_string(),
-            region: "garage".to_string(),
+            endpoint: std::env::var("S3_ENDPOINT").unwrap_or_else(|_| "http://localhost:3900".to_string()),
+            access_key: std::env::var("S3_ACCESS_KEY").expect("S3_ACCESS_KEY must be set"),
+            secret_key: std::env::var("S3_SECRET_KEY").expect("S3_SECRET_KEY must be set"),
+            bucket_name: std::env::var("S3_BUCKET_NAME").unwrap_or_else(|_| "plannify".to_string()),
+            region: std::env::var("S3_REGION").unwrap_or_else(|_| "garage".to_string()),
         };
 
         let otel_config = OtelConfig::default();
