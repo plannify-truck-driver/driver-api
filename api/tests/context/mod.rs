@@ -34,6 +34,8 @@ pub struct TestContext {
 
 impl AsyncTestContext for TestContext {
     async fn setup() -> Self {
+        dotenv::dotenv().ok();
+
         let database_url: String =
             "postgres://plannify_user:plannify_password@localhost:5432/plannify_db".to_string();
 
