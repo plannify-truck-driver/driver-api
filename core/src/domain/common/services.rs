@@ -3,12 +3,13 @@ use crate::domain::{
     driver::port::{DriverCacheRepository, DriverDatabaseRepository},
     health::port::HealthRepository,
     mail::port::{MailDatabaseRepository, MailSmtpRepository},
+    storage::port::StorageRepository,
     update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
     workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
 };
 
 #[derive(Clone)]
-pub struct Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
+pub struct Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -20,6 +21,7 @@ where
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
+    DS: StorageRepository,
 {
     pub(crate) health_repository: H,
     pub(crate) driver_database_repository: DD,
@@ -31,10 +33,11 @@ where
     pub(crate) update_database_repository: UD,
     pub(crate) update_cache_repository: UC,
     pub(crate) document_external_repository: DE,
+    pub(crate) storage_repository: DS,
 }
 
 #[allow(clippy::too_many_arguments)]
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE> Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE>
+impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS> Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -46,6 +49,7 @@ where
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
+    DS: StorageRepository,
 {
     pub fn new(
         health_repository: H,
@@ -58,6 +62,7 @@ where
         update_database_repository: UD,
         update_cache_repository: UC,
         document_external_repository: DE,
+        storage_repository: DS,
     ) -> Self {
         Self {
             health_repository,
@@ -70,6 +75,7 @@ where
             update_database_repository,
             update_cache_repository,
             document_external_repository,
+            storage_repository,
         }
     }
 }

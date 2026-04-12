@@ -7,8 +7,8 @@ use plannify_driver_api_core::{
     domain::common::CoreError,
     infrastructure::{
         driver::repositories::error::DriverError, health::repositories::error::HealthError,
-        mail::repositories::error::MailError, update::repositories::error::UpdateError,
-        workday::repositories::error::WorkdayError,
+        mail::repositories::error::MailError, storage::repositories::error::StorageError,
+        update::repositories::error::UpdateError, workday::repositories::error::WorkdayError,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -20,7 +20,7 @@ use utoipa::ToSchema;
 #[derive(Debug, Error, Clone)]
 pub enum ApiError {
     #[error("Service is unavailable: {msg}")]
-    ServiceUnavailable { msg: String },
+    ServiceUnavailable { msg: String, error_code: String },
 
     #[error("Internal server error")]
     InternalServerError,
@@ -78,6 +78,12 @@ impl From<ApiError> for ErrorBody {
         let status = val.status_code().as_u16();
         let message = val.to_string();
         match val {
+            ApiError::ServiceUnavailable { error_code, .. } => ErrorBody {
+                message,
+                error_code,
+                content: None,
+                status,
+            },
             ApiError::Unauthorized { error_code } => ErrorBody {
                 message,
                 error_code,
@@ -133,7 +139,10 @@ impl IntoResponse for ApiError {
 impl From<CoreError> for ApiError {
     fn from(error: CoreError) -> Self {
         match error {
-            CoreError::ServiceUnavailable(message) => ApiError::ServiceUnavailable { msg: message },
+            CoreError::ServiceUnavailable(message) => ApiError::ServiceUnavailable {
+                msg: message,
+                error_code: "SERVICE_UNAVAILABLE".to_string(),
+            },
             CoreError::CorsBindingError { message } => ApiError::StartupError {
                 msg: format!("CORS binding error: {}", message),
             },
@@ -147,9 +156,15 @@ impl From<HealthError> for ApiError {
             HealthError::DatabaseError => ApiError::InternalServerError,
             HealthError::DatabaseUnhealthy => ApiError::ServiceUnavailable {
                 msg: "Database is unhealthy".to_string(),
+                error_code: "DATABASE_UNHEALTHY".to_string(),
             },
             HealthError::CacheUnhealthy => ApiError::ServiceUnavailable {
                 msg: "Cache is unhealthy".to_string(),
+                error_code: "CACHE_UNHEALTHY".to_string(),
+            },
+            HealthError::StorageUnhealthy => ApiError::ServiceUnavailable {
+                msg: "Storage is unhealthy".to_string(),
+                error_code: "STORAGE_UNHEALTHY".to_string(),
             },
         }
     }
@@ -285,6 +300,21 @@ impl From<UpdateError> for ApiError {
             UpdateError::NotFound => ApiError::NotFound {
                 error_code: "UPDATE_NOT_FOUND".to_string(),
             },
+        }
+    }
+}
+
+impl From<StorageError> for ApiError {
+    fn from(error: StorageError) -> Self {
+        match error {
+            StorageError::ObjectNotFound => ApiError::NotFound {
+                error_code: "OBJECT_NOT_FOUND".to_string(),
+            },
+            StorageError::UploadError(_) => ApiError::InternalServerError,
+            StorageError::DownloadError => ApiError::InternalServerError,
+            StorageError::DeleteError => ApiError::InternalServerError,
+            StorageError::PresignedUrlError => ApiError::InternalServerError,
+            StorageError::Internal => ApiError::InternalServerError,
         }
     }
 }

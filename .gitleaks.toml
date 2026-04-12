@@ -1,0 +1,11 @@
+title = "plannify gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignore integration and unit test directories"
+paths = [
+  '''^api/tests/''',
+  '.github/workflows/security.yml',
+]

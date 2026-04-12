@@ -149,3 +149,13 @@ pub struct WorkdayDocument {
 }
 
 pub type GetWorkdayDocumentsByYearResponse = Vec<WorkdayDocument>;
+
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
+pub struct WorkdayDocumentRow {
+    pub fk_driver_id: Uuid,
+    pub month: i32,
+    pub year: i32,
+    pub file_name: String,
+    pub file_path: String,
+    pub created_at: DateTime<Utc>,
+}

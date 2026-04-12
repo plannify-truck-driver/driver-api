@@ -1,0 +1,114 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+env:
+  CARGO_TERM_COLOR: always
+  SQLX_OFFLINE: true
+
+jobs:
+  integration-tests:
+    runs-on: self-hosted
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          ssh-key: ${{ secrets.SUBMODULE_DEPLOY_KEY }}
+
+      - name: Start services
+        run: docker compose -f common-services/docker-compose.yaml up -d
+
+      # ── Database ──────────────────────────────────────────────────────────────
+
+      - name: Wait for PostgreSQL
+        run: |
+          until PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -c '\q' 2>/dev/null; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Run database migrations
+        run: |
+          for f in $(ls common-services/database-migrations/*.sql | sort); do
+            PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -f "$f"
+          done
+
+      - name: Seed test dataset
+        run: |
+          PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
+
+      # ── Garage S3 ─────────────────────────────────────────────────────────────
+
+      - name: Wait for Garage initialization
+        run: |
+          TIMEOUT=120
+          START=$(date +%s)
+          while true; do
+            STATUS=$(docker inspect --format='{{.State.Status}}' garage_init 2>/dev/null || echo "not_found")
+            EXIT_CODE=$(docker inspect --format='{{.State.ExitCode}}' garage_init 2>/dev/null || echo "-1")
+
+            if [ "$STATUS" = "exited" ] && [ "$EXIT_CODE" = "0" ]; then
+              echo "Garage initialized successfully"
+              break
+            fi
+
+            if [ $(( $(date +%s) - START )) -ge $TIMEOUT ]; then
+              echo "Timeout waiting for Garage initialization"
+              docker logs garage_init
+              docker logs garage
+              exit 1
+            fi
+
+            echo "  status=$STATUS exit_code=$EXIT_CODE — retrying in 5s..."
+            sleep 5
+          done
+
+      - name: Expose S3 credentials
+        run: |
+          source common-services/garage.env
+          echo "S3_ACCESS_KEY=${S3_ACCESS_KEY}" >> "$GITHUB_ENV"
+          echo "S3_SECRET_KEY=${S3_SECRET_KEY}" >> "$GITHUB_ENV"
+          echo "S3_ENDPOINT=${S3_ENDPOINT}" >> "$GITHUB_ENV"
+          echo "S3_REGION=${S3_REGION}" >> "$GITHUB_ENV"
+          echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}" >> "$GITHUB_ENV"
+
+      # ── Build & test ──────────────────────────────────────────────────────────
+
+      - name: Install protoc
+        run: apt-get install -y protobuf-compiler
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+
+      - name: Run integration tests
+        run: cargo test -p api
+
+  unit-tests:
+    runs-on: self-hosted
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install protoc
+        run: apt-get install -y protobuf-compiler
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+
+      - name: Run unit tests
+        run: cargo test --lib

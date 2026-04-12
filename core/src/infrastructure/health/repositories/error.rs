@@ -10,4 +10,7 @@ pub enum HealthError {
 
     #[error("The cache is unhealthy")]
     CacheUnhealthy,
+
+    #[error("The storage is unhealthy")]
+    StorageUnhealthy,
 }

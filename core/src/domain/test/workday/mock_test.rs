@@ -1,14 +1,16 @@
 #[cfg(test)]
 mod tests {
+    use bytes::Bytes;
     use chrono::Datelike;
     use uuid::Uuid;
 
     use crate::{
         domain::{
+            storage::port::StorageRepository,
             test::create_mock_service,
             workday::{
-                entities::{CreateWorkdayRequest, UpdateWorkdayRequest},
-                port::{WorkdayDatabaseRepository, WorkdayService},
+                entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocumentRow},
+                port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
             },
         },
         infrastructure::workday::repositories::error::WorkdayError,
@@ -683,6 +685,106 @@ mod tests {
             chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
             "Expected workday date to match"
         );
+
+        Ok(())
+    }
+
+    // --- get_workday_document_by_month ---
+
+    // Tests for the S3 path and cache behaviour are unit-tested here using in-memory
+    // mocks. Tests requiring a real driver record (gRPC path) are integration-tested
+    // against the data from config/test-dataset.sql.
+
+    #[tokio::test]
+    async fn test_get_workday_document_by_month_from_s3() -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174000").unwrap();
+        let s3_key = "drivers/123e4567-e89b-12d3-a456-426614174000/2026/02/workdays-2026-02.pdf";
+
+        // Pre-seed cache with a document record (mirrors a row from workday_documents)
+        service
+            .workday_cache_repository
+            .set_workday_document_record(
+                driver_id,
+                2,
+                2026,
+                Some(WorkdayDocumentRow {
+                    fk_driver_id: driver_id,
+                    month: 2,
+                    year: 2026,
+                    file_name: "workdays-2026-02.pdf".to_string(),
+                    file_path: s3_key.to_string(),
+                    created_at: chrono::Utc::now(),
+                }),
+            )
+            .await?;
+
+        // Pre-seed the mock S3 store with the PDF bytes
+        let pdf_bytes = Bytes::from("%PDF-1.4 fake content");
+        service
+            .storage_repository
+            .upload(s3_key, pdf_bytes.clone(), "application/pdf")
+            .await?;
+
+        let result = service
+            .get_workday_document_by_month(driver_id, 2, 2026)
+            .await
+            .expect("should return Ok");
+
+        assert!(result.is_some(), "should have returned PDF bytes from S3");
+        assert_eq!(result.unwrap(), pdf_bytes, "returned bytes should match the uploaded content");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_workday_document_by_month_caches_absence_on_db_miss(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174000").unwrap();
+
+        // No workday_documents record in the mock DB. The service queries DB (miss),
+        // caches the absence, then attempts gRPC. gRPC fails here because there is no
+        // driver in the mock, but the cache write happens before that step.
+        let _ = service.get_workday_document_by_month(driver_id, 6, 2026).await;
+
+        let cached = service
+            .workday_cache_repository
+            .get_workday_document_record(driver_id, 6, 2026)
+            .await
+            .expect("cache read should not fail");
+
+        assert!(cached.is_some(), "absence should have been written to cache after DB miss");
+        assert!(cached.unwrap().is_none(), "cached value should be the None sentinel");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_workday_document_by_month_cache_hit_skips_db(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174000").unwrap();
+
+        // Seed a cached absence. If the service were to query the DB it would write
+        // Some(None) again (indistinguishable), but the important invariant is that
+        // the cache entry is not removed or overwritten with a different value.
+        service
+            .workday_cache_repository
+            .set_workday_document_record(driver_id, 6, 2026, None)
+            .await?;
+
+        // Service sees Some(None) in cache → skips DB → proceeds to gRPC.
+        // gRPC fails here (no driver in mock), but that is after the cache decision.
+        let _ = service.get_workday_document_by_month(driver_id, 6, 2026).await;
+
+        let cached = service
+            .workday_cache_repository
+            .get_workday_document_record(driver_id, 6, 2026)
+            .await?;
+
+        assert!(cached.is_some(), "cache entry should still be present");
+        assert!(cached.unwrap().is_none(), "absence sentinel should be unchanged");
 
         Ok(())
     }

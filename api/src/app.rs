@@ -62,6 +62,11 @@ impl App {
             config.common.frontend_url.clone(),
             matches!(config.environment, Environment::Test),
             &config.common.pdf_service_endpoint,
+            &config.s3.access_key,
+            &config.s3.secret_key,
+            &config.s3.endpoint,
+            &config.s3.region,
+            &config.s3.bucket_name,
         )
         .await
         .map_err(|e| ApiError::StartupError {

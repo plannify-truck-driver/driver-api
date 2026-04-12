@@ -26,6 +26,6 @@ impl Default for MockHealthRepository {
 
 impl HealthRepository for MockHealthRepository {
     async fn ping(&self) -> IsHealthy {
-        IsHealthy::new(true, true)
+        IsHealthy::new(true, true, true)
     }
 }

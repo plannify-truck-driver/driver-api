@@ -6,8 +6,8 @@ use uuid::Uuid;
 use crate::{
     domain::workday::{
         entities::{
-            CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument, WorkdayGarbageRow,
-            WorkdayRow,
+            CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument, WorkdayDocumentRow,
+            WorkdayGarbageRow, WorkdayRow,
         },
         port::WorkdayDatabaseRepository,
     },
@@ -481,4 +481,38 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
             })
             .collect())
     }
+
+    #[tracing::instrument(
+        name = "db.workdays.get_workday_document_record",
+        skip(self),
+        fields(
+            db.system = "postgresql",
+            db.operation = "SELECT",
+            driver_id = %driver_id,
+            month = %month,
+            year = %year,
+        )
+    )]
+    async fn get_workday_document_record(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+    ) -> Result<Option<WorkdayDocumentRow>, WorkdayError> {
+        sqlx::query_as::<_, WorkdayDocumentRow>(
+            "SELECT fk_driver_id, month, year, file_name, file_path, created_at
+             FROM workday_documents
+             WHERE fk_driver_id = $1 AND month = $2 AND year = $3",
+        )
+        .bind(driver_id)
+        .bind(month)
+        .bind(year)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get workday document record: {:?}", e);
+            WorkdayError::DatabaseError
+        })
+    }
+
 }

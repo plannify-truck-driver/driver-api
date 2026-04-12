@@ -1,11 +1,25 @@
-use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, OtelConfig, SmtpConfig};
+use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, OtelConfig, S3Config, SmtpConfig};
 use api::{App, app::AppBuilder};
 use axum_test::TestServer;
 use plannify_driver_api_core::application::{DriverRepositories, create_repositories};
+use plannify_driver_api_core::domain::storage::port::StorageRepository;
 use test_context::AsyncTestContext;
 use uuid::Uuid;
 
 use super::helpers::auth::generate_mock_token;
+
+/// S3 objects that mirror the `workday_documents` rows in config/test-dataset.sql.
+/// Uploaded to Garage on setup and deleted on teardown.
+const S3_TEST_FILES: &[(&str, &str)] = &[
+    (
+        "drivers/123e4567-e89b-12d3-a456-426614174000/2026/02/workdays-2026-02.pdf",
+        "workdays-2026-02.pdf",
+    ),
+    (
+        "drivers/123e4567-e89b-12d3-a456-426614174000/2027/01/workdays-2027-01.pdf",
+        "workdays-2027-01.pdf",
+    ),
+];
 
 pub struct TestContext {
     pub app: App,
@@ -20,6 +34,8 @@ pub struct TestContext {
 
 impl AsyncTestContext for TestContext {
     async fn setup() -> Self {
+        dotenv::dotenv().ok();
+
         let database_url: String =
             "postgres://plannify_user:plannify_password@localhost:5432/plannify_db".to_string();
 
@@ -48,6 +64,14 @@ impl AsyncTestContext for TestContext {
             pdf_service_endpoint: "http://localhost:4000".to_string(),
         };
 
+        let s3_config = S3Config {
+            endpoint: std::env::var("S3_ENDPOINT").unwrap_or_else(|_| "http://localhost:3900".to_string()),
+            access_key: std::env::var("S3_ACCESS_KEY").expect("S3_ACCESS_KEY must be set"),
+            secret_key: std::env::var("S3_SECRET_KEY").expect("S3_SECRET_KEY must be set"),
+            bucket_name: std::env::var("S3_BUCKET_NAME").unwrap_or_else(|_| "plannify".to_string()),
+            region: std::env::var("S3_REGION").unwrap_or_else(|_| "garage".to_string()),
+        };
+
         let otel_config = OtelConfig::default();
 
         let check_content = CheckContentConfig {
@@ -63,6 +87,7 @@ impl AsyncTestContext for TestContext {
             check_content,
             environment: Environment::Test,
             otel: otel_config,
+            s3: s3_config,
         };
 
         let repositories = create_repositories(
@@ -73,9 +98,25 @@ impl AsyncTestContext for TestContext {
             config.common.frontend_url.clone(),
             true,
             &config.common.pdf_service_endpoint,
+            &config.s3.access_key,
+            &config.s3.secret_key,
+            &config.s3.endpoint,
+            &config.s3.region,
+            &config.s3.bucket_name,
         )
         .await
         .expect("Failed to create repositories");
+
+        // Seed Garage with the PDF files referenced in config/test-dataset.sql
+        // (workday_documents rows). These are cleaned up in teardown().
+        for (s3_key, file_name) in S3_TEST_FILES {
+            let content = format!("%PDF-1.4 test file: {}", file_name);
+            repositories
+                .storage_repository
+                .upload(s3_key, content.into_bytes().into(), "application/pdf")
+                .await
+                .unwrap_or_else(|e| panic!("Failed to seed Garage object {}: {:?}", s3_key, e));
+        }
 
         let app = App::build(config.clone())
             .await
@@ -111,6 +152,14 @@ impl AsyncTestContext for TestContext {
     }
 
     async fn teardown(self) {
+        for (s3_key, _) in S3_TEST_FILES {
+            self.repositories
+                .storage_repository
+                .delete(s3_key)
+                .await
+                .ok();
+        }
+
         self.app.shutdown().await;
     }
 }
