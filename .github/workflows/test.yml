@@ -61,9 +61,19 @@ jobs:
           echo "=== garage bucket list ==="
           docker exec garage /garage -c /etc/garage.toml bucket list 2>&1 || true
           echo "=== S3 connectivity test ==="
-          AWS_ACCESS_KEY_ID=GKec803dc6f30c7794b5898653 \
-          AWS_SECRET_ACCESS_KEY=1ddb1b32618caf699622d54b9d9cbb8d81866be9f9f6ce2255302a78491ec5c0 \
-          aws --endpoint-url http://localhost:3900 --region garage s3 ls s3://plannify 2>&1 || true
+          source common-services/garage.env
+          AWS_ACCESS_KEY_ID="${S3_ACCESS_KEY_ID}" \
+          AWS_SECRET_ACCESS_KEY="${S3_SECRET_ACCESS_KEY}" \
+          aws --endpoint-url "${S3_ENDPOINT}" --region "${S3_REGION}" s3 ls "s3://${S3_BUCKET}" 2>&1
+
+      - name: Inject S3 credentials into .env
+        run: |
+          source common-services/garage.env
+          sed -i "s|^S3_ACCESS_KEY=.*|S3_ACCESS_KEY=${S3_ACCESS_KEY_ID}|" .env
+          sed -i "s|^S3_SECRET_KEY=.*|S3_SECRET_KEY=${S3_SECRET_ACCESS_KEY}|" .env
+          sed -i "s|^S3_ENDPOINT=.*|S3_ENDPOINT=${S3_ENDPOINT}|" .env
+          sed -i "s|^S3_REGION=.*|S3_REGION=${S3_REGION}|" .env
+          sed -i "s|^S3_BUCKET_NAME=.*|S3_BUCKET_NAME=${S3_BUCKET}|" .env
 
       - name: Install protoc
         run: sudo apt-get install -y protobuf-compiler
