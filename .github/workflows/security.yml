@@ -31,6 +31,9 @@ jobs:
         with:
           components: clippy
 
+      - name: Add Cargo to PATH
+        run: echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+
       - name: Cache Cargo
         uses: actions/cache@v4
         with:
