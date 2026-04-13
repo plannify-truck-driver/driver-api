@@ -98,7 +98,7 @@ async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestConte
     let expected_workday_document_2 = WorkdayDocumentInformation {
         month: 2,
         year: 2026,
-        generated_at: None,
+        generated_at: Some("2026-03-01T10:00:00Z".parse().unwrap()),
     };
     let workday_document_2 = body[1];
     verify_workday_document_content(workday_document_2, expected_workday_document_2);
