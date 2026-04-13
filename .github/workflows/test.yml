@@ -92,7 +92,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run integration tests
-        run: cargo test -p api
+        run: RUST_LOG=debug cargo test -p api
 
   unit-tests:
     runs-on: self-hosted
