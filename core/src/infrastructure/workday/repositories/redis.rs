@@ -70,16 +70,17 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             WorkdayError::Internal
         })?;
 
-        if json_string.is_none() {
+        let Some(json) = json_string else {
             return Ok(None);
+        };
+
+        match serde_json::from_str(&json) {
+            Ok(workdays) => Ok(workdays),
+            Err(e) => {
+                error!("Failed to deserialize workdays from key {}, treating as cache miss: {:?}", key, e);
+                Ok(None)
+            }
         }
-
-        let workdays = serde_json::from_str(&json_string.unwrap()).map_err(|e| {
-            error!("Failed to deserialize workdays: {:?}", e);
-            WorkdayError::Internal
-        })?;
-
-        Ok(workdays)
     }
 
     #[tracing::instrument(
@@ -180,17 +181,17 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             WorkdayError::Internal
         })?;
 
-        if json_string.is_none() {
+        let Some(json) = json_string else {
             return Ok(None);
+        };
+
+        match serde_json::from_str(&json) {
+            Ok(workdays_and_count) => Ok(Some(workdays_and_count)),
+            Err(e) => {
+                error!("Failed to deserialize workdays and count from key {}, treating as cache miss: {:?}", key, e);
+                Ok(None)
+            }
         }
-
-        let workdays_and_count: (Vec<Workday>, u32) = serde_json::from_str(&json_string.unwrap())
-            .map_err(|e| {
-            error!("Failed to deserialize workdays and count: {:?}", e);
-            WorkdayError::Internal
-        })?;
-
-        Ok(Some(workdays_and_count))
     }
 
     #[tracing::instrument(
@@ -312,12 +313,13 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             return Ok(None); // cache miss
         };
 
-        let record: Option<WorkdayDocument> = serde_json::from_str(&json).map_err(|e| {
-            error!("Failed to deserialize workday document record: {:?}", e);
-            WorkdayError::Internal
-        })?;
-
-        Ok(Some(record)) // Some(None) = no data, Some(Some(doc)) = hit
+        match serde_json::from_str(&json) {
+            Ok(record) => Ok(Some(record)), // Some(None) = absence, Some(Some(doc)) = hit
+            Err(e) => {
+                error!("Failed to deserialize workday document record from key {}, treating as cache miss: {:?}", key, e);
+                Ok(None)
+            }
+        }
     }
 
     #[tracing::instrument(
@@ -385,12 +387,13 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             return Ok(None);
         };
 
-        let documents = serde_json::from_str(&json).map_err(|e| {
-            error!("Failed to deserialize documents by year: {:?}", e);
-            WorkdayError::Internal
-        })?;
-
-        Ok(Some(documents))
+        match serde_json::from_str(&json) {
+            Ok(documents) => Ok(Some(documents)),
+            Err(e) => {
+                error!("Failed to deserialize documents by year from key {}, treating as cache miss: {:?}", key, e);
+                Ok(None)
+            }
+        }
     }
 
     #[tracing::instrument(
