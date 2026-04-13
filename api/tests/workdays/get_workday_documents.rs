@@ -1,6 +1,6 @@
 use api::http::common::api_error::ErrorBody;
 use axum::http::StatusCode;
-use plannify_driver_api_core::domain::workday::entities::WorkdayDocument;
+use plannify_driver_api_core::domain::workday::entities::WorkdayDocumentInformation;
 use serial_test::serial;
 use test_context::test_context;
 
@@ -79,7 +79,7 @@ async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestConte
 
     res.assert_status(StatusCode::OK);
 
-    let body: Vec<WorkdayDocument> = res.json();
+    let body: Vec<WorkdayDocumentInformation> = res.json();
 
     assert_eq!(
         body.len(),
@@ -87,7 +87,7 @@ async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestConte
         "there should be exactly two months available"
     );
 
-    let expected_workday_document_1 = WorkdayDocument {
+    let expected_workday_document_1 = WorkdayDocumentInformation {
         month: 1,
         year: 2026,
         generated_at: None,
@@ -95,7 +95,7 @@ async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestConte
     let workday_document_1 = body[0];
     verify_workday_document_content(workday_document_1, expected_workday_document_1);
 
-    let expected_workday_document_2 = WorkdayDocument {
+    let expected_workday_document_2 = WorkdayDocumentInformation {
         month: 2,
         year: 2026,
         generated_at: None,

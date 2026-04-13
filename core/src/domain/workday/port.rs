@@ -11,8 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::entities::{
-        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument,
-        WorkdayDocumentRow, WorkdayGarbageRow, WorkdayRow,
+        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument, WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow
     },
     infrastructure::workday::repositories::error::WorkdayError,
 };
@@ -130,14 +129,14 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> impl Future<Output = Result<Vec<WorkdayDocument>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Vec<WorkdayDocumentInformation>, WorkdayError>> + Send;
 
     fn get_workday_document_record(
         &self,
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> impl Future<Output = Result<Option<WorkdayDocumentRow>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Option<WorkdayDocument>, WorkdayError>> + Send;
 }
 
 pub trait WorkdayCacheRepository: Send + Sync {
@@ -213,14 +212,14 @@ pub trait WorkdayCacheRepository: Send + Sync {
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> impl Future<Output = Result<Option<Option<WorkdayDocumentRow>>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Option<WorkdayDocument>, WorkdayError>> + Send;
 
     fn set_workday_document_record(
         &self,
         driver_id: Uuid,
         month: i32,
         year: i32,
-        record: Option<WorkdayDocumentRow>,
+        record: Option<WorkdayDocument>,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 }
 pub trait WorkdayService: Send + Sync {
@@ -290,7 +289,7 @@ pub trait WorkdayService: Send + Sync {
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> impl Future<Output = Result<Vec<WorkdayDocument>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Vec<WorkdayDocumentInformation>, WorkdayError>> + Send;
 
     fn get_workday_document_by_month(
         &self,
@@ -519,12 +518,12 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> Result<Vec<WorkdayDocument>, WorkdayError> {
+    ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
-        let documents: Vec<WorkdayDocument> = workdays
+        let documents: Vec<WorkdayDocumentInformation> = workdays
             .iter()
             .filter(|w| w.fk_driver_id == driver_id && w.date.year() == year)
-            .map(|w| WorkdayDocument {
+            .map(|w| WorkdayDocumentInformation {
                 month: w.date.month(),
                 year: w.date.year() as u32,
                 generated_at: None,
@@ -538,13 +537,13 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         _driver_id: Uuid,
         _month: i32,
         _year: i32,
-    ) -> Result<Option<WorkdayDocumentRow>, WorkdayError> {
+    ) -> Result<Option<WorkdayDocument>, WorkdayError> {
         Ok(None)
     }
 }
 
 type MockWorkdayCacheType = HashMap<String, Vec<Workday>>;
-type MockDocumentRecordCache = HashMap<(Uuid, i32, i32), Option<WorkdayDocumentRow>>;
+type MockDocumentRecordCache = HashMap<(Uuid, i32, i32), Option<WorkdayDocument>>;
 
 #[derive(Clone)]
 pub struct MockWorkdayCacheRepository {
@@ -700,10 +699,10 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> Result<Option<Option<WorkdayDocumentRow>>, WorkdayError> {
+    ) -> Result<Option<WorkdayDocument>, WorkdayError> {
         let records = self.document_records.lock().unwrap();
         // Key absent → cache miss (None); key present → Some(value) where value may be None (absence) or Some(row)
-        Ok(records.get(&(driver_id, month, year)).cloned())
+        Ok(records.get(&(driver_id, month, year)).cloned().flatten())
     }
 
     async fn set_workday_document_record(
@@ -711,7 +710,7 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-        record: Option<WorkdayDocumentRow>,
+        record: Option<WorkdayDocument>,
     ) -> Result<(), WorkdayError> {
         let mut records = self.document_records.lock().unwrap();
         records.insert((driver_id, month, year), record);

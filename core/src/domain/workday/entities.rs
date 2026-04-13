@@ -142,20 +142,36 @@ impl WorkdayGarbageRow {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, ToSchema)]
-pub struct WorkdayDocument {
+pub struct WorkdayDocumentInformation {
     pub month: u32,
     pub year: u32,
     pub generated_at: Option<DateTime<Utc>>,
 }
 
-pub type GetWorkdayDocumentsByYearResponse = Vec<WorkdayDocument>;
+pub type GetWorkdayDocumentsByYearResponse = Vec<WorkdayDocumentInformation>;
 
 #[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct WorkdayDocumentRow {
     pub fk_driver_id: Uuid,
     pub month: i32,
     pub year: i32,
+    pub fk_document_id: Uuid,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WorkdayDocument {
+    pub fk_driver_id: Uuid,
+    pub month: i32,
+    pub year: i32,
+    pub s3_file_path: String,
     pub file_name: String,
-    pub file_path: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
+pub struct DocumentRow {
+    pub pk_document_id: Uuid,
+    pub s3_file_path: String,
+    pub file_name: String,
     pub created_at: DateTime<Utc>,
 }

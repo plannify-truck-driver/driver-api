@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::{
-        entities::{Workday, WorkdayDocumentRow},
+        entities::{Workday, WorkdayDocument},
         port::{WorkdayCacheKeyType, WorkdayCacheRepository},
     },
     infrastructure::workday::repositories::error::WorkdayError,
@@ -296,7 +296,7 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> Result<Option<Option<WorkdayDocumentRow>>, WorkdayError> {
+    ) -> Result<Option<WorkdayDocument>, WorkdayError> {
         let mut conn = self.connection.clone();
         let (key, _) = self.get_key_by_type(
             driver_id,
@@ -312,12 +312,12 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             return Ok(None);
         };
 
-        let record: Option<WorkdayDocumentRow> = serde_json::from_str(&json).map_err(|e| {
+        let record: Option<WorkdayDocument> = serde_json::from_str(&json).map_err(|e| {
             error!("Failed to deserialize workday document record: {:?}", e);
             WorkdayError::Internal
         })?;
 
-        Ok(Some(record))
+        Ok(record)
     }
 
     #[tracing::instrument(
@@ -336,7 +336,7 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-        record: Option<WorkdayDocumentRow>,
+        record: Option<WorkdayDocument>,
     ) -> Result<(), WorkdayError> {
         let mut conn = self.connection.clone();
         let (key, ttl) = self.get_key_by_type(

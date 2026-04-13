@@ -1,4 +1,4 @@
-use plannify_driver_api_core::domain::workday::entities::{Workday, WorkdayDocument};
+use plannify_driver_api_core::domain::workday::entities::{Workday, WorkdayDocumentInformation};
 
 pub mod create_workday;
 pub mod delete_workday;
@@ -19,7 +19,7 @@ fn verify_workday_content(workday: Workday, expected_workday: Workday) {
     assert_eq!(workday.overnight_rest, expected_workday.overnight_rest);
 }
 
-fn verify_workday_document_content(document: WorkdayDocument, expected_document: WorkdayDocument) {
+fn verify_workday_document_content(document: WorkdayDocumentInformation, expected_document: WorkdayDocumentInformation) {
     assert_eq!(document.month, expected_document.month);
     assert_eq!(document.year, expected_document.year);
     assert_eq!(document.generated_at, expected_document.generated_at);

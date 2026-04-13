@@ -6,8 +6,7 @@ use uuid::Uuid;
 use crate::{
     domain::workday::{
         entities::{
-            CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument, WorkdayDocumentRow,
-            WorkdayGarbageRow, WorkdayRow,
+            CreateWorkdayRequest, DocumentRow, UpdateWorkdayRequest, WorkdayDocument, WorkdayDocumentInformation, WorkdayDocumentRow, WorkdayGarbageRow, WorkdayRow
         },
         port::WorkdayDatabaseRepository,
     },
@@ -445,7 +444,7 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> Result<Vec<WorkdayDocument>, WorkdayError> {
+    ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
         let records = sqlx::query!(
             r#"
             SELECT EXTRACT(MONTH FROM w.date)::INTEGER as month,
@@ -473,7 +472,7 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         Ok(records
             .into_iter()
             .filter_map(|r| {
-                Some(WorkdayDocument {
+                Some(WorkdayDocumentInformation {
                     month: r.month? as u32,
                     year: r.year? as u32,
                     generated_at: None,
@@ -498,9 +497,9 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> Result<Option<WorkdayDocumentRow>, WorkdayError> {
-        sqlx::query_as::<_, WorkdayDocumentRow>(
-            "SELECT fk_driver_id, month, year, file_name, file_path, created_at
+    ) -> Result<Option<WorkdayDocument>, WorkdayError> {
+        let workday_document = sqlx::query_as::<_, WorkdayDocumentRow>(
+            "SELECT fk_driver_id, month, year, fk_document_id
              FROM workday_documents
              WHERE fk_driver_id = $1 AND month = $2 AND year = $3",
         )
@@ -512,7 +511,34 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         .map_err(|e| {
             error!("Failed to get workday document record: {:?}", e);
             WorkdayError::DatabaseError
-        })
+        })?;
+
+        let workday_document = match workday_document {
+            Some(doc) => doc,
+            None => return Ok(None),
+        };
+
+        let document = sqlx::query_as::<_, DocumentRow>(
+            "SELECT pk_document_id, s3_file_path, file_name, created_at
+             FROM documents
+             WHERE pk_document_id = $1",
+        )
+        .bind(workday_document.fk_document_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get document for workday document record: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(Some(WorkdayDocument {
+            fk_driver_id: workday_document.fk_driver_id,
+            month: workday_document.month,
+            year: workday_document.year,
+            s3_file_path: document.s3_file_path,
+            file_name: document.file_name,
+            created_at: document.created_at,
+        }))
     }
 
 }

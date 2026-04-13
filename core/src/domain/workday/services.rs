@@ -12,7 +12,7 @@ use crate::{
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::{
             entities::{
-                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument,
+                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocumentInformation,
                 WorkdayGarbageRow, WorkdayRow,
             },
             port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
@@ -329,7 +329,7 @@ where
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> Result<Vec<WorkdayDocument>, WorkdayError> {
+    ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
         self.workday_database_repository
             .get_workday_documents_by_year(driver_id, year)
             .await
@@ -361,7 +361,7 @@ where
             .await?;
 
         let document_record = match cached_record {
-            Some(cached) => cached,
+            Some(cached) => Some(cached),
             None => {
                 let db_record = self
                     .workday_database_repository
@@ -382,7 +382,7 @@ where
 
             let pdf = self
                 .storage_repository
-                .download(&record.file_path)
+                .download(&record.s3_file_path)
                 .await
                 .map_err(|_| WorkdayError::Internal)?;
 

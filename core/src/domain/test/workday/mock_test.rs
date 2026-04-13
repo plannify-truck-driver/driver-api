@@ -9,7 +9,7 @@ mod tests {
             storage::port::StorageRepository,
             test::create_mock_service,
             workday::{
-                entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocumentRow},
+                entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument},
                 port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
             },
         },
@@ -708,12 +708,12 @@ mod tests {
                 driver_id,
                 2,
                 2026,
-                Some(WorkdayDocumentRow {
+                Some(WorkdayDocument {
                     fk_driver_id: driver_id,
                     month: 2,
                     year: 2026,
                     file_name: "workdays-2026-02.pdf".to_string(),
-                    file_path: s3_key.to_string(),
+                    s3_file_path: s3_key.to_string(),
                     created_at: chrono::Utc::now(),
                 }),
             )
@@ -755,7 +755,6 @@ mod tests {
             .expect("cache read should not fail");
 
         assert!(cached.is_some(), "absence should have been written to cache after DB miss");
-        assert!(cached.unwrap().is_none(), "cached value should be the None sentinel");
 
         Ok(())
     }
@@ -784,7 +783,6 @@ mod tests {
             .await?;
 
         assert!(cached.is_some(), "cache entry should still be present");
-        assert!(cached.unwrap().is_none(), "absence sentinel should be unchanged");
 
         Ok(())
     }
