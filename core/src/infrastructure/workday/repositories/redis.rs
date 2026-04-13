@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::{
-        entities::{Workday, WorkdayDocument},
+        entities::{Workday, WorkdayDocument, WorkdayDocumentInformation},
         port::{WorkdayCacheKeyType, WorkdayCacheRepository},
     },
     infrastructure::workday::repositories::error::WorkdayError,
@@ -351,6 +351,102 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
 
         let _: () = conn.set_ex(key.clone(), json_string, ttl).await.map_err(|e| {
             error!("Failed to set redis key {}: {:?}", key, e);
+            WorkdayError::Internal
+        })?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.get_documents_by_year",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "GET",
+            driver_id = %driver_id,
+            year = %year,
+        )
+    )]
+    async fn get_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<Option<Vec<WorkdayDocumentInformation>>, WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentsByYear { year });
+
+        let json_string: Option<String> = conn.get(key.clone()).await.map_err(|e| {
+            error!("Failed to get redis key {}: {:?}", key, e);
+            WorkdayError::Internal
+        })?;
+
+        let Some(json) = json_string else {
+            return Ok(None);
+        };
+
+        let documents = serde_json::from_str(&json).map_err(|e| {
+            error!("Failed to deserialize documents by year: {:?}", e);
+            WorkdayError::Internal
+        })?;
+
+        Ok(Some(documents))
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.set_documents_by_year",
+        skip(self, documents),
+        fields(
+            db.system = "redis",
+            db.operation = "SET",
+            driver_id = %driver_id,
+            year = %year,
+        )
+    )]
+    async fn set_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+        documents: Vec<WorkdayDocumentInformation>,
+    ) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, ttl) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentsByYear { year });
+
+        let json_string = serde_json::to_string(&documents).map_err(|e| {
+            error!("Failed to serialize documents by year: {:?}", e);
+            WorkdayError::Internal
+        })?;
+
+        let _: () = conn.set_ex(key.clone(), json_string, ttl).await.map_err(|e| {
+            error!("Failed to set redis key {}: {:?}", key, e);
+            WorkdayError::Internal
+        })?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.delete_documents_by_year",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "DEL",
+            driver_id = %driver_id,
+            year = %year,
+        )
+    )]
+    async fn delete_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentsByYear { year });
+
+        let _: () = conn.del(key.clone()).await.map_err(|e| {
+            error!("Failed to delete redis key {}: {:?}", key, e);
             WorkdayError::Internal
         })?;
 

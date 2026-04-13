@@ -176,6 +176,9 @@ where
         self.workday_cache_repository
             .delete_key(driver_id, "workdays:period")
             .await?;
+        self.workday_cache_repository
+            .delete_documents_by_year(driver_id, workday.date.year())
+            .await?;
 
         Ok(workday)
     }
@@ -227,6 +230,9 @@ where
         self.workday_cache_repository
             .delete_key(driver_id, "workdays:period")
             .await?;
+        self.workday_cache_repository
+            .delete_documents_by_year(driver_id, date.year())
+            .await?;
 
         Ok(())
     }
@@ -273,6 +279,9 @@ where
         self.workday_cache_repository
             .delete_key(driver_id, "workdays:period")
             .await?;
+        self.workday_cache_repository
+            .delete_documents_by_year(driver_id, date.year())
+            .await?;
 
         Ok(workday_garbage)
     }
@@ -300,6 +309,9 @@ where
         self.workday_cache_repository
             .delete_key(driver_id, "workdays:period")
             .await?;
+        self.workday_cache_repository
+            .delete_documents_by_year(driver_id, date.year())
+            .await?;
 
         Ok(())
     }
@@ -323,6 +335,7 @@ where
         fields(
             driver_id = %driver_id,
             year = %year,
+            cache.hit = tracing::field::Empty,
         )
     )]
     async fn get_workday_documents_by_year(
@@ -330,9 +343,48 @@ where
         driver_id: Uuid,
         year: i32,
     ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
-        self.workday_database_repository
+        if let Some(cached) = self
+            .workday_cache_repository
+            .get_documents_by_year(driver_id, year)
+            .await?
+        {
+            tracing::Span::current().record("cache.hit", true);
+            return Ok(cached);
+        }
+
+        tracing::Span::current().record("cache.hit", false);
+
+        let documents = self
+            .workday_database_repository
             .get_workday_documents_by_year(driver_id, year)
-            .await
+            .await?;
+
+        let workday_months = self
+            .workday_database_repository
+            .get_workday_months_by_year(driver_id, year)
+            .await?;
+
+        let document_months: std::collections::HashSet<u32> =
+            documents.iter().map(|d| d.month).collect();
+
+        let mut result = documents;
+        for month in workday_months {
+            if !document_months.contains(&(month as u32)) {
+                result.push(WorkdayDocumentInformation {
+                    month: month as u32,
+                    year: year as u32,
+                    generated_at: None,
+                });
+            }
+        }
+
+        result.sort_by_key(|d| d.month);
+
+        self.workday_cache_repository
+            .set_documents_by_year(driver_id, year, result.clone())
+            .await?;
+
+        Ok(result)
     }
 
     #[tracing::instrument(
