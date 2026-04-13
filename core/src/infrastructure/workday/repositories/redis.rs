@@ -296,7 +296,7 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> Result<Option<WorkdayDocument>, WorkdayError> {
+    ) -> Result<Option<Option<WorkdayDocument>>, WorkdayError> {
         let mut conn = self.connection.clone();
         let (key, _) = self.get_key_by_type(
             driver_id,
@@ -309,7 +309,7 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         })?;
 
         let Some(json) = json_string else {
-            return Ok(None);
+            return Ok(None); // cache miss
         };
 
         let record: Option<WorkdayDocument> = serde_json::from_str(&json).map_err(|e| {
@@ -317,7 +317,7 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             WorkdayError::Internal
         })?;
 
-        Ok(record)
+        Ok(Some(record)) // Some(None) = no data, Some(Some(doc)) = hit
     }
 
     #[tracing::instrument(

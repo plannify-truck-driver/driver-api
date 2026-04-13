@@ -413,7 +413,7 @@ where
             .await?;
 
         let document_record = match cached_record {
-            Some(cached) => Some(cached),
+            Some(record) => record, // Some(None) = absence, Some(Some(doc)) = hit
             None => {
                 let db_record = self
                     .workday_database_repository

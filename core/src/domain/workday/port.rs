@@ -226,7 +226,7 @@ pub trait WorkdayCacheRepository: Send + Sync {
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> impl Future<Output = Result<Option<WorkdayDocument>, WorkdayError>> + Send;
+    ) -> impl Future<Output = Result<Option<Option<WorkdayDocument>>, WorkdayError>> + Send;
 
     fn set_workday_document_record(
         &self,
@@ -752,10 +752,10 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> Result<Option<WorkdayDocument>, WorkdayError> {
+    ) -> Result<Option<Option<WorkdayDocument>>, WorkdayError> {
         let records = self.document_records.lock().unwrap();
-        // Key absent → cache miss (None); key present → Some(value) where value may be None (absence) or Some(row)
-        Ok(records.get(&(driver_id, month, year)).cloned().flatten())
+        // Key absent → None (cache miss); key present → Some(None) (absence) or Some(Some(doc)) (hit)
+        Ok(records.get(&(driver_id, month, year)).cloned())
     }
 
     async fn set_workday_document_record(
