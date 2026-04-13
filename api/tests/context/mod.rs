@@ -36,11 +36,6 @@ impl AsyncTestContext for TestContext {
     async fn setup() -> Self {
         dotenv::dotenv().ok();
 
-        let _ = tracing_subscriber::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-            .with_test_writer()
-            .try_init();
-
         let database_url: String =
             "postgres://plannify_user:plannify_password@localhost:5432/plannify_db".to_string();
 

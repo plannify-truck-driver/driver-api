@@ -92,7 +92,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run integration tests
-        run: RUST_LOG=debug cargo test -p api
+        run: cargo test -p api
 
       - name: Stop services
         if: always()
