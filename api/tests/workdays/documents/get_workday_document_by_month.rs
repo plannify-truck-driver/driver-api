@@ -154,3 +154,35 @@ async fn test_get_workday_document_by_month_not_accessible_by_other_user(
         status => panic!("unexpected status for other user: {}", status),
     }
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_workday_document_by_month_content_disposition_header(
+    ctx: &mut context::TestContext,
+) {
+    // The response for a seeded document must carry the right Content-Disposition header.
+    let res = ctx
+        .authenticated_router
+        .get("/workdays/documents/2026/2")
+        .await;
+
+    res.assert_status(StatusCode::OK);
+
+    let disposition = res
+        .headers()
+        .get("content-disposition")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    assert!(
+        disposition.contains("workdays-2026-02.pdf"),
+        "Content-Disposition must reference the correct filename, got: {}",
+        disposition
+    );
+    assert!(
+        disposition.contains("attachment"),
+        "Content-Disposition must use 'attachment', got: {}",
+        disposition
+    );
+}

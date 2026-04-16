@@ -203,3 +203,44 @@ async fn test_create_workday_duplicate_garbage(ctx: &mut context::TestContext) {
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "WORKDAY_ALREADY_EXISTS");
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_create_workday_cache_invalidation(ctx: &mut context::TestContext) {
+    // Create a workday in a month that has never been touched (March 2026)
+    ctx.authenticated_router
+        .post("/workdays")
+        .json(&json!({
+            "date": "2026-03-15",
+            "start_time": "08:00:00",
+            "end_time": "17:00:00",
+            "rest_time": "01:00:00",
+            "overnight_rest": false
+        }))
+        .await
+        .assert_status(StatusCode::CREATED);
+
+    // The monthly cache must be invalidated: the new workday must appear immediately
+    let res = ctx
+        .authenticated_router
+        .get("/workdays/month?month=3&year=2026")
+        .await;
+    res.assert_status(StatusCode::OK);
+    let body: Vec<Workday> = res.json();
+    assert!(
+        body.iter()
+            .any(|w| w.date == chrono::NaiveDate::from_ymd_opt(2026, 3, 15).unwrap()),
+        "the newly created workday must be visible in the monthly GET after cache invalidation"
+    );
+
+    // Cleanup: hard-delete the workday (the service's create already cleared the cache)
+    ctx.repositories
+        .workday_database_repository
+        .delete_workday(
+            ctx.authenticated_user_id,
+            chrono::NaiveDate::from_ymd_opt(2026, 3, 15).unwrap(),
+        )
+        .await
+        .ok();
+}

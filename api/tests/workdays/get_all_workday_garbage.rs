@@ -62,3 +62,24 @@ async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
         chrono::NaiveDate::from_ymd_opt(2026, 3, 11).unwrap()
     );
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_all_workday_garbage_cross_user_isolation(ctx: &mut context::TestContext) {
+    // User B has exactly one garbage entry (2026-01-02).
+    // User A's entries (2024-01-01 and 2026-01-15) must NOT appear.
+    let other_router = ctx.create_authenticated_router_with_different_user().await;
+
+    let res = other_router.get("/workdays/garbage").await;
+
+    res.assert_status(StatusCode::OK);
+    let body: Vec<WorkdayGarbage> = res.json();
+
+    assert_eq!(body.len(), 1, "User B should see exactly one garbage entry");
+    assert_eq!(
+        body[0].workday_date,
+        chrono::NaiveDate::from_ymd_opt(2026, 1, 2).unwrap(),
+        "User B's only garbage entry should be 2026-01-02"
+    );
+}

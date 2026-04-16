@@ -148,3 +148,40 @@ async fn test_get_all_workdays_period_with_wrong_parameters(ctx: &mut context::T
     let body4: ErrorBody = res4.json();
     assert_eq!(body4.error_code, "MISSING_ATTRIBUTE");
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_all_workdays_period_cross_user_isolation(ctx: &mut context::TestContext) {
+    // User B has no workdays in 2027 — the paginated result must be empty.
+    let other_router = ctx.create_authenticated_router_with_different_user().await;
+
+    let res = other_router
+        .get("/workdays?from=2027-01-01&to=2027-12-31&page=1&limit=10")
+        .await;
+
+    res.assert_status(StatusCode::OK);
+    let body: PaginatedResponse<Workday> = res.json();
+    assert_eq!(body.total, 0, "User B should have no workdays in 2027");
+    assert!(body.data.is_empty());
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_all_workdays_period_single_day(ctx: &mut context::TestContext) {
+    // A single-day range (from == to) must return only the workday on that date.
+    let res = ctx
+        .authenticated_router
+        .get("/workdays?from=2026-01-01&to=2026-01-01&page=1&limit=10")
+        .await;
+
+    res.assert_status(StatusCode::OK);
+    let body: PaginatedResponse<Workday> = res.json();
+    assert_eq!(body.total, 1, "exactly one workday must match 2026-01-01");
+    assert_eq!(body.data.len(), 1);
+    assert_eq!(
+        body.data[0].date,
+        chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()
+    );
+}

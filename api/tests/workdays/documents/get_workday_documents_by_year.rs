@@ -100,3 +100,22 @@ async fn test_get_workday_documents_by_year_without_garbage(ctx: &mut context::T
         "there should be exactly zero months available"
     );
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_workday_documents_by_year_cross_user_isolation(ctx: &mut context::TestContext) {
+    // User B has no workdays or documents in 2031 — they must see an empty list,
+    // not User A's seeded document (2031/01).
+    let other_router = ctx.create_authenticated_router_with_different_user().await;
+
+    let res = other_router.get("/workdays/documents/2031").await;
+
+    res.assert_status(StatusCode::OK);
+    let body: Vec<WorkdayDocumentInformation> = res.json();
+    assert!(
+        body.is_empty(),
+        "User B must see no documents for 2031, got {}",
+        body.len()
+    );
+}

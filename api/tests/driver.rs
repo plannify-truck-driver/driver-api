@@ -213,3 +213,81 @@ async fn test_delete_rest_periods_success(ctx: &mut context::TestContext) {
         .await
         .unwrap();
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_all_rest_periods_cross_user_isolation(ctx: &mut context::TestContext) {
+    // User A has 2 rest periods set in the test dataset.
+    // User B has rest_json = NULL, so they must see a different (empty) result.
+    let other_router = ctx.create_authenticated_router_with_different_user().await;
+
+    let user_a_res = ctx.authenticated_router.get("/rest-periods").await;
+    user_a_res.assert_status(StatusCode::OK);
+    let user_a_body: Vec<DriverRestPeriod> = user_a_res.json();
+    assert_eq!(user_a_body.len(), 2, "User A should have 2 rest periods");
+
+    let user_b_res = other_router.get("/rest-periods").await;
+    user_b_res.assert_status(StatusCode::OK);
+    let user_b_body: Vec<DriverRestPeriod> = user_b_res.json();
+    assert_ne!(
+        user_b_body.len(),
+        user_a_body.len(),
+        "User B must not see User A's rest periods"
+    );
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_delete_rest_periods_then_get_empty(ctx: &mut context::TestContext) {
+    // After deleting rest periods, GET must return an empty list
+    ctx.authenticated_router
+        .delete("/rest-periods")
+        .await
+        .assert_status(StatusCode::OK);
+
+    let res = ctx.authenticated_router.get("/rest-periods").await;
+    res.assert_status(StatusCode::OK);
+    let body: Vec<DriverRestPeriod> = res.json();
+    assert!(
+        body.is_empty(),
+        "rest periods must be empty after deletion, got {}",
+        body.len()
+    );
+
+    // Cleanup: restore the original periods
+    ctx.repositories
+        .driver_database_repository
+        .set_driver_rest_periods(
+            ctx.authenticated_user_id,
+            vec![
+                DriverRestPeriod {
+                    start: "00:00:00".parse().unwrap(),
+                    end: "00:59:59".parse().unwrap(),
+                    rest: "01:00:00".parse().unwrap(),
+                },
+                DriverRestPeriod {
+                    start: "01:00:00".parse().unwrap(),
+                    end: "23:59:59".parse().unwrap(),
+                    rest: "01:00:00".parse().unwrap(),
+                },
+            ],
+        )
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_set_rest_periods_empty_array(ctx: &mut context::TestContext) {
+    // An empty rest_periods array must be rejected (no period starts at 00:00:00)
+    let res = ctx
+        .authenticated_router
+        .post("/rest-periods")
+        .json(&json!({ "rest_periods": [] }))
+        .await;
+
+    res.assert_status(StatusCode::BAD_REQUEST);
+}

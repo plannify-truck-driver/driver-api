@@ -148,3 +148,33 @@ async fn test_get_workday_document_years_update_cache_success(ctx: &mut context:
         .await
         .ok();
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_workday_document_years_cross_user_isolation(ctx: &mut context::TestContext) {
+    // User A sees [2025, 2026, 2027, 2031].
+    // User B has only one non-garbage workday (2026-01-01) and no documents,
+    // so they should see only [2026].
+    let other_router = ctx.create_authenticated_router_with_different_user().await;
+
+    let res = other_router.get("/workdays/documents/year").await;
+
+    res.assert_status(StatusCode::OK);
+    let body: Vec<i32> = res.json();
+
+    assert_eq!(body.len(), 1, "User B should see exactly 1 year");
+    assert!(body.contains(&2026), "User B's only year should be 2026");
+    assert!(
+        !body.contains(&2025),
+        "User B must not see User A's 2025"
+    );
+    assert!(
+        !body.contains(&2027),
+        "User B must not see User A's 2027"
+    );
+    assert!(
+        !body.contains(&2031),
+        "User B must not see User A's 2031"
+    );
+}
