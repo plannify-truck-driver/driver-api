@@ -94,6 +94,10 @@ jobs:
       - name: Run integration tests
         run: cargo test -p api
 
+      - name: Stop services
+        if: always()
+        run: docker compose -f common-services/docker-compose.yaml down -v
+
   unit-tests:
     runs-on: self-hosted
     permissions:

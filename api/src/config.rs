@@ -193,25 +193,13 @@ pub struct OtelConfig {
 
 #[derive(Clone, Parser, Debug, Default)]
 pub struct S3Config {
-    #[arg(
-        long = "s3-access-key",
-        env = "S3_ACCESS_KEY",
-        name = "s3_access_key"
-    )]
+    #[arg(long = "s3-access-key", env = "S3_ACCESS_KEY", name = "s3_access_key")]
     pub access_key: String,
 
-    #[arg(
-        long = "s3-secret-key",
-        env = "S3_SECRET_KEY",
-        name = "s3_secret_key"
-    )]
+    #[arg(long = "s3-secret-key", env = "S3_SECRET_KEY", name = "s3_secret_key")]
     pub secret_key: String,
 
-    #[arg(
-        long = "s3-endpoint",
-        env = "S3_ENDPOINT",
-        name = "s3_endpoint"
-    )]
+    #[arg(long = "s3-endpoint", env = "S3_ENDPOINT", name = "s3_endpoint")]
     pub endpoint: String,
 
     #[arg(

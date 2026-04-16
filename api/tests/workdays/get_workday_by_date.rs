@@ -56,3 +56,17 @@ async fn test_get_workday_by_date_already_in_garbage(ctx: &mut context::TestCont
 
     res.assert_status(StatusCode::NOT_FOUND);
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_workday_by_date_cross_user_isolation(ctx: &mut context::TestContext) {
+    // 2027-01-01 belongs to User A. User B must not be able to read it.
+    let other_router = ctx.create_authenticated_router_with_different_user().await;
+
+    let res = other_router.get("/workdays/2027-01-01").await;
+
+    res.assert_status(StatusCode::NOT_FOUND);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "WORKDAY_NOT_FOUND");
+}

@@ -19,7 +19,12 @@ impl PostgresHealthRepository {
         s3_client: S3Client,
         s3_bucket: String,
     ) -> Self {
-        Self { pool, cache, s3_client, s3_bucket }
+        Self {
+            pool,
+            cache,
+            s3_client,
+            s3_bucket,
+        }
     }
 }
 

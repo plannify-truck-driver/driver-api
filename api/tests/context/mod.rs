@@ -1,4 +1,7 @@
-use api::config::{CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, OtelConfig, S3Config, SmtpConfig};
+use api::config::{
+    CheckContentConfig, CommonConfig, Config, Environment, JwtConfig, OtelConfig, S3Config,
+    SmtpConfig,
+};
 use api::{App, app::AppBuilder};
 use axum_test::TestServer;
 use plannify_driver_api_core::application::{DriverRepositories, create_repositories};
@@ -18,6 +21,10 @@ const S3_TEST_FILES: &[(&str, &str)] = &[
     (
         "drivers/123e4567-e89b-12d3-a456-426614174000/2027/01/workdays-2027-01.pdf",
         "workdays-2027-01.pdf",
+    ),
+    (
+        "drivers/123e4567-e89b-12d3-a456-426614174000/2031/01/workdays-2031-01.pdf",
+        "workdays-2031-01.pdf",
     ),
 ];
 
@@ -65,7 +72,8 @@ impl AsyncTestContext for TestContext {
         };
 
         let s3_config = S3Config {
-            endpoint: std::env::var("S3_ENDPOINT").unwrap_or_else(|_| "http://localhost:3900".to_string()),
+            endpoint: std::env::var("S3_ENDPOINT")
+                .unwrap_or_else(|_| "http://localhost:3900".to_string()),
             access_key: std::env::var("S3_ACCESS_KEY").expect("S3_ACCESS_KEY must be set"),
             secret_key: std::env::var("S3_SECRET_KEY").expect("S3_SECRET_KEY must be set"),
             bucket_name: std::env::var("S3_BUCKET_NAME").unwrap_or_else(|_| "plannify".to_string()),
@@ -159,6 +167,12 @@ impl AsyncTestContext for TestContext {
                 .await
                 .ok();
         }
+
+        let mut conn = self.repositories.redis_manager.clone();
+        let _: () = redis::cmd("FLUSHDB")
+            .query_async(&mut conn)
+            .await
+            .unwrap_or(());
 
         self.app.shutdown().await;
     }

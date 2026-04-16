@@ -12,7 +12,7 @@ use crate::{
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::{
             entities::{
-                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument,
+                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocumentInformation,
                 WorkdayGarbageRow, WorkdayRow,
             },
             port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
@@ -176,6 +176,12 @@ where
         self.workday_cache_repository
             .delete_key(driver_id, "workdays:period")
             .await?;
+        self.workday_cache_repository
+            .delete_documents_by_year(driver_id, workday.date.year())
+            .await?;
+        self.workday_cache_repository
+            .delete_document_years(driver_id)
+            .await?;
 
         Ok(workday)
     }
@@ -227,6 +233,12 @@ where
         self.workday_cache_repository
             .delete_key(driver_id, "workdays:period")
             .await?;
+        self.workday_cache_repository
+            .delete_documents_by_year(driver_id, date.year())
+            .await?;
+        self.workday_cache_repository
+            .delete_document_years(driver_id)
+            .await?;
 
         Ok(())
     }
@@ -273,6 +285,12 @@ where
         self.workday_cache_repository
             .delete_key(driver_id, "workdays:period")
             .await?;
+        self.workday_cache_repository
+            .delete_documents_by_year(driver_id, date.year())
+            .await?;
+        self.workday_cache_repository
+            .delete_document_years(driver_id)
+            .await?;
 
         Ok(workday_garbage)
     }
@@ -300,6 +318,12 @@ where
         self.workday_cache_repository
             .delete_key(driver_id, "workdays:period")
             .await?;
+        self.workday_cache_repository
+            .delete_documents_by_year(driver_id, date.year())
+            .await?;
+        self.workday_cache_repository
+            .delete_document_years(driver_id)
+            .await?;
 
         Ok(())
     }
@@ -309,12 +333,41 @@ where
         skip(self),
         fields(
             driver_id = %driver_id,
+            cache.hit = tracing::field::Empty,
         )
     )]
     async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
-        self.workday_database_repository
-            .get_workday_documents(driver_id)
-            .await
+        let cached_years = self
+            .workday_cache_repository
+            .get_document_years(driver_id)
+            .await?;
+
+        if let Some(cached_years) = cached_years {
+            tracing::Span::current().record("cache.hit", true);
+            return Ok(cached_years);
+        }
+
+        tracing::Span::current().record("cache.hit", false);
+
+        let workday_years = self
+            .workday_database_repository
+            .get_workday_years(driver_id)
+            .await?;
+
+        let document_years = self
+            .workday_database_repository
+            .get_workday_document_years(driver_id)
+            .await?;
+
+        let mut years: Vec<i32> = workday_years.into_iter().chain(document_years).collect();
+        years.sort_unstable();
+        years.dedup();
+
+        self.workday_cache_repository
+            .set_document_years(driver_id, years.clone())
+            .await?;
+
+        Ok(years)
     }
 
     #[tracing::instrument(
@@ -323,16 +376,56 @@ where
         fields(
             driver_id = %driver_id,
             year = %year,
+            cache.hit = tracing::field::Empty,
         )
     )]
     async fn get_workday_documents_by_year(
         &self,
         driver_id: Uuid,
         year: i32,
-    ) -> Result<Vec<WorkdayDocument>, WorkdayError> {
-        self.workday_database_repository
+    ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
+        if let Some(cached) = self
+            .workday_cache_repository
+            .get_documents_by_year(driver_id, year)
+            .await?
+        {
+            tracing::Span::current().record("cache.hit", true);
+            return Ok(cached);
+        }
+
+        tracing::Span::current().record("cache.hit", false);
+
+        let documents = self
+            .workday_database_repository
             .get_workday_documents_by_year(driver_id, year)
-            .await
+            .await?;
+
+        let workday_months = self
+            .workday_database_repository
+            .get_workday_months_by_year(driver_id, year)
+            .await?;
+
+        let document_months: std::collections::HashSet<u32> =
+            documents.iter().map(|d| d.month).collect();
+
+        let mut result = documents;
+        for month in workday_months {
+            if !document_months.contains(&(month as u32)) {
+                result.push(WorkdayDocumentInformation {
+                    month: month as u32,
+                    year: year as u32,
+                    generated_at: None,
+                });
+            }
+        }
+
+        result.sort_by_key(|d| d.month);
+
+        self.workday_cache_repository
+            .set_documents_by_year(driver_id, year, result.clone())
+            .await?;
+
+        Ok(result)
     }
 
     #[tracing::instrument(
@@ -361,7 +454,7 @@ where
             .await?;
 
         let document_record = match cached_record {
-            Some(cached) => cached,
+            Some(record) => record, // Some(None) = absence, Some(Some(doc)) = hit
             None => {
                 let db_record = self
                     .workday_database_repository
@@ -382,7 +475,7 @@ where
 
             let pdf = self
                 .storage_repository
-                .download(&record.file_path)
+                .download(&record.s3_file_path)
                 .await
                 .map_err(|_| WorkdayError::Internal)?;
 

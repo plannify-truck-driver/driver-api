@@ -9,7 +9,11 @@ pub struct IsHealthy {
 
 impl IsHealthy {
     pub fn new(database: bool, cache: bool, storage: bool) -> Self {
-        Self { database, cache, storage }
+        Self {
+            database,
+            cache,
+            storage,
+        }
     }
 
     pub fn to_result(&self) -> Result<Self, HealthError> {

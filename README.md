@@ -14,6 +14,8 @@ Up the docker compose from [Common services](https://github.com/plannify-truck-d
 docker compose -f ./common-services/docker-compose.yaml up -d
 ```
 
+Get S3 credentials from the `common-services/garage.env` file and set them in the `.env` file.
+
 ## Usage
 
 ### Running the API

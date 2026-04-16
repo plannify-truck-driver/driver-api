@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT wd.month, wd.year, d.created_at as \"generated_at?\"\n            FROM workday_documents wd\n            LEFT JOIN documents d ON wd.fk_document_id = d.pk_document_id\n            WHERE wd.fk_driver_id = $1 AND wd.year = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "month",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "year",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "generated_at?",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "be97c5ebc3863528105d894f2495b134a20bbde8694f93ee336572a4c1bc58ce"
+}

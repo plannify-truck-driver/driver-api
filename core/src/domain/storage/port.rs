@@ -17,15 +17,9 @@ pub trait StorageRepository: Send + Sync {
         content_type: &str,
     ) -> impl Future<Output = Result<(), StorageError>> + Send;
 
-    fn download(
-        &self,
-        key: &str,
-    ) -> impl Future<Output = Result<Bytes, StorageError>> + Send;
+    fn download(&self, key: &str) -> impl Future<Output = Result<Bytes, StorageError>> + Send;
 
-    fn delete(
-        &self,
-        key: &str,
-    ) -> impl Future<Output = Result<(), StorageError>> + Send;
+    fn delete(&self, key: &str) -> impl Future<Output = Result<(), StorageError>> + Send;
 
     fn generate_presigned_url(
         &self,
@@ -48,7 +42,12 @@ impl MockStorageRepository {
 }
 
 impl StorageRepository for MockStorageRepository {
-    async fn upload(&self, key: &str, data: Bytes, _content_type: &str) -> Result<(), StorageError> {
+    async fn upload(
+        &self,
+        key: &str,
+        data: Bytes,
+        _content_type: &str,
+    ) -> Result<(), StorageError> {
         let mut store = self.store.lock().unwrap();
         store.insert(key.to_string(), data);
         Ok(())
@@ -56,10 +55,7 @@ impl StorageRepository for MockStorageRepository {
 
     async fn download(&self, key: &str) -> Result<Bytes, StorageError> {
         let store = self.store.lock().unwrap();
-        store
-            .get(key)
-            .cloned()
-            .ok_or(StorageError::ObjectNotFound)
+        store.get(key).cloned().ok_or(StorageError::ObjectNotFound)
     }
 
     async fn delete(&self, key: &str) -> Result<(), StorageError> {

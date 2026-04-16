@@ -19,6 +19,12 @@ INSERT INTO "workday_garbage" ("workday_date", "fk_driver_id", "created_at", "sc
 ('2026-01-15', '123e4567-e89b-12d3-a456-426614174000', '2026-02-10 11:30:00', '2026-03-11'),
 ('2026-01-02', '123e4567-e89b-12d3-a456-426614174001', '2026-02-10 11:30:00', '2026-03-11');
 
-INSERT INTO "workday_documents" ("fk_driver_id", "month", "year", "file_name", "file_path", "created_at") VALUES
-('123e4567-e89b-12d3-a456-426614174000', 2, 2026, 'workdays-2026-02.pdf', 'drivers/123e4567-e89b-12d3-a456-426614174000/2026/02/workdays-2026-02.pdf', '2026-03-01 10:00:00'),
-('123e4567-e89b-12d3-a456-426614174000', 1, 2027, 'workdays-2027-01.pdf', 'drivers/123e4567-e89b-12d3-a456-426614174000/2027/01/workdays-2027-01.pdf', '2027-02-01 10:00:00');
+INSERT INTO "documents" ("pk_document_id", "s3_file_path", "file_name", "created_at") VALUES
+('123e4567-e89b-12d3-a456-426614174100', 'drivers/123e4567-e89b-12d3-a456-426614174000/2026/02/workdays-2026-02.pdf', 'workdays-2026-02.pdf', '2026-03-01 10:00:00'),
+('123e4567-e89b-12d3-a456-426614174101', 'drivers/123e4567-e89b-12d3-a456-426614174000/2027/01/workdays-2027-01.pdf', 'workdays-2027-01.pdf', '2027-02-01 10:00:00'),
+('123e4567-e89b-12d3-a456-426614174102', 'drivers/123e4567-e89b-12d3-a456-426614174000/2031/01/workdays-2031-01.pdf', 'workdays-2031-01.pdf', '2031-02-01 10:00:00');
+
+INSERT INTO "workday_documents" ("fk_driver_id", "month", "year", "fk_document_id") VALUES
+('123e4567-e89b-12d3-a456-426614174000', 2, 2026, '123e4567-e89b-12d3-a456-426614174100'),
+('123e4567-e89b-12d3-a456-426614174000', 1, 2027, '123e4567-e89b-12d3-a456-426614174101'),
+('123e4567-e89b-12d3-a456-426614174000', 1, 2031, '123e4567-e89b-12d3-a456-426614174102');

@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::{
-        entities::{Workday, WorkdayDocumentRow},
+        entities::{Workday, WorkdayDocument, WorkdayDocumentInformation},
         port::{WorkdayCacheKeyType, WorkdayCacheRepository},
     },
     infrastructure::workday::repositories::error::WorkdayError,
@@ -28,6 +28,14 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         format!("driver:{}:workdays:{}", driver_id, suffix)
     }
 
+    #[tracing::instrument(
+        name = "cache.workdays.delete_key",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            prefix = %prefix,
+        )
+    )]
     async fn delete_key(&self, driver_id: Uuid, prefix: &str) -> Result<(), WorkdayError> {
         let mut conn = self.connection.clone();
         let key_pattern = format!("driver:{}:{}*", driver_id, prefix);
@@ -70,16 +78,20 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             WorkdayError::Internal
         })?;
 
-        if json_string.is_none() {
+        let Some(json) = json_string else {
             return Ok(None);
+        };
+
+        match serde_json::from_str(&json) {
+            Ok(workdays) => Ok(workdays),
+            Err(e) => {
+                error!(
+                    "Failed to deserialize workdays from key {}, treating as cache miss: {:?}",
+                    key, e
+                );
+                Ok(None)
+            }
         }
-
-        let workdays = serde_json::from_str(&json_string.unwrap()).map_err(|e| {
-            error!("Failed to deserialize workdays: {:?}", e);
-            WorkdayError::Internal
-        })?;
-
-        Ok(workdays)
     }
 
     #[tracing::instrument(
@@ -180,17 +192,20 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             WorkdayError::Internal
         })?;
 
-        if json_string.is_none() {
+        let Some(json) = json_string else {
             return Ok(None);
+        };
+
+        match serde_json::from_str(&json) {
+            Ok(workdays_and_count) => Ok(Some(workdays_and_count)),
+            Err(e) => {
+                error!(
+                    "Failed to deserialize workdays and count from key {}, treating as cache miss: {:?}",
+                    key, e
+                );
+                Ok(None)
+            }
         }
-
-        let workdays_and_count: (Vec<Workday>, u32) = serde_json::from_str(&json_string.unwrap())
-            .map_err(|e| {
-            error!("Failed to deserialize workdays and count: {:?}", e);
-            WorkdayError::Internal
-        })?;
-
-        Ok(Some(workdays_and_count))
     }
 
     #[tracing::instrument(
@@ -296,12 +311,10 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-    ) -> Result<Option<Option<WorkdayDocumentRow>>, WorkdayError> {
+    ) -> Result<Option<Option<WorkdayDocument>>, WorkdayError> {
         let mut conn = self.connection.clone();
-        let (key, _) = self.get_key_by_type(
-            driver_id,
-            WorkdayCacheKeyType::Document { month, year },
-        );
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Document { month, year });
 
         let json_string: Option<String> = conn.get(key.clone()).await.map_err(|e| {
             error!("Failed to get redis key {}: {:?}", key, e);
@@ -309,15 +322,19 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         })?;
 
         let Some(json) = json_string else {
-            return Ok(None);
+            return Ok(None); // cache miss
         };
 
-        let record: Option<WorkdayDocumentRow> = serde_json::from_str(&json).map_err(|e| {
-            error!("Failed to deserialize workday document record: {:?}", e);
-            WorkdayError::Internal
-        })?;
-
-        Ok(Some(record))
+        match serde_json::from_str(&json) {
+            Ok(record) => Ok(Some(record)), // Some(None) = absence, Some(Some(doc)) = hit
+            Err(e) => {
+                error!(
+                    "Failed to deserialize workday document record from key {}, treating as cache miss: {:?}",
+                    key, e
+                );
+                Ok(None)
+            }
+        }
     }
 
     #[tracing::instrument(
@@ -336,21 +353,213 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         driver_id: Uuid,
         month: i32,
         year: i32,
-        record: Option<WorkdayDocumentRow>,
+        record: Option<WorkdayDocument>,
     ) -> Result<(), WorkdayError> {
         let mut conn = self.connection.clone();
-        let (key, ttl) = self.get_key_by_type(
-            driver_id,
-            WorkdayCacheKeyType::Document { month, year },
-        );
+        let (key, ttl) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::Document { month, year });
 
         let json_string = serde_json::to_string(&record).map_err(|e| {
             error!("Failed to serialize workday document record: {:?}", e);
             WorkdayError::Internal
         })?;
 
-        let _: () = conn.set_ex(key.clone(), json_string, ttl).await.map_err(|e| {
-            error!("Failed to set redis key {}: {:?}", key, e);
+        let _: () = conn
+            .set_ex(key.clone(), json_string, ttl)
+            .await
+            .map_err(|e| {
+                error!("Failed to set redis key {}: {:?}", key, e);
+                WorkdayError::Internal
+            })?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.get_document_years",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "GET",
+            driver_id = %driver_id,
+        )
+    )]
+    async fn get_document_years(&self, driver_id: Uuid) -> Result<Option<Vec<i32>>, WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, _) = self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentYears);
+
+        let json_string: Option<String> = conn.get(key.clone()).await.map_err(|e| {
+            error!("Failed to get redis key {}: {:?}", key, e);
+            WorkdayError::Internal
+        })?;
+
+        let Some(json) = json_string else {
+            return Ok(None);
+        };
+
+        match serde_json::from_str(&json) {
+            Ok(years) => Ok(Some(years)),
+            Err(e) => {
+                error!(
+                    "Failed to deserialize document years from key {}, treating as cache miss: {:?}",
+                    key, e
+                );
+                Ok(None)
+            }
+        }
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.set_document_years",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "SET",
+            driver_id = %driver_id,
+        )
+    )]
+    async fn set_document_years(
+        &self,
+        driver_id: Uuid,
+        years: Vec<i32>,
+    ) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, ttl) = self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentYears);
+
+        let json_string = serde_json::to_string(&years).map_err(|e| {
+            error!("Failed to serialize document years: {:?}", e);
+            WorkdayError::Internal
+        })?;
+
+        let _: () = conn
+            .set_ex(key.clone(), json_string, ttl)
+            .await
+            .map_err(|e| {
+                error!("Failed to set redis key {}: {:?}", key, e);
+                WorkdayError::Internal
+            })?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.delete_document_years",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "DEL",
+            driver_id = %driver_id,
+        )
+    )]
+    async fn delete_document_years(&self, driver_id: Uuid) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, _) = self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentYears);
+
+        let _: () = conn.del(key.clone()).await.map_err(|e| {
+            error!("Failed to delete redis key {}: {:?}", key, e);
+            WorkdayError::Internal
+        })?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.get_documents_by_year",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "GET",
+            driver_id = %driver_id,
+            year = %year,
+        )
+    )]
+    async fn get_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<Option<Vec<WorkdayDocumentInformation>>, WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentsByYear { year });
+
+        let json_string: Option<String> = conn.get(key.clone()).await.map_err(|e| {
+            error!("Failed to get redis key {}: {:?}", key, e);
+            WorkdayError::Internal
+        })?;
+
+        let Some(json) = json_string else {
+            return Ok(None);
+        };
+
+        match serde_json::from_str(&json) {
+            Ok(documents) => Ok(Some(documents)),
+            Err(e) => {
+                error!(
+                    "Failed to deserialize documents by year from key {}, treating as cache miss: {:?}",
+                    key, e
+                );
+                Ok(None)
+            }
+        }
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.set_documents_by_year",
+        skip(self, documents),
+        fields(
+            db.system = "redis",
+            db.operation = "SET",
+            driver_id = %driver_id,
+            year = %year,
+        )
+    )]
+    async fn set_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+        documents: Vec<WorkdayDocumentInformation>,
+    ) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, ttl) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentsByYear { year });
+
+        let json_string = serde_json::to_string(&documents).map_err(|e| {
+            error!("Failed to serialize documents by year: {:?}", e);
+            WorkdayError::Internal
+        })?;
+
+        let _: () = conn
+            .set_ex(key.clone(), json_string, ttl)
+            .await
+            .map_err(|e| {
+                error!("Failed to set redis key {}: {:?}", key, e);
+                WorkdayError::Internal
+            })?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.delete_documents_by_year",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "DEL",
+            driver_id = %driver_id,
+            year = %year,
+        )
+    )]
+    async fn delete_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::DocumentsByYear { year });
+
+        let _: () = conn.del(key.clone()).await.map_err(|e| {
+            error!("Failed to delete redis key {}: {:?}", key, e);
             WorkdayError::Internal
         })?;
 

@@ -23,9 +23,21 @@ pub async fn health_check(
 
     let is_healthy = health_check.to_result().is_ok();
     let status = if is_healthy { "healthy" } else { "unhealthy" };
-    let database_status = if health_check.database { "connected" } else { "disconnected" };
-    let cache_status = if health_check.cache { "connected" } else { "disconnected" };
-    let storage_status = if health_check.storage { "connected" } else { "disconnected" };
+    let database_status = if health_check.database {
+        "connected"
+    } else {
+        "disconnected"
+    };
+    let cache_status = if health_check.cache {
+        "connected"
+    } else {
+        "disconnected"
+    };
+    let storage_status = if health_check.storage {
+        "connected"
+    } else {
+        "disconnected"
+    };
 
     let response = HealthResponse {
         status: status.to_string(),

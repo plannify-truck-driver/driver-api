@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT DISTINCT year\n            FROM workday_documents\n            WHERE fk_driver_id = $1\n            ORDER BY year ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "year",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "71c22b0ea20de304f727e49d7f664adbdfc05b1a64153e903fedf813005e9b4b"
+}
