@@ -22,6 +22,10 @@ const S3_TEST_FILES: &[(&str, &str)] = &[
         "drivers/123e4567-e89b-12d3-a456-426614174000/2027/01/workdays-2027-01.pdf",
         "workdays-2027-01.pdf",
     ),
+    (
+        "drivers/123e4567-e89b-12d3-a456-426614174000/2031/01/workdays-2031-01.pdf",
+        "workdays-2031-01.pdf",
+    ),
 ];
 
 pub struct TestContext {

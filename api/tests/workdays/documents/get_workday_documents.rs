@@ -9,53 +9,6 @@ use crate::{context, workdays::verify_workday_document_content};
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
-async fn test_get_workday_documents_unauthorized(ctx: &mut context::TestContext) {
-    let res = ctx
-        .unauthenticated_router
-        .get("/workdays/documents/year")
-        .await;
-
-    res.assert_status(StatusCode::UNAUTHORIZED);
-
-    let body: ErrorBody = res.json();
-    assert_eq!(body.error_code, "UNAUTHORIZED");
-}
-
-#[test_context(context::TestContext)]
-#[tokio::test]
-#[serial]
-async fn test_get_workday_documents_success(ctx: &mut context::TestContext) {
-    let res = ctx
-        .authenticated_router
-        .get("/workdays/documents/year")
-        .await;
-
-    res.assert_status(StatusCode::OK);
-
-    let body: Vec<i32> = res.json();
-
-    assert_eq!(
-        body.len(),
-        3,
-        "there should be exactly three years available"
-    );
-    assert!(
-        body.contains(&2025),
-        "2025 should be in the available years"
-    );
-    assert!(
-        body.contains(&2026),
-        "2026 should be in the available years"
-    );
-    assert!(
-        body.contains(&2027),
-        "2027 should be in the available years"
-    );
-}
-
-#[test_context(context::TestContext)]
-#[tokio::test]
-#[serial]
 async fn test_get_workday_documents_by_year_unauthorized(ctx: &mut context::TestContext) {
     let res = ctx
         .unauthenticated_router

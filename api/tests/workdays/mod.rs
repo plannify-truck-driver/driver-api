@@ -7,9 +7,9 @@ pub mod get_all_workday_garbage;
 pub mod get_all_workdays_month;
 pub mod get_all_workdays_period;
 pub mod get_workday_by_date;
-pub mod get_workday_document_by_month;
-pub mod get_workday_documents;
 pub mod update_workday;
+
+pub mod documents;
 
 fn verify_workday_content(workday: Workday, expected_workday: Workday) {
     assert_eq!(workday.date, expected_workday.date);
