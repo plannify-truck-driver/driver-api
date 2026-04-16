@@ -6,7 +6,8 @@ use uuid::Uuid;
 use crate::{
     domain::workday::{
         entities::{
-            CreateWorkdayRequest, DocumentRow, UpdateWorkdayRequest, WorkdayDocument, WorkdayDocumentInformation, WorkdayDocumentRow, WorkdayGarbageRow, WorkdayRow
+            CreateWorkdayRequest, DocumentRow, UpdateWorkdayRequest, WorkdayDocument,
+            WorkdayDocumentInformation, WorkdayDocumentRow, WorkdayGarbageRow, WorkdayRow,
         },
         port::WorkdayDatabaseRepository,
     },
@@ -169,6 +170,37 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         })?;
 
         Ok((workdays, total_count_record.count.unwrap_or(0) as u32))
+    }
+
+    #[tracing::instrument(
+        name = "db.workdays.get_workday_years",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
+    async fn get_workday_years(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
+        let records = sqlx::query_as::<_, (Option<i32>,)>(
+            r#"
+            SELECT EXTRACT(YEAR FROM date)::INTEGER as year
+            FROM workdays
+            WHERE fk_driver_id = $1
+            AND date NOT IN (
+                SELECT workday_date FROM workday_garbage
+                WHERE fk_driver_id = $1
+            )
+            GROUP BY year
+            "#,
+        )
+        .bind(driver_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get workday years: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(records.into_iter().filter_map(|r| r.0).collect())
     }
 
     #[tracing::instrument(
@@ -440,37 +472,6 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
     }
 
     #[tracing::instrument(
-        name = "db.workdays.get_workday_documents",
-        skip(self),
-        fields(
-            driver_id = %driver_id,
-        )
-    )]
-    async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
-        let records = sqlx::query!(
-            r#"
-            SELECT EXTRACT(YEAR FROM date)::INTEGER as year
-            FROM workdays
-            WHERE fk_driver_id = $1
-            AND date NOT IN (
-                SELECT workday_date FROM workday_garbage
-                WHERE fk_driver_id = $1
-            )
-            GROUP BY year
-            "#,
-            driver_id
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| {
-            error!("Failed to get workday documents: {:?}", e);
-            WorkdayError::DatabaseError
-        })?;
-
-        Ok(records.into_iter().filter_map(|r| r.year).collect())
-    }
-
-    #[tracing::instrument(
         name = "db.workdays.get_workday_documents_by_year",
         skip(self),
         fields(
@@ -556,7 +557,10 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|e| {
-            error!("Failed to get document for workday document record: {:?}", e);
+            error!(
+                "Failed to get document for workday document record: {:?}",
+                e
+            );
             WorkdayError::DatabaseError
         })?;
 
@@ -569,5 +573,4 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
             created_at: document.created_at,
         }))
     }
-
 }

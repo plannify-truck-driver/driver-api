@@ -32,6 +32,7 @@ pub enum WorkdayCacheKeyType {
         month: i32,
         year: i32,
     },
+    DocumentYears,
     DocumentsByYear {
         year: i32,
     },
@@ -55,6 +56,7 @@ impl WorkdayCacheKeyType {
             WorkdayCacheKeyType::DocumentsByYear { year } => {
                 format!("documents-by-year:{}", year)
             }
+            WorkdayCacheKeyType::DocumentYears => "document-years".to_string(),
         }
     }
 
@@ -63,7 +65,8 @@ impl WorkdayCacheKeyType {
             WorkdayCacheKeyType::Monthly { .. } => 3600 * 24,
             WorkdayCacheKeyType::Period { .. } => 3600 * 24,
             WorkdayCacheKeyType::Document { .. } => 3600 * 24 * 7,
-            WorkdayCacheKeyType::DocumentsByYear { .. } => 3600 * 24,
+            WorkdayCacheKeyType::DocumentsByYear { .. } => 3600 * 24 * 7,
+            WorkdayCacheKeyType::DocumentYears => 3600 * 24 * 7,
         }
     }
 }
@@ -90,6 +93,11 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         page: u32,
         limit: u32,
     ) -> impl Future<Output = Result<(Vec<WorkdayRow>, u32), WorkdayError>> + Send;
+
+    fn get_workday_years(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
 
     fn get_workday_months_by_year(
         &self,
@@ -133,11 +141,6 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         driver_id: Uuid,
         date: NaiveDate,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
-
-    fn get_workday_documents(
-        &self,
-        driver_id: Uuid,
-    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
 
     fn get_workday_documents_by_year(
         &self,
@@ -234,6 +237,22 @@ pub trait WorkdayCacheRepository: Send + Sync {
         month: i32,
         year: i32,
         record: Option<WorkdayDocument>,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn get_document_years(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Option<Vec<i32>>, WorkdayError>> + Send;
+
+    fn set_document_years(
+        &self,
+        driver_id: Uuid,
+        years: Vec<i32>,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn delete_document_years(
+        &self,
+        driver_id: Uuid,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 
     fn get_documents_by_year(
@@ -414,10 +433,10 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
     }
 
     async fn get_workday_months_by_year(
-            &self,
-            driver_id: Uuid,
-            year: i32,
-        ) -> Result<Vec<i32>, WorkdayError> {
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<Vec<i32>, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
         let mut months: Vec<i32> = workdays
             .iter()
@@ -426,7 +445,7 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
             .collect();
         months.sort_unstable();
         months.dedup();
-        
+
         Ok(months)
     }
 
@@ -554,7 +573,7 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         }
     }
 
-    async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
+    async fn get_workday_years(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
         let documents: Vec<i32> = workdays
             .iter()
@@ -595,12 +614,14 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
 type MockWorkdayCacheType = HashMap<String, Vec<Workday>>;
 type MockDocumentRecordCache = HashMap<(Uuid, i32, i32), Option<WorkdayDocument>>;
 type MockDocumentsByYearCache = HashMap<(Uuid, i32), Vec<WorkdayDocumentInformation>>;
+type MockDocumentYearsCache = HashMap<Uuid, Vec<i32>>;
 
 #[derive(Clone)]
 pub struct MockWorkdayCacheRepository {
     workdays: Arc<Mutex<MockWorkdayCacheType>>,
     document_records: Arc<Mutex<MockDocumentRecordCache>>,
     documents_by_year: Arc<Mutex<MockDocumentsByYearCache>>,
+    document_years: Arc<Mutex<MockDocumentYearsCache>>,
 }
 
 impl MockWorkdayCacheRepository {
@@ -609,6 +630,7 @@ impl MockWorkdayCacheRepository {
             workdays: Arc::new(Mutex::new(HashMap::new())),
             document_records: Arc::new(Mutex::new(HashMap::new())),
             documents_by_year: Arc::new(Mutex::new(HashMap::new())),
+            document_years: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -767,6 +789,27 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
     ) -> Result<(), WorkdayError> {
         let mut records = self.document_records.lock().unwrap();
         records.insert((driver_id, month, year), record);
+        Ok(())
+    }
+
+    async fn get_document_years(&self, driver_id: Uuid) -> Result<Option<Vec<i32>>, WorkdayError> {
+        let cache = self.document_years.lock().unwrap();
+        Ok(cache.get(&driver_id).cloned())
+    }
+
+    async fn set_document_years(
+        &self,
+        driver_id: Uuid,
+        years: Vec<i32>,
+    ) -> Result<(), WorkdayError> {
+        let mut cache = self.document_years.lock().unwrap();
+        cache.insert(driver_id, years);
+        Ok(())
+    }
+
+    async fn delete_document_years(&self, driver_id: Uuid) -> Result<(), WorkdayError> {
+        let mut cache = self.document_years.lock().unwrap();
+        cache.remove(&driver_id);
         Ok(())
     }
 

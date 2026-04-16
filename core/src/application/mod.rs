@@ -102,13 +102,8 @@ pub async fn create_repositories(
         }
     };
 
-    let s3_credentials = aws_sdk_s3::config::Credentials::new(
-        s3_access_key,
-        s3_secret_key,
-        None,
-        None,
-        "Static",
-    );
+    let s3_credentials =
+        aws_sdk_s3::config::Credentials::new(s3_access_key, s3_secret_key, None, None, "Static");
     let s3_config = aws_sdk_s3::config::Builder::new()
         .credentials_provider(s3_credentials)
         .endpoint_url(s3_endpoint)

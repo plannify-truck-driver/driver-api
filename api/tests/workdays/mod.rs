@@ -19,7 +19,10 @@ fn verify_workday_content(workday: Workday, expected_workday: Workday) {
     assert_eq!(workday.overnight_rest, expected_workday.overnight_rest);
 }
 
-fn verify_workday_document_content(document: WorkdayDocumentInformation, expected_document: WorkdayDocumentInformation) {
+fn verify_workday_document_content(
+    document: WorkdayDocumentInformation,
+    expected_document: WorkdayDocumentInformation,
+) {
     assert_eq!(document.month, expected_document.month);
     assert_eq!(document.year, expected_document.year);
     assert_eq!(document.generated_at, expected_document.generated_at);

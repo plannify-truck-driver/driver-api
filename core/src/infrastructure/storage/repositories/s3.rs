@@ -8,7 +8,7 @@ use aws_sdk_s3::{
     primitives::ByteStream,
 };
 use bytes::Bytes;
-use tracing::{error, Span};
+use tracing::{Span, error};
 
 use crate::{
     domain::storage::port::StorageRepository,
@@ -63,12 +63,7 @@ impl StorageRepository for S3StorageRepository {
             aws.s3.content_length = tracing::field::Empty,
         )
     )]
-    async fn upload(
-        &self,
-        key: &str,
-        data: Bytes,
-        content_type: &str,
-    ) -> Result<(), StorageError> {
+    async fn upload(&self, key: &str, data: Bytes, content_type: &str) -> Result<(), StorageError> {
         let content_length = data.len();
         Span::current().record("aws.s3.content_length", content_length);
 

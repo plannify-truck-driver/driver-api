@@ -45,7 +45,9 @@ async fn main() -> Result<(), ApiError> {
     app.start().await?;
 
     // flush traces before exit
-    provider.shutdown().expect("failed to shutdown OpenTelemetry");
+    provider
+        .shutdown()
+        .expect("failed to shutdown OpenTelemetry");
 
     Ok(())
 }

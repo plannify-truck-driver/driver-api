@@ -179,6 +179,9 @@ where
         self.workday_cache_repository
             .delete_documents_by_year(driver_id, workday.date.year())
             .await?;
+        self.workday_cache_repository
+            .delete_document_years(driver_id)
+            .await?;
 
         Ok(workday)
     }
@@ -233,6 +236,9 @@ where
         self.workday_cache_repository
             .delete_documents_by_year(driver_id, date.year())
             .await?;
+        self.workday_cache_repository
+            .delete_document_years(driver_id)
+            .await?;
 
         Ok(())
     }
@@ -282,6 +288,9 @@ where
         self.workday_cache_repository
             .delete_documents_by_year(driver_id, date.year())
             .await?;
+        self.workday_cache_repository
+            .delete_document_years(driver_id)
+            .await?;
 
         Ok(workday_garbage)
     }
@@ -312,6 +321,9 @@ where
         self.workday_cache_repository
             .delete_documents_by_year(driver_id, date.year())
             .await?;
+        self.workday_cache_repository
+            .delete_document_years(driver_id)
+            .await?;
 
         Ok(())
     }
@@ -321,12 +333,32 @@ where
         skip(self),
         fields(
             driver_id = %driver_id,
+            cache.hit = tracing::field::Empty,
         )
     )]
     async fn get_workday_documents(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
-        self.workday_database_repository
-            .get_workday_documents(driver_id)
-            .await
+        let cached_years = self
+            .workday_cache_repository
+            .get_document_years(driver_id)
+            .await?;
+
+        if let Some(cached_years) = cached_years {
+            tracing::Span::current().record("cache.hit", true);
+            return Ok(cached_years);
+        }
+
+        tracing::Span::current().record("cache.hit", false);
+
+        let years = self
+            .workday_database_repository
+            .get_workday_years(driver_id)
+            .await?;
+
+        self.workday_cache_repository
+            .set_document_years(driver_id, years.clone())
+            .await?;
+
+        Ok(years)
     }
 
     #[tracing::instrument(
