@@ -165,16 +165,7 @@ async fn test_get_workday_document_years_cross_user_isolation(ctx: &mut context:
 
     assert_eq!(body.len(), 1, "User B should see exactly 1 year");
     assert!(body.contains(&2026), "User B's only year should be 2026");
-    assert!(
-        !body.contains(&2025),
-        "User B must not see User A's 2025"
-    );
-    assert!(
-        !body.contains(&2027),
-        "User B must not see User A's 2027"
-    );
-    assert!(
-        !body.contains(&2031),
-        "User B must not see User A's 2031"
-    );
+    assert!(!body.contains(&2025), "User B must not see User A's 2025");
+    assert!(!body.contains(&2027), "User B must not see User A's 2027");
+    assert!(!body.contains(&2031), "User B must not see User A's 2031");
 }

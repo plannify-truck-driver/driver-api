@@ -144,9 +144,7 @@ async fn test_get_all_workdays_month_cross_user_isolation(ctx: &mut context::Tes
     // User B has no workdays in January 2027 — the result must be empty.
     let other_router = ctx.create_authenticated_router_with_different_user().await;
 
-    let res = other_router
-        .get("/workdays/month?month=1&year=2027")
-        .await;
+    let res = other_router.get("/workdays/month?month=1&year=2027").await;
 
     res.assert_status(StatusCode::OK);
     let body: Vec<Workday> = res.json();
