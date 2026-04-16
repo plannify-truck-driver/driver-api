@@ -1,8 +1,8 @@
 use api::{ApiError, app::App};
 use dotenv::dotenv;
 use opentelemetry::trace::TracerProvider as _;
-use opentelemetry_otlp::WithExportConfig;
-use opentelemetry_sdk::trace::TracerProvider;
+use opentelemetry_otlp::{SpanExporter, WithExportConfig};
+use opentelemetry_sdk::trace::SdkTracerProvider;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use api::config::Config;
@@ -14,14 +14,14 @@ async fn main() -> Result<(), ApiError> {
 
     let config: Config = Config::parse();
 
-    let exporter = opentelemetry_otlp::SpanExporter::builder()
+    let exporter = SpanExporter::builder()
         .with_tonic()
         .with_endpoint(&config.otel.exporter_otlp_endpoint)
         .build()
         .expect("failed to build OTLP exporter");
 
-    let provider = TracerProvider::builder()
-        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
+    let provider = SdkTracerProvider::builder()
+        .with_batch_exporter(exporter)
         .build();
 
     opentelemetry::global::set_tracer_provider(provider.clone());
