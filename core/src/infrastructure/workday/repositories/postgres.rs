@@ -472,6 +472,36 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
     }
 
     #[tracing::instrument(
+        name = "db.workdays.get_workday_document_years",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+        )
+    )]
+    async fn get_workday_document_years(
+            &self,
+            driver_id: Uuid,
+        ) -> Result<Vec<i32>, WorkdayError> {
+        let records = sqlx::query!(
+            r#"
+            SELECT DISTINCT year
+            FROM workday_documents
+            WHERE fk_driver_id = $1
+            ORDER BY year ASC
+            "#,
+            driver_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get workday document years: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(records.into_iter().map(|r| r.year).collect())
+    }
+
+    #[tracing::instrument(
         name = "db.workdays.get_workday_documents_by_year",
         skip(self),
         fields(

@@ -24,7 +24,7 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 
 # JWT
-jsonwebtoken = "10.3.0"
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 
 # External libraries
 plannify_driver_api_core = { path = "../core", package = "plannify_driver_api_core" }

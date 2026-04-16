@@ -36,8 +36,8 @@ async fn test_get_workday_document_years_success(ctx: &mut context::TestContext)
 
     assert_eq!(
         body.len(),
-        3,
-        "there should be exactly three years available"
+        4,
+        "there should be exactly four years available"
     );
     assert!(
         body.contains(&2025),
@@ -51,12 +51,16 @@ async fn test_get_workday_document_years_success(ctx: &mut context::TestContext)
         body.contains(&2027),
         "2027 should be in the available years"
     );
+    assert!(
+        body.contains(&2031),
+        "2031 should be in the available years"
+    );
 }
 
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
-async fn test_get_workday_document_years_updatecache_success(ctx: &mut context::TestContext) {
+async fn test_get_workday_document_years_update_cache_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
         .get("/workdays/documents/year")

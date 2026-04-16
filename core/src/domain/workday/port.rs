@@ -142,6 +142,11 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         date: NaiveDate,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 
+    fn get_workday_document_years(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
+
     fn get_workday_documents_by_year(
         &self,
         driver_id: Uuid,
@@ -355,6 +360,7 @@ pub trait WorkdayService: Send + Sync {
 pub struct MockWorkdayDatabaseRepository {
     workdays: Arc<Mutex<Vec<WorkdayRow>>>,
     workdays_garbage: Arc<Mutex<Vec<WorkdayGarbageRow>>>,
+    workday_documents: Arc<Mutex<Vec<WorkdayDocument>>>,
 }
 
 impl MockWorkdayDatabaseRepository {
@@ -362,6 +368,7 @@ impl MockWorkdayDatabaseRepository {
         Self {
             workdays: Arc::new(Mutex::new(Vec::new())),
             workdays_garbage: Arc::new(Mutex::new(Vec::new())),
+            workday_documents: Arc::new(Mutex::new(Vec::new())),
         }
     }
 }
@@ -581,6 +588,21 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
             .map(|w| w.date.year()) // Example logic
             .collect();
         Ok(documents)
+    }
+
+    async fn get_workday_document_years(
+            &self,
+            driver_id: Uuid,
+        ) -> Result<Vec<i32>, WorkdayError> {
+        let documents = self.workday_documents.lock().unwrap();
+        let years: Vec<i32> = documents
+            .iter()
+            .filter(|d| d.fk_driver_id == driver_id)
+            .map(|d| d.year)
+            .collect();
+
+        Ok(years)
+        
     }
 
     async fn get_workday_documents_by_year(

@@ -349,10 +349,19 @@ where
 
         tracing::Span::current().record("cache.hit", false);
 
-        let years = self
+        let workday_years = self
             .workday_database_repository
             .get_workday_years(driver_id)
             .await?;
+
+        let document_years = self
+            .workday_database_repository
+            .get_workday_document_years(driver_id)
+            .await?;
+
+        let mut years: Vec<i32> = workday_years.into_iter().chain(document_years).collect();
+        years.sort_unstable();
+        years.dedup();
 
         self.workday_cache_repository
             .set_document_years(driver_id, years.clone())
