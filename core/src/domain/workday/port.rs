@@ -590,10 +590,7 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         Ok(documents)
     }
 
-    async fn get_workday_document_years(
-            &self,
-            driver_id: Uuid,
-        ) -> Result<Vec<i32>, WorkdayError> {
+    async fn get_workday_document_years(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
         let documents = self.workday_documents.lock().unwrap();
         let years: Vec<i32> = documents
             .iter()
@@ -602,7 +599,6 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
             .collect();
 
         Ok(years)
-        
     }
 
     async fn get_workday_documents_by_year(

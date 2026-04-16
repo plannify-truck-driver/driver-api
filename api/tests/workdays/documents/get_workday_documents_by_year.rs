@@ -24,7 +24,7 @@ async fn test_get_workday_documents_by_year_unauthorized(ctx: &mut context::Test
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
-async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestContext) {
+async fn test_get_workday_documents_by_year_in_database_success(ctx: &mut context::TestContext) {
     let res = ctx
         .authenticated_router
         .get("/workdays/documents/2026")
@@ -55,6 +55,30 @@ async fn test_get_workday_documents_by_year_success(ctx: &mut context::TestConte
     };
     let workday_document_2 = body[1];
     verify_workday_document_content(workday_document_2, expected_workday_document_2);
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_workday_documents_by_year_in_s3_success(ctx: &mut context::TestContext) {
+    let res = ctx
+        .authenticated_router
+        .get("/workdays/documents/2031")
+        .await;
+
+    res.assert_status(StatusCode::OK);
+
+    let body: Vec<WorkdayDocumentInformation> = res.json();
+
+    assert_eq!(body.len(), 1, "there should be exactly one month available");
+
+    let expected_workday_document = WorkdayDocumentInformation {
+        month: 1,
+        year: 2031,
+        generated_at: Some("2031-02-01T10:00:00Z".parse().unwrap()),
+    };
+    let workday_document = body[0];
+    verify_workday_document_content(workday_document, expected_workday_document);
 }
 
 #[test_context(context::TestContext)]

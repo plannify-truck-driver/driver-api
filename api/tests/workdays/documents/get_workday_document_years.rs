@@ -1,8 +1,9 @@
 use api::http::common::api_error::ErrorBody;
 use axum::http::StatusCode;
+use plannify_driver_api_core::domain::workday::port::WorkdayDatabaseRepository;
+use serde_json::json;
 use serial_test::serial;
 use test_context::test_context;
-use serde_json::json;
 
 use crate::context;
 
@@ -92,7 +93,9 @@ async fn test_get_workday_document_years_update_cache_success(ctx: &mut context:
         "2031 should be in the available years"
     );
 
-    ctx.authenticated_router.post("/workdays").json(&json!({
+    ctx.authenticated_router
+        .post("/workdays")
+        .json(&json!({
             "date": "2030-01-01",
             "start_time": "08:00:00",
             "end_time": null,
@@ -135,4 +138,13 @@ async fn test_get_workday_document_years_update_cache_success(ctx: &mut context:
         body.contains(&2031),
         "2031 should be in the available years"
     );
+
+    ctx.repositories
+        .workday_database_repository
+        .delete_workday(
+            ctx.authenticated_user_id,
+            chrono::NaiveDate::from_ymd_opt(2030, 1, 1).unwrap(),
+        )
+        .await
+        .ok();
 }

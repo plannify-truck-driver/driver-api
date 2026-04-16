@@ -44,6 +44,7 @@ pub type DriverService = Service<
 #[derive(Clone)]
 pub struct DriverRepositories {
     pub pool: PgPool,
+    pub redis_manager: ConnectionManager,
     pub health_repository: PostgresHealthRepository,
     pub driver_database_repository: PostgresDriverRepository,
     pub driver_cache_repository: RedisDriverCacheRepository,
@@ -133,7 +134,7 @@ pub async fn create_repositories(
     );
     let mail_database_repository = PostgresMailRepository::new(pg_pool.clone());
     let update_database_repository = PostgresUpdateRepository::new(pg_pool.clone());
-    let update_cache_repository = RedisUpdateCacheRepository::new(redis_manager);
+    let update_cache_repository = RedisUpdateCacheRepository::new(redis_manager.clone());
 
     let document_external_repository = GrpcDocumentRepository::connect(pdf_service_endpoint)
         .await
@@ -146,6 +147,7 @@ pub async fn create_repositories(
 
     Ok(DriverRepositories {
         pool: pg_pool,
+        redis_manager,
         health_repository,
         driver_database_repository,
         driver_cache_repository,

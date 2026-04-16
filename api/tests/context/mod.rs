@@ -168,6 +168,12 @@ impl AsyncTestContext for TestContext {
                 .ok();
         }
 
+        let mut conn = self.repositories.redis_manager.clone();
+        let _: () = redis::cmd("FLUSHDB")
+            .query_async(&mut conn)
+            .await
+            .unwrap_or(());
+
         self.app.shutdown().await;
     }
 }

@@ -101,6 +101,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "plannify_driver_api_core",
+ "redis",
  "reqwest 0.13.1",
  "serde",
  "serde_json",
