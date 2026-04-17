@@ -175,10 +175,7 @@ impl App {
 
         let health_router = axum::Router::new()
             .merge(health_routes())
-            .with_state(state.clone())
-            .layer(from_fn(|request, next| {
-                tracing_middleware(request, next, None)
-            }));
+            .with_state(state.clone());
 
         // Write OpenAPI spec to file in development environment
         if matches!(config.environment, crate::config::Environment::Development) {
