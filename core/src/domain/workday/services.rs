@@ -165,10 +165,30 @@ where
         driver_id: Uuid,
         create_workday_request: CreateWorkdayRequest,
     ) -> Result<WorkdayRow, WorkdayError> {
-        let workday = self
+        let workday = match self
             .workday_database_repository
             .create_workday(driver_id, create_workday_request)
-            .await?;
+            .await
+        {
+            Ok(w) => w,
+            Err(WorkdayError::WorkdayAlreadyExists) => {
+                let has_garbage =
+                    self.get_workdays_garbage(driver_id)
+                        .await
+                        .ok()
+                        .and_then(|garbages| {
+                            garbages
+                                .into_iter()
+                                .find(|g| g.workday_date == create_workday_request.date)
+                        });
+                return Err(if has_garbage.is_some() {
+                    WorkdayError::WorkdayGarbageAlreadyExists
+                } else {
+                    WorkdayError::WorkdayAlreadyExists
+                });
+            }
+            Err(_) => return Err(WorkdayError::Internal),
+        };
 
         self.workday_cache_repository
             .delete_workdays_by_month(driver_id, workday.date.month() as i32, workday.date.year())

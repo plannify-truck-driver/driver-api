@@ -70,7 +70,7 @@ pub struct GetWorkdaysByPeriodParams {
     pub limit: u32,
 }
 
-#[derive(Debug, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Deserialize, Clone, Copy, Validate, ToSchema)]
 pub struct CreateWorkdayRequest {
     #[validate(custom(
         function = "validate_date",
