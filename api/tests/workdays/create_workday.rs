@@ -201,7 +201,7 @@ async fn test_create_workday_duplicate_garbage(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::CONFLICT);
 
     let body: ErrorBody = res.json();
-    assert_eq!(body.error_code, "WORKDAY_ALREADY_EXISTS");
+    assert_eq!(body.error_code, "WORKDAY_GARBAGE_ALREADY_EXISTS");
 }
 
 #[test_context(context::TestContext)]
