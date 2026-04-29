@@ -13,7 +13,7 @@ permissions:
   packages: write
 
 jobs:
-  build-and-push:
+  build-image:
     runs-on: ${{ matrix.runner.name }}
     strategy:
       matrix:
@@ -57,7 +57,8 @@ jobs:
         with:
           context: .
           platforms: ${{ matrix.runner.platform }}
-          push: true
+          push: false
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=${{ runner.temp }}/.buildx-cache
@@ -85,22 +86,9 @@ jobs:
           rm -rf ${{ runner.temp }}/.buildx-cache
           mv ${{ runner.temp }}/.buildx-cache-new ${{ runner.temp }}/.buildx-cache
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          body: |
-            ## Docker Image
-            `${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}`
-
-            ## Installation
-            ```bash
-            docker pull ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}
-            ```
-
   analyze-cve:
     runs-on: ubuntu-24.04
-    needs: build-and-push
+    needs: build-image
     steps:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -118,3 +106,41 @@ jobs:
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
+
+  push-image:
+    runs-on: ubuntu-24.04
+    needs: [build-image, analyze-cve]
+    if: github.ref_name == github.event.repository.default_branch
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}
+
+  create-release:
+    runs-on: ubuntu-24.04
+    needs: push-image
+    if: github.ref_name == github.event.repository.default_branch
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Docker Image
+            `${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}`
+
+            ## Installation
+            ```bash
+            docker pull ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}
+            ```
