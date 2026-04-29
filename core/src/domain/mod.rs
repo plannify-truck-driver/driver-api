@@ -2,6 +2,7 @@ pub mod common;
 pub mod document;
 pub mod driver;
 pub mod employee;
+pub mod formating;
 pub mod health;
 pub mod mail;
 pub mod storage;

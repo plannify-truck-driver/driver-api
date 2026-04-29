@@ -9,6 +9,7 @@ use crate::{
             },
             port::{
                 DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository, DriverService,
+                to_email_case, to_title_case,
             },
         },
         health::port::HealthRepository,
@@ -42,26 +43,6 @@ where
     DE: DocumentExternalRepository,
     DS: StorageRepository,
 {
-    fn to_title_case(name: String) -> String {
-        name.trim()
-            .split(|c: char| c.is_whitespace() || c == '-')
-            .map(|word| {
-                if word.is_empty() {
-                    return String::new();
-                }
-                let mut chars = word.chars();
-                match chars.next() {
-                    None => String::new(),
-                    Some(first) => {
-                        first.to_uppercase().collect::<String>()
-                            + chars.as_str().to_lowercase().as_str()
-                    }
-                }
-            })
-            .collect::<Vec<String>>()
-            .join("-")
-    }
-
     #[tracing::instrument(
         name = "driver_service.create_driver",
         skip(self),
@@ -98,9 +79,9 @@ where
             }
         }
 
-        create_request.firstname = Self::to_title_case(create_request.firstname);
-        create_request.lastname = Self::to_title_case(create_request.lastname);
-        create_request.email = create_request.email.trim().to_lowercase();
+        create_request.firstname = to_title_case(create_request.firstname);
+        create_request.lastname = to_title_case(create_request.lastname);
+        create_request.email = to_email_case(create_request.email);
 
         let email_domain = create_request.email.split('@').next_back().unwrap_or("");
 
@@ -152,7 +133,7 @@ where
         &self,
         login_request: LoginDriverRequest,
     ) -> Result<DriverRow, DriverError> {
-        let email = login_request.email.trim().to_lowercase();
+        let email = to_email_case(login_request.email);
         let driver = self
             .driver_database_repository
             .get_driver_by_email(email)

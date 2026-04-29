@@ -92,9 +92,31 @@ pub trait DriverDatabaseRepository: Send + Sync {
     ) -> impl Future<Output = Result<(), DriverError>> + Send;
 }
 
-pub trait DriverService: Send + Sync {
-    fn to_title_case(name: String) -> String;
+pub fn to_title_case(name: String) -> String {
+    name.trim()
+        .split(|c: char| c.is_whitespace() || c == '-')
+        .map(|word| {
+            if word.is_empty() {
+                return String::new();
+            }
+            let mut chars = word.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(first) => {
+                    first.to_uppercase().collect::<String>()
+                        + chars.as_str().to_lowercase().as_str()
+                }
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("-")
+}
 
+pub fn to_email_case(email: String) -> String {
+    email.trim().to_lowercase()
+}
+
+pub trait DriverService: Send + Sync {
     fn create_driver(
         &self,
         create_request: CreateDriverRequest,
