@@ -27,9 +27,10 @@ async fn test_delete_workday_unauthorized(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_delete_workday_success(ctx: &mut context::TestContext) {
+    // 2025-12-31 is in an undocumented month — safe to soft-delete
     let res = ctx
         .authenticated_router
-        .delete("/workdays/2027-01-02")
+        .delete("/workdays/2025-12-31")
         .await;
 
     res.assert_status(StatusCode::OK);
@@ -38,7 +39,7 @@ async fn test_delete_workday_success(ctx: &mut context::TestContext) {
         .workday_database_repository
         .delete_workday_garbage(
             ctx.authenticated_user_id,
-            chrono::NaiveDate::from_ymd_opt(2027, 1, 2).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(2025, 12, 31).unwrap(),
         )
         .await
         .unwrap();
@@ -78,10 +79,11 @@ async fn test_delete_workday_duplicate(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_delete_workday_cross_user_isolation(ctx: &mut context::TestContext) {
-    // 2027-01-01 belongs to User A. User B must receive 404 when trying to soft-delete it.
+    // 2026-01-31 belongs to User A only (User B has no such workday, undocumented month).
+    // User B must receive 404.
     let other_router = ctx.create_authenticated_router_with_different_user().await;
 
-    let res = other_router.delete("/workdays/2027-01-01").await;
+    let res = other_router.delete("/workdays/2026-01-31").await;
 
     res.assert_status(StatusCode::NOT_FOUND);
     let body: ErrorBody = res.json();
@@ -92,20 +94,21 @@ async fn test_delete_workday_cross_user_isolation(ctx: &mut context::TestContext
 #[tokio::test]
 #[serial]
 async fn test_delete_workday_disappears_from_get(ctx: &mut context::TestContext) {
-    // 2026-02-01 is accessible before deletion
+    // 2025-12-31 is exclusively User A's (User B has no workday on that date),
+    // in an undocumented month — safe to soft-delete.
     ctx.authenticated_router
-        .get("/workdays/2026-02-01")
+        .get("/workdays/2025-12-31")
         .await
         .assert_status(StatusCode::OK);
 
     // Soft-delete it
     ctx.authenticated_router
-        .delete("/workdays/2026-02-01")
+        .delete("/workdays/2025-12-31")
         .await
         .assert_status(StatusCode::OK);
 
     // It must no longer be reachable
-    let res = ctx.authenticated_router.get("/workdays/2026-02-01").await;
+    let res = ctx.authenticated_router.get("/workdays/2025-12-31").await;
     res.assert_status(StatusCode::NOT_FOUND);
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "WORKDAY_NOT_FOUND");
@@ -115,10 +118,26 @@ async fn test_delete_workday_disappears_from_get(ctx: &mut context::TestContext)
         .workday_database_repository
         .delete_workday_garbage(
             ctx.authenticated_user_id,
-            chrono::NaiveDate::from_ymd_opt(2026, 2, 1).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(2025, 12, 31).unwrap(),
         )
         .await
         .ok();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_delete_workday_document_already_generated(ctx: &mut context::TestContext) {
+    // 2026-02-01 exists and 2026-02 has a generated document in the test dataset
+    let res = ctx
+        .authenticated_router
+        .delete("/workdays/2026-02-01")
+        .await;
+
+    res.assert_status(StatusCode::FORBIDDEN);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "WORKDAY_DOCUMENT_ALREADY_GENERATED");
 }
 
 #[test_context(context::TestContext)]

@@ -173,6 +173,7 @@ pub async fn get_all_workdays_period(
     ),
     responses(
         (status = 201, description = "Workday created successfully", body = Workday),
+        (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 409, description = "Workday already exists", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
@@ -209,6 +210,7 @@ pub async fn create_workday(
     ),
     responses(
         (status = 200, description = "Workday updated successfully", body = Workday),
+        (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 404, description = "Workday not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
@@ -247,6 +249,7 @@ pub async fn update_workday(
     ),
     responses(
         (status = 200, description = "Workday deleted successfully"),
+        (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 404, description = "Workday not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
@@ -321,6 +324,7 @@ pub async fn get_all_workday_garbage(
     ),
     responses(
         (status = 200, description = "Workday garbage deleted successfully"),
+        (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 404, description = "Workday garbage not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )

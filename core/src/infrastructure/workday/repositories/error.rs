@@ -19,4 +19,7 @@ pub enum WorkdayError {
 
     #[error("Workday garbage not found")]
     WorkdayGarbageNotFound,
+
+    #[error("A document has already been generated for this month")]
+    WorkdayDocumentAlreadyGenerated,
 }

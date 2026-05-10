@@ -84,6 +84,21 @@ async fn test_delete_workday_garbage_cross_user_isolation(ctx: &mut context::Tes
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
+async fn test_delete_workday_garbage_document_already_generated(ctx: &mut context::TestContext) {
+    let res = ctx
+        .authenticated_router
+        .delete("/workdays/garbage/2027-01-01")
+        .await;
+
+    res.assert_status(StatusCode::FORBIDDEN);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "WORKDAY_DOCUMENT_ALREADY_GENERATED");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
 async fn test_restore_workday_reappears_in_get(ctx: &mut context::TestContext) {
     // 2026-01-15 is currently soft-deleted — it must not be accessible
     ctx.authenticated_router

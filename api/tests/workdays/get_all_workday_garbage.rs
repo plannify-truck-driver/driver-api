@@ -27,7 +27,11 @@ async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::OK);
 
     let body: Vec<WorkdayGarbage> = res.json();
-    assert_eq!(body.len(), 2, "there should be exactly two workday garbage");
+    assert_eq!(
+        body.len(),
+        3,
+        "there should be exactly three workday garbage"
+    );
     assert_eq!(
         body[0].workday_date,
         chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
@@ -60,6 +64,23 @@ async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
     assert_eq!(
         body[1].scheduled_deletion_date,
         chrono::NaiveDate::from_ymd_opt(2026, 3, 11).unwrap()
+    );
+
+    assert_eq!(
+        body[2].workday_date,
+        chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap()
+    );
+    assert_eq!(
+        body[2].created_at,
+        chrono::NaiveDateTime::new(
+            chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
+            chrono::NaiveTime::from_hms_opt(11, 30, 0).unwrap()
+        )
+        .and_utc()
+    );
+    assert_eq!(
+        body[2].scheduled_deletion_date,
+        chrono::NaiveDate::from_ymd_opt(2027, 2, 1).unwrap()
     );
 }
 
