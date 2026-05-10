@@ -665,6 +665,16 @@
               }
             }
           },
+          "403": {
+            "description": "A document has already been generated for this month",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Workday not found",
             "content": {
@@ -715,6 +725,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Workday"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A document has already been generated for this month",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -970,6 +990,16 @@
           "200": {
             "description": "Workday garbage deleted successfully"
           },
+          "403": {
+            "description": "A document has already been generated for this month",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Workday garbage not found",
             "content": {
@@ -1135,6 +1165,16 @@
         "responses": {
           "200": {
             "description": "Workday deleted successfully"
+          },
+          "403": {
+            "description": "A document has already been generated for this month",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "404": {
             "description": "Workday not found",
