@@ -10,9 +10,9 @@ mod tests {
             test::create_mock_service,
             workday::{
                 entities::{
-                CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument,
-                WorkdayDocumentInformation,
-            },
+                    CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument,
+                    WorkdayDocumentInformation,
+                },
                 port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
             },
         },
@@ -695,8 +695,8 @@ mod tests {
     // --- document guard ---
 
     #[tokio::test]
-    async fn test_create_workday_fail_document_already_generated(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_create_workday_fail_document_already_generated()
+    -> Result<(), Box<dyn std::error::Error>> {
         let service = create_mock_service();
         let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
 
@@ -733,8 +733,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_update_workday_fail_document_already_generated(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_update_workday_fail_document_already_generated()
+    -> Result<(), Box<dyn std::error::Error>> {
         let service = create_mock_service();
         let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
 
@@ -785,8 +785,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_workday_fail_document_already_generated(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_delete_workday_fail_document_already_generated()
+    -> Result<(), Box<dyn std::error::Error>> {
         let service = create_mock_service();
         let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
 
@@ -831,8 +831,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_create_workday_garbage_fail_document_already_generated(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_create_workday_garbage_fail_document_already_generated()
+    -> Result<(), Box<dyn std::error::Error>> {
         let service = create_mock_service();
         let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
 
@@ -877,8 +877,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_workday_garbage_fail_document_already_generated(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_delete_workday_garbage_fail_document_already_generated()
+    -> Result<(), Box<dyn std::error::Error>> {
         let service = create_mock_service();
         let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
 

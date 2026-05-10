@@ -84,9 +84,7 @@ async fn test_delete_workday_garbage_cross_user_isolation(ctx: &mut context::Tes
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
-async fn test_delete_workday_garbage_document_already_generated(
-    ctx: &mut context::TestContext,
-) {
+async fn test_delete_workday_garbage_document_already_generated(ctx: &mut context::TestContext) {
     // 2027-01 has a generated document. Seed a garbage entry for 2027-01-01 so we can
     // attempt to restore it and confirm the guard fires.
     ctx.repositories
