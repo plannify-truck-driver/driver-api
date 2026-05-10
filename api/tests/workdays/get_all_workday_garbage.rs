@@ -27,7 +27,11 @@ async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::OK);
 
     let body: Vec<WorkdayGarbage> = res.json();
-    assert_eq!(body.len(), 3, "there should be exactly three workday garbage");
+    assert_eq!(
+        body.len(),
+        3,
+        "there should be exactly three workday garbage"
+    );
     assert_eq!(
         body[0].workday_date,
         chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
