@@ -1,11 +1,14 @@
-use plannify_driver_api_core::domain::{driver::port::{to_email_case, to_title_case}, formating::entities::GetValueFormatingParams};
+use plannify_driver_api_core::domain::{
+    driver::port::{to_email_case, to_title_case},
+    formating::entities::GetValueFormatingParams,
+};
 
-use crate::{ApiError, http::common::{api_error::ErrorBody, response::Response, validator::ValidatedQuery}};
+use crate::{
+    ApiError,
+    http::common::{api_error::ErrorBody, response::Response, validator::ValidatedQuery},
+};
 
-#[tracing::instrument(
-    name = "format_first_name",
-    skip_all,
-)]
+#[tracing::instrument(name = "format_first_name", skip_all)]
 #[utoipa::path(
     get,
     path = "/formating/first-name",
@@ -26,10 +29,7 @@ pub async fn get_first_name_formating(
     Ok(Response::ok(value))
 }
 
-#[tracing::instrument(
-    name = "format_last_name",
-    skip_all,
-)]
+#[tracing::instrument(name = "format_last_name", skip_all)]
 #[utoipa::path(
     get,
     path = "/formating/last-name",
@@ -50,10 +50,7 @@ pub async fn get_last_name_formating(
     Ok(Response::ok(value))
 }
 
-#[tracing::instrument(
-    name = "format_email",
-    skip_all,
-)]
+#[tracing::instrument(name = "format_email", skip_all)]
 #[utoipa::path(
     get,
     path = "/formating/email",

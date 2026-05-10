@@ -391,6 +391,41 @@ where
     }
 
     #[tracing::instrument(
+        name = "workday_service.get_generated_document_by_year",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            year = %year,
+            cache.hit = tracing::field::Empty,
+        )
+    )]
+    async fn get_generated_document_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
+        if let Some(cached) = self
+            .workday_cache_repository
+            .get_generated_documents_by_year(driver_id, year)
+            .await?
+        {
+            tracing::Span::current().record("cache.hit", true);
+            return Ok(cached);
+        }
+
+        let documents = self
+            .workday_database_repository
+            .get_workday_documents_by_year(driver_id, year)
+            .await?;
+
+        self.workday_cache_repository
+            .set_generated_documents_by_year(driver_id, year, documents.clone())
+            .await?;
+
+        Ok(documents)
+    }
+
+    #[tracing::instrument(
         name = "workday_service.get_workday_documents_by_year",
         skip(self),
         fields(
@@ -415,10 +450,7 @@ where
 
         tracing::Span::current().record("cache.hit", false);
 
-        let documents = self
-            .workday_database_repository
-            .get_workday_documents_by_year(driver_id, year)
-            .await?;
+        let documents = self.get_generated_document_by_year(driver_id, year).await?;
 
         let workday_months = self
             .workday_database_repository

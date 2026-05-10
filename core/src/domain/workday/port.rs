@@ -33,6 +33,9 @@ pub enum WorkdayCacheKeyType {
         year: i32,
     },
     DocumentYears,
+    GeneratedDocumentsByYear {
+        year: i32,
+    },
     DocumentsByYear {
         year: i32,
     },
@@ -53,6 +56,9 @@ impl WorkdayCacheKeyType {
             WorkdayCacheKeyType::Document { month, year } => {
                 format!("documents:{}-{}", year, month)
             }
+            WorkdayCacheKeyType::GeneratedDocumentsByYear { year } => {
+                format!("generated-documents-by-year:{}", year)
+            }
             WorkdayCacheKeyType::DocumentsByYear { year } => {
                 format!("documents-by-year:{}", year)
             }
@@ -65,6 +71,7 @@ impl WorkdayCacheKeyType {
             WorkdayCacheKeyType::Monthly { .. } => 3600 * 24,
             WorkdayCacheKeyType::Period { .. } => 3600 * 24,
             WorkdayCacheKeyType::Document { .. } => 3600 * 24 * 7,
+            WorkdayCacheKeyType::GeneratedDocumentsByYear { .. } => 3600 * 24 * 7,
             WorkdayCacheKeyType::DocumentsByYear { .. } => 3600 * 24 * 7,
             WorkdayCacheKeyType::DocumentYears => 3600 * 24 * 7,
         }
@@ -260,6 +267,25 @@ pub trait WorkdayCacheRepository: Send + Sync {
         driver_id: Uuid,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 
+    fn get_generated_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> impl Future<Output = Result<Option<Vec<WorkdayDocumentInformation>>, WorkdayError>> + Send;
+
+    fn set_generated_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+        documents: Vec<WorkdayDocumentInformation>,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    fn delete_generated_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
     fn get_documents_by_year(
         &self,
         driver_id: Uuid,
@@ -341,6 +367,12 @@ pub trait WorkdayService: Send + Sync {
         &self,
         driver_id: Uuid,
     ) -> impl Future<Output = Result<Vec<i32>, WorkdayError>> + Send;
+
+    fn get_generated_document_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> impl Future<Output = Result<Vec<WorkdayDocumentInformation>, WorkdayError>> + Send;
 
     fn get_workday_documents_by_year(
         &self,
@@ -638,6 +670,7 @@ type MockDocumentYearsCache = HashMap<Uuid, Vec<i32>>;
 pub struct MockWorkdayCacheRepository {
     workdays: Arc<Mutex<MockWorkdayCacheType>>,
     document_records: Arc<Mutex<MockDocumentRecordCache>>,
+    generated_documents_by_year: Arc<Mutex<MockDocumentsByYearCache>>,
     documents_by_year: Arc<Mutex<MockDocumentsByYearCache>>,
     document_years: Arc<Mutex<MockDocumentYearsCache>>,
 }
@@ -647,6 +680,7 @@ impl MockWorkdayCacheRepository {
         Self {
             workdays: Arc::new(Mutex::new(HashMap::new())),
             document_records: Arc::new(Mutex::new(HashMap::new())),
+            generated_documents_by_year: Arc::new(Mutex::new(HashMap::new())),
             documents_by_year: Arc::new(Mutex::new(HashMap::new())),
             document_years: Arc::new(Mutex::new(HashMap::new())),
         }
@@ -807,6 +841,36 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
     ) -> Result<(), WorkdayError> {
         let mut records = self.document_records.lock().unwrap();
         records.insert((driver_id, month, year), record);
+        Ok(())
+    }
+
+    async fn get_generated_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<Option<Vec<WorkdayDocumentInformation>>, WorkdayError> {
+        let cache = self.generated_documents_by_year.lock().unwrap();
+        Ok(cache.get(&(driver_id, year)).cloned())
+    }
+
+    async fn set_generated_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+        documents: Vec<WorkdayDocumentInformation>,
+    ) -> Result<(), WorkdayError> {
+        let mut cache = self.generated_documents_by_year.lock().unwrap();
+        cache.insert((driver_id, year), documents);
+        Ok(())
+    }
+
+    async fn delete_generated_documents_by_year(
+        &self,
+        driver_id: Uuid,
+        year: i32,
+    ) -> Result<(), WorkdayError> {
+        let mut cache = self.generated_documents_by_year.lock().unwrap();
+        cache.remove(&(driver_id, year));
         Ok(())
     }
 

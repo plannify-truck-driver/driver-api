@@ -25,7 +25,12 @@ use crate::{
     http::{
         authentication::routes::{
             authentication_routes, refresh_cookie_routes, unauthenticated_routes,
-        }, common::middleware::{auth::AuthRefreshMiddleware, tracing::tracing_middleware}, driver::routes::driver_routes, formating::routes::formating_routes, update::routes::update_routes, workday::routes::workday_routes
+        },
+        common::middleware::{auth::AuthRefreshMiddleware, tracing::tracing_middleware},
+        driver::routes::driver_routes,
+        formating::routes::formating_routes,
+        update::routes::update_routes,
+        workday::routes::workday_routes,
     },
 };
 
