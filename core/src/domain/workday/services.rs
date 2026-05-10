@@ -165,6 +165,17 @@ where
         driver_id: Uuid,
         create_workday_request: CreateWorkdayRequest,
     ) -> Result<WorkdayRow, WorkdayError> {
+        let date = create_workday_request.date;
+        let documents = self
+            .get_generated_document_by_year(driver_id, date.year())
+            .await?;
+        if documents
+            .iter()
+            .any(|d| d.month == date.month() && d.generated_at.is_some())
+        {
+            return Err(WorkdayError::WorkdayDocumentAlreadyGenerated);
+        }
+
         let workday = match self
             .workday_database_repository
             .create_workday(driver_id, create_workday_request)
@@ -219,6 +230,17 @@ where
         driver_id: Uuid,
         update_workday_request: UpdateWorkdayRequest,
     ) -> Result<WorkdayRow, WorkdayError> {
+        let date = update_workday_request.date;
+        let documents = self
+            .get_generated_document_by_year(driver_id, date.year())
+            .await?;
+        if documents
+            .iter()
+            .any(|d| d.month == date.month() && d.generated_at.is_some())
+        {
+            return Err(WorkdayError::WorkdayDocumentAlreadyGenerated);
+        }
+
         let workday = self
             .workday_database_repository
             .update_workday(driver_id, update_workday_request)
@@ -243,6 +265,16 @@ where
         )
     )]
     async fn delete_workday(&self, driver_id: Uuid, date: NaiveDate) -> Result<(), WorkdayError> {
+        let documents = self
+            .get_generated_document_by_year(driver_id, date.year())
+            .await?;
+        if documents
+            .iter()
+            .any(|d| d.month == date.month() && d.generated_at.is_some())
+        {
+            return Err(WorkdayError::WorkdayDocumentAlreadyGenerated);
+        }
+
         self.workday_database_repository
             .delete_workday(driver_id, date)
             .await?;
@@ -292,6 +324,16 @@ where
         driver_id: Uuid,
         date: NaiveDate,
     ) -> Result<WorkdayGarbageRow, WorkdayError> {
+        let documents = self
+            .get_generated_document_by_year(driver_id, date.year())
+            .await?;
+        if documents
+            .iter()
+            .any(|d| d.month == date.month() && d.generated_at.is_some())
+        {
+            return Err(WorkdayError::WorkdayDocumentAlreadyGenerated);
+        }
+
         let scheduled_deletion_date =
             chrono::Utc::now().naive_utc().date() + chrono::Duration::days(30);
         let workday_garbage = self
@@ -328,6 +370,16 @@ where
         driver_id: Uuid,
         date: NaiveDate,
     ) -> Result<(), WorkdayError> {
+        let documents = self
+            .get_generated_document_by_year(driver_id, date.year())
+            .await?;
+        if documents
+            .iter()
+            .any(|d| d.month == date.month() && d.generated_at.is_some())
+        {
+            return Err(WorkdayError::WorkdayDocumentAlreadyGenerated);
+        }
+
         self.workday_database_repository
             .delete_workday_garbage(driver_id, date)
             .await?;

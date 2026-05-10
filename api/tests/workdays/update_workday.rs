@@ -36,11 +36,12 @@ async fn test_update_workday_unauthorized(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_update_workday_success(ctx: &mut context::TestContext) {
+    // 2026-01-31 is in an undocumented month — safe to mutate
     let res = ctx
         .authenticated_router
         .put("/workdays")
         .json(&json!({
-            "date": "2027-01-01",
+            "date": "2026-01-31",
             "start_time": "08:00:00",
             "end_time": null,
             "rest_time": "00:00:00",
@@ -53,7 +54,7 @@ async fn test_update_workday_success(ctx: &mut context::TestContext) {
     let body: Workday = res.json();
 
     let expected_workday = Workday {
-        date: chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
+        date: chrono::NaiveDate::from_ymd_opt(2026, 1, 31).unwrap(),
         start_time: chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
         end_time: None,
         rest_time: chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
@@ -61,16 +62,17 @@ async fn test_update_workday_success(ctx: &mut context::TestContext) {
     };
     verify_workday_content(body, expected_workday);
 
+    // Restore original dataset values
     ctx.repositories
         .workday_database_repository
         .update_workday(
             ctx.authenticated_user_id,
             UpdateWorkdayRequest {
-                date: chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
-                start_time: chrono::NaiveTime::from_hms_opt(8, 14, 0).unwrap(),
-                end_time: Some(chrono::NaiveTime::from_hms_opt(13, 31, 0).unwrap()),
-                rest_time: chrono::NaiveTime::from_hms_opt(1, 45, 0).unwrap(),
-                overnight_rest: true,
+                date: chrono::NaiveDate::from_ymd_opt(2026, 1, 31).unwrap(),
+                start_time: chrono::NaiveTime::from_hms_opt(7, 40, 0).unwrap(),
+                end_time: None,
+                rest_time: chrono::NaiveTime::from_hms_opt(0, 30, 0).unwrap(),
+                overnight_rest: false,
             },
         )
         .await
@@ -193,13 +195,13 @@ async fn test_update_workday_with_wrong_body(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_update_workday_cross_user_isolation(ctx: &mut context::TestContext) {
-    // 2027-01-01 belongs to User A. User B must receive 404 when trying to update it.
+    // 2026-01-31 belongs to User A (undocumented month). User B must receive 404.
     let other_router = ctx.create_authenticated_router_with_different_user().await;
 
     let res = other_router
         .put("/workdays")
         .json(&json!({
-            "date": "2027-01-01",
+            "date": "2026-01-31",
             "start_time": "09:00:00",
             "end_time": null,
             "rest_time": "00:00:00",
@@ -215,21 +217,45 @@ async fn test_update_workday_cross_user_isolation(ctx: &mut context::TestContext
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
+async fn test_update_workday_document_already_generated(ctx: &mut context::TestContext) {
+    // 2026-02-01 exists and 2026-02 has a generated document in the test dataset
+    let res = ctx
+        .authenticated_router
+        .put("/workdays")
+        .json(&json!({
+            "date": "2026-02-01",
+            "start_time": "09:00:00",
+            "end_time": null,
+            "rest_time": "00:00:00",
+            "overnight_rest": false
+        }))
+        .await;
+
+    res.assert_status(StatusCode::FORBIDDEN);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "WORKDAY_DOCUMENT_ALREADY_GENERATED");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
 async fn test_update_workday_cache_invalidation(ctx: &mut context::TestContext) {
-    // Warm up the monthly cache for January 2027
+    // Use January 2026 (undocumented month). Visible workdays: 2026-01-01 and 2026-01-31
+    // (2026-01-15 is in garbage and excluded from results).
     let initial_res = ctx
         .authenticated_router
-        .get("/workdays/month?month=1&year=2027")
+        .get("/workdays/month?month=1&year=2026")
         .await;
     initial_res.assert_status(StatusCode::OK);
     let initial_body: Vec<Workday> = initial_res.json();
     assert_eq!(initial_body.len(), 2);
 
-    // Update 2027-01-01 with a different start_time
+    // Update 2026-01-31 with a different start_time
     ctx.authenticated_router
         .put("/workdays")
         .json(&json!({
-            "date": "2027-01-01",
+            "date": "2026-01-31",
             "start_time": "10:00:00",
             "end_time": null,
             "rest_time": "00:30:00",
@@ -241,13 +267,17 @@ async fn test_update_workday_cache_invalidation(ctx: &mut context::TestContext) 
     // The update must be visible — the cache must have been invalidated
     let updated_res = ctx
         .authenticated_router
-        .get("/workdays/month?month=1&year=2027")
+        .get("/workdays/month?month=1&year=2026")
         .await;
     updated_res.assert_status(StatusCode::OK);
     let updated_body: Vec<Workday> = updated_res.json();
     assert_eq!(updated_body.len(), 2);
+    let updated_workday = updated_body
+        .iter()
+        .find(|w| w.date == chrono::NaiveDate::from_ymd_opt(2026, 1, 31).unwrap())
+        .expect("2026-01-31 must be present in the response");
     assert_eq!(
-        updated_body[0].start_time,
+        updated_workday.start_time,
         chrono::NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
         "updated start_time must be reflected immediately after cache invalidation"
     );
@@ -258,11 +288,11 @@ async fn test_update_workday_cache_invalidation(ctx: &mut context::TestContext) 
         .update_workday(
             ctx.authenticated_user_id,
             UpdateWorkdayRequest {
-                date: chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
-                start_time: chrono::NaiveTime::from_hms_opt(8, 14, 0).unwrap(),
-                end_time: Some(chrono::NaiveTime::from_hms_opt(13, 31, 0).unwrap()),
-                rest_time: chrono::NaiveTime::from_hms_opt(1, 45, 0).unwrap(),
-                overnight_rest: true,
+                date: chrono::NaiveDate::from_ymd_opt(2026, 1, 31).unwrap(),
+                start_time: chrono::NaiveTime::from_hms_opt(7, 40, 0).unwrap(),
+                end_time: None,
+                rest_time: chrono::NaiveTime::from_hms_opt(0, 30, 0).unwrap(),
+                overnight_rest: false,
             },
         )
         .await

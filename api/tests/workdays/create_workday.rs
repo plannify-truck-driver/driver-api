@@ -207,6 +207,29 @@ async fn test_create_workday_duplicate_garbage(ctx: &mut context::TestContext) {
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
+async fn test_create_workday_document_already_generated(ctx: &mut context::TestContext) {
+    // 2026-02 has a generated document in the test dataset
+    let res = ctx
+        .authenticated_router
+        .post("/workdays")
+        .json(&json!({
+            "date": "2026-02-05",
+            "start_time": "08:00:00",
+            "end_time": null,
+            "rest_time": "00:00:00",
+            "overnight_rest": false
+        }))
+        .await;
+
+    res.assert_status(StatusCode::FORBIDDEN);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "WORKDAY_DOCUMENT_ALREADY_GENERATED");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
 async fn test_create_workday_cache_invalidation(ctx: &mut context::TestContext) {
     // Create a workday in a month that has never been touched (March 2026)
     ctx.authenticated_router

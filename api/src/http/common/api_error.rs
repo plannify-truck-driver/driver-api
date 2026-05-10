@@ -271,6 +271,10 @@ impl From<WorkdayError> for ApiError {
             WorkdayError::WorkdayGarbageNotFound => ApiError::NotFound {
                 error_code: "WORKDAY_GARBAGE_NOT_FOUND".to_string(),
             },
+            WorkdayError::WorkdayDocumentAlreadyGenerated => ApiError::Forbidden {
+                error_code: "WORKDAY_DOCUMENT_ALREADY_GENERATED".to_string(),
+                content: None,
+            },
         }
     }
 }

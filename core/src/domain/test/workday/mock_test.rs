@@ -9,7 +9,10 @@ mod tests {
             storage::port::StorageRepository,
             test::create_mock_service,
             workday::{
-                entities::{CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument},
+                entities::{
+                CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument,
+                WorkdayDocumentInformation,
+            },
                 port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
             },
         },
@@ -685,6 +688,245 @@ mod tests {
             chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
             "Expected workday date to match"
         );
+
+        Ok(())
+    }
+
+    // --- document guard ---
+
+    #[tokio::test]
+    async fn test_create_workday_fail_document_already_generated(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
+
+        service
+            .workday_cache_repository
+            .set_generated_documents_by_year(
+                driver_id,
+                2026,
+                vec![WorkdayDocumentInformation {
+                    month: 1,
+                    year: 2026,
+                    generated_at: Some(chrono::Utc::now()),
+                }],
+            )
+            .await?;
+
+        let error = service
+            .create_workday(
+                driver_id,
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-05", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: None,
+                    rest_time: chrono::NaiveTime::parse_from_str("00:30:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await
+            .expect_err("create_workday should have returned an error");
+
+        assert_eq!(error, WorkdayError::WorkdayDocumentAlreadyGenerated);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_update_workday_fail_document_already_generated(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
+
+        service
+            .workday_database_repository
+            .create_workday(
+                driver_id,
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: None,
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await?;
+
+        service
+            .workday_cache_repository
+            .set_generated_documents_by_year(
+                driver_id,
+                2026,
+                vec![WorkdayDocumentInformation {
+                    month: 1,
+                    year: 2026,
+                    generated_at: Some(chrono::Utc::now()),
+                }],
+            )
+            .await?;
+
+        let error = service
+            .update_workday(
+                driver_id,
+                UpdateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("09:00:00", "%H:%M:%S").unwrap(),
+                    end_time: None,
+                    rest_time: chrono::NaiveTime::parse_from_str("00:30:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await
+            .expect_err("update_workday should have returned an error");
+
+        assert_eq!(error, WorkdayError::WorkdayDocumentAlreadyGenerated);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_workday_fail_document_already_generated(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
+
+        service
+            .workday_database_repository
+            .create_workday(
+                driver_id,
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: None,
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await?;
+
+        service
+            .workday_cache_repository
+            .set_generated_documents_by_year(
+                driver_id,
+                2026,
+                vec![WorkdayDocumentInformation {
+                    month: 1,
+                    year: 2026,
+                    generated_at: Some(chrono::Utc::now()),
+                }],
+            )
+            .await?;
+
+        let error = service
+            .delete_workday(
+                driver_id,
+                chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+            )
+            .await
+            .expect_err("delete_workday should have returned an error");
+
+        assert_eq!(error, WorkdayError::WorkdayDocumentAlreadyGenerated);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_create_workday_garbage_fail_document_already_generated(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
+
+        service
+            .workday_database_repository
+            .create_workday(
+                driver_id,
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: None,
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await?;
+
+        service
+            .workday_cache_repository
+            .set_generated_documents_by_year(
+                driver_id,
+                2026,
+                vec![WorkdayDocumentInformation {
+                    month: 1,
+                    year: 2026,
+                    generated_at: Some(chrono::Utc::now()),
+                }],
+            )
+            .await?;
+
+        let error = service
+            .create_workday_garbage(
+                driver_id,
+                chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+            )
+            .await
+            .expect_err("create_workday_garbage should have returned an error");
+
+        assert_eq!(error, WorkdayError::WorkdayDocumentAlreadyGenerated);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_workday_garbage_fail_document_already_generated(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
+
+        service
+            .workday_database_repository
+            .create_workday(
+                driver_id,
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: None,
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await?;
+        service
+            .workday_database_repository
+            .create_workday_garbage(
+                driver_id,
+                chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                chrono::NaiveDate::parse_from_str("2026-02-01", "%Y-%m-%d").unwrap(),
+                None,
+            )
+            .await?;
+
+        service
+            .workday_cache_repository
+            .set_generated_documents_by_year(
+                driver_id,
+                2026,
+                vec![WorkdayDocumentInformation {
+                    month: 1,
+                    year: 2026,
+                    generated_at: Some(chrono::Utc::now()),
+                }],
+            )
+            .await?;
+
+        let error = service
+            .delete_workday_garbage(
+                driver_id,
+                chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+            )
+            .await
+            .expect_err("delete_workday_garbage should have returned an error");
+
+        assert_eq!(error, WorkdayError::WorkdayDocumentAlreadyGenerated);
 
         Ok(())
     }
