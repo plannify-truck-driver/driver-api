@@ -1,11 +1,8 @@
 use api::http::common::api_error::ErrorBody;
 use axum::http::StatusCode;
-use plannify_driver_api_core::domain::workday::{
-    entities::WorkdayGarbage, port::WorkdayDatabaseRepository,
-};
+use plannify_driver_api_core::domain::workday::entities::WorkdayGarbage;
 use serial_test::serial;
 use test_context::test_context;
-use uuid::Uuid;
 
 use crate::context;
 
@@ -30,7 +27,7 @@ async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::OK);
 
     let body: Vec<WorkdayGarbage> = res.json();
-    assert_eq!(body.len(), 2, "there should be exactly two workday garbage");
+    assert_eq!(body.len(), 3, "there should be exactly three workday garbage");
     assert_eq!(
         body[0].workday_date,
         chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
@@ -64,23 +61,29 @@ async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
         body[1].scheduled_deletion_date,
         chrono::NaiveDate::from_ymd_opt(2026, 3, 11).unwrap()
     );
+
+    assert_eq!(
+        body[2].workday_date,
+        chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap()
+    );
+    assert_eq!(
+        body[2].created_at,
+        chrono::NaiveDateTime::new(
+            chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
+            chrono::NaiveTime::from_hms_opt(11, 30, 0).unwrap()
+        )
+        .and_utc()
+    );
+    assert_eq!(
+        body[2].scheduled_deletion_date,
+        chrono::NaiveDate::from_ymd_opt(2027, 2, 1).unwrap()
+    );
 }
 
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
 async fn test_get_all_workday_garbage_cross_user_isolation(ctx: &mut context::TestContext) {
-    // Defensive cleanup: remove any stale garbage entry for User B on 2026-01-01
-    // that could have been left by a previous failed test run.
-    ctx.repositories
-        .workday_database_repository
-        .delete_workday_garbage(
-            Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
-            chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
-        )
-        .await
-        .ok();
-
     // User B has exactly one garbage entry (2026-01-02).
     // User A's entries (2024-01-01 and 2026-01-15) must NOT appear.
     let other_router = ctx.create_authenticated_router_with_different_user().await;

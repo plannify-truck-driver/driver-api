@@ -4,7 +4,6 @@ use plannify_driver_api_core::domain::workday::port::WorkdayDatabaseRepository;
 use serde_json::json;
 use serial_test::serial;
 use test_context::test_context;
-use uuid::Uuid;
 
 use crate::context;
 
@@ -154,18 +153,6 @@ async fn test_get_workday_document_years_update_cache_success(ctx: &mut context:
 #[tokio::test]
 #[serial]
 async fn test_get_workday_document_years_cross_user_isolation(ctx: &mut context::TestContext) {
-    // Defensive cleanup: remove any stale garbage entry for User B on 2026-01-01
-    // that could have been left by a previous failed test run (garbage excludes workdays
-    // from the years query, so a stale entry would cause User B to see 0 years).
-    ctx.repositories
-        .workday_database_repository
-        .delete_workday_garbage(
-            Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
-            chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
-        )
-        .await
-        .ok();
-
     // User A sees [2025, 2026, 2027, 2031].
     // User B has only one non-garbage workday (2026-01-01) and no documents,
     // so they should see only [2026].

@@ -85,19 +85,6 @@ async fn test_delete_workday_garbage_cross_user_isolation(ctx: &mut context::Tes
 #[tokio::test]
 #[serial]
 async fn test_delete_workday_garbage_document_already_generated(ctx: &mut context::TestContext) {
-    // 2027-01 has a generated document. Seed a garbage entry for 2027-01-01 so we can
-    // attempt to restore it and confirm the guard fires.
-    ctx.repositories
-        .workday_database_repository
-        .create_workday_garbage(
-            ctx.authenticated_user_id,
-            chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
-            chrono::NaiveDate::from_ymd_opt(2027, 2, 1).unwrap(),
-            None,
-        )
-        .await
-        .unwrap();
-
     let res = ctx
         .authenticated_router
         .delete("/workdays/garbage/2027-01-01")
@@ -107,16 +94,6 @@ async fn test_delete_workday_garbage_document_already_generated(ctx: &mut contex
 
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "WORKDAY_DOCUMENT_ALREADY_GENERATED");
-
-    // Cleanup: remove the garbage entry
-    ctx.repositories
-        .workday_database_repository
-        .delete_workday_garbage(
-            ctx.authenticated_user_id,
-            chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
-        )
-        .await
-        .ok();
 }
 
 #[test_context(context::TestContext)]
