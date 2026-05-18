@@ -177,10 +177,12 @@ mod tests {
 
     // --- Stubs ---
 
+    type UploadLog = Arc<Mutex<Vec<(Uuid, i32, i32, String)>>>;
+
     struct StubWorkdayDb {
         pending: Vec<(Uuid, i32, i32)>,
         create_doc_fail: bool,
-        uploads: Arc<Mutex<Vec<(Uuid, i32, i32, String)>>>,
+        uploads: UploadLog,
     }
 
     impl StubWorkdayDb {
