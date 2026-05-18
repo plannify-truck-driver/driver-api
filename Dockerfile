@@ -38,10 +38,14 @@ FROM debian:bookworm-slim AS runtime
 
 RUN \
     apt-get update && \
-    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
-    libssl3 && \
+    libssl3 \
+    libc-bin \
+    libc6 \
+    libcap2 \
+    libsystemd0 \
+    libudev1 && \
     rm -rf /var/lib/apt/lists/* && \
     addgroup \
     --system \
