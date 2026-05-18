@@ -630,10 +630,7 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         }
     }
 
-    async fn delete_definitly_workday_garbage(
-        &self,
-    ) -> Result<u32, WorkdayError>
-    {
+    async fn delete_definitly_workday_garbage(&self) -> Result<u32, WorkdayError> {
         let mut workdays_garbage = self.workdays_garbage.lock().unwrap();
         let mut workdays = self.workdays.lock().unwrap();
         let today = Utc::now().naive_utc().date();

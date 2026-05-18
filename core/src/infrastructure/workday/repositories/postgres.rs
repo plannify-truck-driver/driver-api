@@ -471,14 +471,8 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         Ok(())
     }
 
-    #[tracing::instrument(
-        name = "db.workdays.delete_definitly_workday_garbage",
-        skip(self),
-    )]
-    async fn delete_definitly_workday_garbage(
-        &self,
-    ) -> Result<u32, WorkdayError>
-    {
+    #[tracing::instrument(name = "db.workdays.delete_definitly_workday_garbage", skip(self))]
+    async fn delete_definitly_workday_garbage(&self) -> Result<u32, WorkdayError> {
         let result = sqlx::query!(
             r#"
             DELETE FROM workdays W

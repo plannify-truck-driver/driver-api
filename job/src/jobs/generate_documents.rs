@@ -125,9 +125,13 @@ where
             }
         };
 
-        let _ = cache.set_workday_document_record(*driver_id, *month, *year, Some(doc)).await;
+        let _ = cache
+            .set_workday_document_record(*driver_id, *month, *year, Some(doc))
+            .await;
         let _ = cache.delete_document_years(*driver_id).await;
-        let _ = cache.delete_generated_documents_by_year(*driver_id, *year).await;
+        let _ = cache
+            .delete_generated_documents_by_year(*driver_id, *year)
+            .await;
         let _ = cache.delete_documents_by_year(*driver_id, *year).await;
 
         generated += 1;
@@ -161,8 +165,7 @@ mod tests {
             },
         },
         infrastructure::{
-            storage::repositories::error::StorageError,
-            workday::repositories::error::WorkdayError,
+            storage::repositories::error::StorageError, workday::repositories::error::WorkdayError,
         },
     };
     use std::{
@@ -182,25 +185,50 @@ mod tests {
 
     impl StubWorkdayDb {
         fn empty() -> Self {
-            Self { pending: vec![], create_doc_fail: false, uploads: Default::default() }
+            Self {
+                pending: vec![],
+                create_doc_fail: false,
+                uploads: Default::default(),
+            }
         }
         fn with_pending(driver_id: Uuid, month: i32, year: i32) -> Self {
-            Self { pending: vec![(driver_id, month, year)], create_doc_fail: false, uploads: Default::default() }
+            Self {
+                pending: vec![(driver_id, month, year)],
+                create_doc_fail: false,
+                uploads: Default::default(),
+            }
         }
         fn with_pending_and_failing_persist(driver_id: Uuid, month: i32, year: i32) -> Self {
-            Self { pending: vec![(driver_id, month, year)], create_doc_fail: true, uploads: Default::default() }
+            Self {
+                pending: vec![(driver_id, month, year)],
+                create_doc_fail: true,
+                uploads: Default::default(),
+            }
         }
     }
 
     impl WorkdayDatabaseRepository for StubWorkdayDb {
-        async fn get_pending_document_months(&self, _: NaiveDate) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
+        async fn get_pending_document_months(
+            &self,
+            _: NaiveDate,
+        ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
             Ok(self.pending.clone())
         }
-        async fn create_workday_document(&self, driver_id: Uuid, month: i32, year: i32, s3_key: String, _: String) -> Result<WorkdayDocument, WorkdayError> {
+        async fn create_workday_document(
+            &self,
+            driver_id: Uuid,
+            month: i32,
+            year: i32,
+            s3_key: String,
+            _: String,
+        ) -> Result<WorkdayDocument, WorkdayError> {
             if self.create_doc_fail {
                 return Err(WorkdayError::DatabaseError);
             }
-            self.uploads.lock().unwrap().push((driver_id, month, year, s3_key));
+            self.uploads
+                .lock()
+                .unwrap()
+                .push((driver_id, month, year, s3_key));
             Ok(WorkdayDocument {
                 fk_driver_id: driver_id,
                 month,
@@ -210,21 +238,97 @@ mod tests {
                 created_at: Utc::now(),
             })
         }
-        async fn get_workday_by_date(&self, _: Uuid, _: NaiveDate) -> Result<Option<WorkdayRow>, WorkdayError> { unreachable!() }
-        async fn get_workdays_by_month(&self, _: Uuid, _: i32, _: i32) -> Result<Vec<WorkdayRow>, WorkdayError> { unreachable!() }
-        async fn get_workdays_by_period(&self, _: Uuid, _: NaiveDate, _: NaiveDate, _: u32, _: u32) -> Result<(Vec<WorkdayRow>, u32), WorkdayError> { unreachable!() }
-        async fn get_workday_years(&self, _: Uuid) -> Result<Vec<i32>, WorkdayError> { unreachable!() }
-        async fn get_workday_months_by_year(&self, _: Uuid, _: i32) -> Result<Vec<i32>, WorkdayError> { unreachable!() }
-        async fn create_workday(&self, _: Uuid, _: CreateWorkdayRequest) -> Result<WorkdayRow, WorkdayError> { unreachable!() }
-        async fn update_workday(&self, _: Uuid, _: UpdateWorkdayRequest) -> Result<WorkdayRow, WorkdayError> { unreachable!() }
-        async fn delete_workday(&self, _: Uuid, _: NaiveDate) -> Result<(), WorkdayError> { unreachable!() }
-        async fn get_workdays_garbage(&self, _: Uuid) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> { unreachable!() }
-        async fn create_workday_garbage(&self, _: Uuid, _: NaiveDate, _: NaiveDate, _: Option<DateTime<Utc>>) -> Result<WorkdayGarbageRow, WorkdayError> { unreachable!() }
-        async fn delete_workday_garbage(&self, _: Uuid, _: NaiveDate) -> Result<(), WorkdayError> { unreachable!() }
-        async fn delete_definitly_workday_garbage(&self) -> Result<u32, WorkdayError> { unreachable!() }
-        async fn get_workday_document_years(&self, _: Uuid) -> Result<Vec<i32>, WorkdayError> { unreachable!() }
-        async fn get_workday_documents_by_year(&self, _: Uuid, _: i32) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> { unreachable!() }
-        async fn get_workday_document_record(&self, _: Uuid, _: i32, _: i32) -> Result<Option<WorkdayDocument>, WorkdayError> { unreachable!() }
+        async fn get_workday_by_date(
+            &self,
+            _: Uuid,
+            _: NaiveDate,
+        ) -> Result<Option<WorkdayRow>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workdays_by_month(
+            &self,
+            _: Uuid,
+            _: i32,
+            _: i32,
+        ) -> Result<Vec<WorkdayRow>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workdays_by_period(
+            &self,
+            _: Uuid,
+            _: NaiveDate,
+            _: NaiveDate,
+            _: u32,
+            _: u32,
+        ) -> Result<(Vec<WorkdayRow>, u32), WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workday_years(&self, _: Uuid) -> Result<Vec<i32>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workday_months_by_year(
+            &self,
+            _: Uuid,
+            _: i32,
+        ) -> Result<Vec<i32>, WorkdayError> {
+            unreachable!()
+        }
+        async fn create_workday(
+            &self,
+            _: Uuid,
+            _: CreateWorkdayRequest,
+        ) -> Result<WorkdayRow, WorkdayError> {
+            unreachable!()
+        }
+        async fn update_workday(
+            &self,
+            _: Uuid,
+            _: UpdateWorkdayRequest,
+        ) -> Result<WorkdayRow, WorkdayError> {
+            unreachable!()
+        }
+        async fn delete_workday(&self, _: Uuid, _: NaiveDate) -> Result<(), WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workdays_garbage(
+            &self,
+            _: Uuid,
+        ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+            unreachable!()
+        }
+        async fn create_workday_garbage(
+            &self,
+            _: Uuid,
+            _: NaiveDate,
+            _: NaiveDate,
+            _: Option<DateTime<Utc>>,
+        ) -> Result<WorkdayGarbageRow, WorkdayError> {
+            unreachable!()
+        }
+        async fn delete_workday_garbage(&self, _: Uuid, _: NaiveDate) -> Result<(), WorkdayError> {
+            unreachable!()
+        }
+        async fn delete_definitly_workday_garbage(&self) -> Result<u32, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workday_document_years(&self, _: Uuid) -> Result<Vec<i32>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workday_documents_by_year(
+            &self,
+            _: Uuid,
+            _: i32,
+        ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workday_document_record(
+            &self,
+            _: Uuid,
+            _: i32,
+            _: i32,
+        ) -> Result<Option<WorkdayDocument>, WorkdayError> {
+            unreachable!()
+        }
     }
 
     struct StubStorage {
@@ -234,10 +338,16 @@ mod tests {
 
     impl StubStorage {
         fn ok() -> Self {
-            Self { fail_upload: false, store: Default::default() }
+            Self {
+                fail_upload: false,
+                store: Default::default(),
+            }
         }
         fn failing() -> Self {
-            Self { fail_upload: true, store: Default::default() }
+            Self {
+                fail_upload: true,
+                store: Default::default(),
+            }
         }
     }
 
@@ -250,10 +360,23 @@ mod tests {
             Ok(())
         }
         async fn download(&self, key: &str) -> Result<Bytes, StorageError> {
-            self.store.lock().unwrap().get(key).cloned().ok_or(StorageError::ObjectNotFound)
+            self.store
+                .lock()
+                .unwrap()
+                .get(key)
+                .cloned()
+                .ok_or(StorageError::ObjectNotFound)
         }
-        async fn delete(&self, _: &str) -> Result<(), StorageError> { unreachable!() }
-        async fn generate_presigned_url(&self, _: &str, _: Duration) -> Result<String, StorageError> { unreachable!() }
+        async fn delete(&self, _: &str) -> Result<(), StorageError> {
+            unreachable!()
+        }
+        async fn generate_presigned_url(
+            &self,
+            _: &str,
+            _: Duration,
+        ) -> Result<String, StorageError> {
+            unreachable!()
+        }
     }
 
     struct StubWorkdayService {
@@ -262,26 +385,108 @@ mod tests {
     }
 
     impl StubWorkdayService {
-        fn returns_pdf(bytes: Bytes) -> Self { Self { pdf: Some(bytes), fail: false } }
-        fn returns_none() -> Self { Self { pdf: None, fail: false } }
+        fn returns_pdf(bytes: Bytes) -> Self {
+            Self {
+                pdf: Some(bytes),
+                fail: false,
+            }
+        }
+        fn returns_none() -> Self {
+            Self {
+                pdf: None,
+                fail: false,
+            }
+        }
     }
 
     impl WorkdayService for StubWorkdayService {
-        async fn get_workday_document_by_month(&self, _: Uuid, _: i32, _: i32) -> Result<Option<Bytes>, WorkdayError> {
-            if self.fail { Err(WorkdayError::Internal) } else { Ok(self.pdf.clone()) }
+        async fn get_workday_document_by_month(
+            &self,
+            _: Uuid,
+            _: i32,
+            _: i32,
+        ) -> Result<Option<Bytes>, WorkdayError> {
+            if self.fail {
+                Err(WorkdayError::Internal)
+            } else {
+                Ok(self.pdf.clone())
+            }
         }
-        async fn get_workday_by_date(&self, _: Uuid, _: NaiveDate) -> Result<Workday, WorkdayError> { unreachable!() }
-        async fn get_workdays_by_month(&self, _: Uuid, _: i32, _: i32) -> Result<Vec<Workday>, WorkdayError> { unreachable!() }
-        async fn get_workdays_by_period(&self, _: Uuid, _: NaiveDate, _: NaiveDate, _: u32, _: u32) -> Result<(Vec<Workday>, u32), WorkdayError> { unreachable!() }
-        async fn create_workday(&self, _: Uuid, _: CreateWorkdayRequest) -> Result<WorkdayRow, WorkdayError> { unreachable!() }
-        async fn update_workday(&self, _: Uuid, _: UpdateWorkdayRequest) -> Result<WorkdayRow, WorkdayError> { unreachable!() }
-        async fn delete_workday(&self, _: Uuid, _: NaiveDate) -> Result<(), WorkdayError> { unreachable!() }
-        async fn get_workdays_garbage(&self, _: Uuid) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> { unreachable!() }
-        async fn create_workday_garbage(&self, _: Uuid, _: NaiveDate) -> Result<WorkdayGarbageRow, WorkdayError> { unreachable!() }
-        async fn delete_workday_garbage(&self, _: Uuid, _: NaiveDate) -> Result<(), WorkdayError> { unreachable!() }
-        async fn get_workday_documents(&self, _: Uuid) -> Result<Vec<i32>, WorkdayError> { unreachable!() }
-        async fn get_generated_document_by_year(&self, _: Uuid, _: i32) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> { unreachable!() }
-        async fn get_workday_documents_by_year(&self, _: Uuid, _: i32) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> { unreachable!() }
+        async fn get_workday_by_date(
+            &self,
+            _: Uuid,
+            _: NaiveDate,
+        ) -> Result<Workday, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workdays_by_month(
+            &self,
+            _: Uuid,
+            _: i32,
+            _: i32,
+        ) -> Result<Vec<Workday>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workdays_by_period(
+            &self,
+            _: Uuid,
+            _: NaiveDate,
+            _: NaiveDate,
+            _: u32,
+            _: u32,
+        ) -> Result<(Vec<Workday>, u32), WorkdayError> {
+            unreachable!()
+        }
+        async fn create_workday(
+            &self,
+            _: Uuid,
+            _: CreateWorkdayRequest,
+        ) -> Result<WorkdayRow, WorkdayError> {
+            unreachable!()
+        }
+        async fn update_workday(
+            &self,
+            _: Uuid,
+            _: UpdateWorkdayRequest,
+        ) -> Result<WorkdayRow, WorkdayError> {
+            unreachable!()
+        }
+        async fn delete_workday(&self, _: Uuid, _: NaiveDate) -> Result<(), WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workdays_garbage(
+            &self,
+            _: Uuid,
+        ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+            unreachable!()
+        }
+        async fn create_workday_garbage(
+            &self,
+            _: Uuid,
+            _: NaiveDate,
+        ) -> Result<WorkdayGarbageRow, WorkdayError> {
+            unreachable!()
+        }
+        async fn delete_workday_garbage(&self, _: Uuid, _: NaiveDate) -> Result<(), WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workday_documents(&self, _: Uuid) -> Result<Vec<i32>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_generated_document_by_year(
+            &self,
+            _: Uuid,
+            _: i32,
+        ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workday_documents_by_year(
+            &self,
+            _: Uuid,
+            _: i32,
+        ) -> Result<Vec<WorkdayDocumentInformation>, WorkdayError> {
+            unreachable!()
+        }
     }
 
     // --- Tests ---
