@@ -149,6 +149,10 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         date: NaiveDate,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 
+    fn delete_definitly_workday_garbage(
+        &self,
+    ) -> impl Future<Output = Result<u32, WorkdayError>> + Send;
+
     fn get_workday_document_years(
         &self,
         driver_id: Uuid,
@@ -166,6 +170,20 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         month: i32,
         year: i32,
     ) -> impl Future<Output = Result<Option<WorkdayDocument>, WorkdayError>> + Send;
+
+    fn get_pending_document_months(
+        &self,
+        before: NaiveDate,
+    ) -> impl Future<Output = Result<Vec<(Uuid, i32, i32)>, WorkdayError>> + Send;
+
+    fn create_workday_document(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+        s3_file_path: String,
+        file_name: String,
+    ) -> impl Future<Output = Result<WorkdayDocument, WorkdayError>> + Send;
 }
 
 pub trait WorkdayCacheRepository: Send + Sync {
@@ -612,6 +630,19 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         }
     }
 
+    async fn delete_definitly_workday_garbage(&self) -> Result<u32, WorkdayError> {
+        let mut workdays_garbage = self.workdays_garbage.lock().unwrap();
+        let mut workdays = self.workdays.lock().unwrap();
+        let today = Utc::now().naive_utc().date();
+
+        let initial_garbage_len = workdays_garbage.len();
+
+        workdays_garbage.retain(|w| w.scheduled_deletion_date != today);
+        workdays.retain(|w| w.date != today);
+
+        Ok((initial_garbage_len - workdays_garbage.len()) as u32)
+    }
+
     async fn get_workday_years(&self, driver_id: Uuid) -> Result<Vec<i32>, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
         let documents: Vec<i32> = workdays
@@ -658,6 +689,50 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         _year: i32,
     ) -> Result<Option<WorkdayDocument>, WorkdayError> {
         Ok(None)
+    }
+
+    async fn create_workday_document(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+        s3_file_path: String,
+        file_name: String,
+    ) -> Result<WorkdayDocument, WorkdayError> {
+        let mut documents = self.workday_documents.lock().unwrap();
+        let doc = WorkdayDocument {
+            fk_driver_id: driver_id,
+            month,
+            year,
+            s3_file_path,
+            file_name,
+            created_at: Utc::now(),
+        };
+        documents.push(doc.clone());
+        Ok(doc)
+    }
+
+    async fn get_pending_document_months(
+        &self,
+        before: NaiveDate,
+    ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
+        let workdays = self.workdays.lock().unwrap();
+        let documents = self.workday_documents.lock().unwrap();
+
+        let mut result: Vec<(Uuid, i32, i32)> = workdays
+            .iter()
+            .filter(|w| w.date < before)
+            .map(|w| (w.fk_driver_id, w.date.month() as i32, w.date.year()))
+            .filter(|(driver_id, month, year)| {
+                !documents
+                    .iter()
+                    .any(|d| &d.fk_driver_id == driver_id && &d.month == month && &d.year == year)
+            })
+            .collect();
+
+        result.sort_unstable();
+        result.dedup();
+        Ok(result)
     }
 }
 

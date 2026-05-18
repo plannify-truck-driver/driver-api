@@ -13,21 +13,25 @@ RUN \
 COPY Cargo.toml Cargo.lock ./
 COPY api/Cargo.toml ./api/
 COPY core/Cargo.toml ./core/
+COPY job/Cargo.toml ./job/
 COPY .sqlx ./sqlx
 
 RUN \
-    mkdir -p api/src core/src && \
+    mkdir -p api/src core/src job/src && \
     echo "fn main() {}" > api/src/main.rs && \
+    echo "fn main() {}" > job/src/main.rs && \
     touch core/src/lib.rs && \
     cargo build --release
 
 COPY api api
 COPY core core
+COPY job job
 COPY .sqlx .sqlx
 
 RUN \
     touch api/src/main.rs && \
     touch core/src/lib.rs && \
+    touch job/src/main.rs && \
     cargo build --release
 
 FROM debian:bookworm-slim AS runtime
@@ -62,3 +66,12 @@ WORKDIR /usr/local/src/user
 EXPOSE 3000
 
 ENTRYPOINT ["api"]
+
+FROM runtime AS job
+
+COPY --from=rust-build /usr/local/src/user/target/release/job /usr/local/bin/
+COPY --from=rust-build --chown=plannify-user:plannify-user /usr/local/src/user/core/templates /usr/local/src/user/core/templates
+
+WORKDIR /usr/local/src/user
+
+ENTRYPOINT ["job"]

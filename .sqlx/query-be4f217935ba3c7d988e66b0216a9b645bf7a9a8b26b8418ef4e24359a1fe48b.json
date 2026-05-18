@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM workdays W\n            WHERE W.date IN (\n                SELECT workday_date FROM workday_garbage\n                WHERE scheduled_deletion_date <= CURRENT_DATE\n            )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "be4f217935ba3c7d988e66b0216a9b645bf7a9a8b26b8418ef4e24359a1fe48b"
+}

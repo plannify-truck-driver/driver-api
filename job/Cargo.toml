@@ -1,0 +1,33 @@
+[package]
+name = "job"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "job"
+path = "src/main.rs"
+
+[dependencies]
+plannify_driver_api_core = { path = "../core", package = "plannify_driver_api_core" }
+
+tokio = { workspace = true }
+clap = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+dotenv = { workspace = true }
+chrono = { workspace = true }
+lettre = { workspace = true }
+
+[dev-dependencies]
+bytes = "1.9"
+uuid = { workspace = true }
+aws-sdk-s3 = { workspace = true }
+
+# Tracing
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+tracing-opentelemetry = { workspace = true }

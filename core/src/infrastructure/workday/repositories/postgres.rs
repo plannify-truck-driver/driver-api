@@ -471,6 +471,27 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         Ok(())
     }
 
+    #[tracing::instrument(name = "db.workdays.delete_definitly_workday_garbage", skip(self))]
+    async fn delete_definitly_workday_garbage(&self) -> Result<u32, WorkdayError> {
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM workdays W
+            WHERE W.date IN (
+                SELECT workday_date FROM workday_garbage
+                WHERE scheduled_deletion_date <= CURRENT_DATE
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to delete definitly workday garbage: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(result.rows_affected() as u32)
+    }
+
     #[tracing::instrument(
         name = "db.workdays.get_workday_document_years",
         skip(self),
@@ -536,6 +557,106 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
                 generated_at: r.generated_at,
             })
             .collect())
+    }
+
+    #[tracing::instrument(
+        name = "db.workdays.create_workday_document",
+        skip(self),
+        fields(driver_id = %driver_id, month = %month, year = %year)
+    )]
+    async fn create_workday_document(
+        &self,
+        driver_id: Uuid,
+        month: i32,
+        year: i32,
+        s3_file_path: String,
+        file_name: String,
+    ) -> Result<WorkdayDocument, WorkdayError> {
+        let document_id = Uuid::new_v4();
+
+        let document = sqlx::query_as::<_, DocumentRow>(
+            r#"
+            INSERT INTO documents (pk_document_id, s3_file_path, file_name, created_at)
+            VALUES ($1, $2, $3, NOW())
+            RETURNING *
+            "#,
+        )
+        .bind(document_id)
+        .bind(&s3_file_path)
+        .bind(&file_name)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to insert document: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO workday_documents (fk_driver_id, month, year, fk_document_id)
+            VALUES ($1, $2, $3, $4)
+            "#,
+        )
+        .bind(driver_id)
+        .bind(month)
+        .bind(year)
+        .bind(document_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to insert workday_document record: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(WorkdayDocument {
+            fk_driver_id: driver_id,
+            month,
+            year,
+            s3_file_path: document.s3_file_path,
+            file_name: document.file_name,
+            created_at: document.created_at,
+        })
+    }
+
+    #[tracing::instrument(
+        name = "db.workdays.get_pending_document_months",
+        skip(self),
+        fields(before = %before)
+    )]
+    async fn get_pending_document_months(
+        &self,
+        before: NaiveDate,
+    ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
+        let records = sqlx::query_as::<_, (Uuid, i32, i32)>(
+            r#"
+            SELECT DISTINCT
+                w.fk_driver_id,
+                EXTRACT(MONTH FROM w.date)::INTEGER AS month,
+                EXTRACT(YEAR FROM w.date)::INTEGER AS year
+            FROM workdays w
+            WHERE w.date < $1
+            AND w.date NOT IN (
+                SELECT wg.workday_date FROM workday_garbage wg
+                WHERE wg.fk_driver_id = w.fk_driver_id
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM workday_documents wd
+                WHERE wd.fk_driver_id = w.fk_driver_id
+                AND wd.month = EXTRACT(MONTH FROM w.date)::INTEGER
+                AND wd.year = EXTRACT(YEAR FROM w.date)::INTEGER
+            )
+            ORDER BY year ASC, month ASC
+            "#,
+        )
+        .bind(before)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get pending document months: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(records)
     }
 
     #[tracing::instrument(

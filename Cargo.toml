@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["api", "core"]
+members = ["api", "core", "job"]
 
 [workspace.package]
 name = "plannify-driver-api"
@@ -11,6 +11,13 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 thiserror = "2.0.18"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# CLI
+clap = { version = "4.5.53", features = ["derive", "env"] }
+dotenv = "0.15.0"
 
 # Logging
 tracing = "0.1.44"

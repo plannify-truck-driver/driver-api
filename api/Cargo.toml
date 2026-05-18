@@ -8,7 +8,7 @@ license.workspace = true
 [dependencies]
 # Axum framework
 axum = "0.8"
-tokio = { version = "1", features = ["full"] }
+tokio = { workspace = true }
 tower-http = { version = "0.6.6", features = ["cors", "trace"] }
 tower = { version = "0.5.3", features = ["limit"]}
 axum-extra = { version = "0.12.2", features = ["cookie"] }
@@ -30,9 +30,8 @@ jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 plannify_driver_api_core = { path = "../core", package = "plannify_driver_api_core" }
 
 # Environment variables
-clap = { version = "4.5.53", features = ["derive", "env"] }
-env = "1.0.1"
-dotenv = "0.15.0"
+clap = { workspace = true }
+dotenv = { workspace = true }
 thiserror = { workspace = true }
 
 # Swagger / OpenAPI
