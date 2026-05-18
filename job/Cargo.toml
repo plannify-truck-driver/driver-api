@@ -25,9 +25,3 @@ lettre = { workspace = true }
 bytes = "1.9"
 uuid = { workspace = true }
 aws-sdk-s3 = { workspace = true }
-
-# Tracing
-opentelemetry = { workspace = true }
-opentelemetry-otlp = { workspace = true }
-opentelemetry_sdk = { workspace = true }
-tracing-opentelemetry = { workspace = true }
