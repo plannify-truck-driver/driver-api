@@ -34,6 +34,13 @@ pub struct Config {
     )]
     pub pdf_service_endpoint: String,
 
+    #[arg(
+        long = "workday-garbage-retention-days",
+        env = "WORKDAY_GARBAGE_RETENTION_DAYS",
+        default_value = "30"
+    )]
+    pub workday_garbage_retention_days: i64,
+
     #[command(flatten)]
     pub smtp: SmtpConfig,
 

@@ -1,5 +1,5 @@
 use crate::{
-    Service,
+    Service, ServiceConfig,
     domain::{
         document::port::MockDocumentExternalRepository,
         driver::port::{MockDriverCacheRepository, MockDriverDatabaseRepository},
@@ -52,5 +52,6 @@ pub fn create_mock_service() -> MockService {
         update_cache_repository,
         document_external_repository,
         storage_repository,
+        ServiceConfig::default(),
     )
 }

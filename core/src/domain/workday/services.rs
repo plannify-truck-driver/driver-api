@@ -334,8 +334,8 @@ where
             return Err(WorkdayError::WorkdayDocumentAlreadyGenerated);
         }
 
-        let scheduled_deletion_date =
-            chrono::Utc::now().naive_utc().date() + chrono::Duration::days(30);
+        let scheduled_deletion_date = chrono::Utc::now().naive_utc().date()
+            + chrono::Duration::days(self.config.workday_garbage_retention_days);
         let workday_garbage = self
             .workday_database_repository
             .create_workday_garbage(driver_id, date, scheduled_deletion_date, None)

@@ -160,6 +160,22 @@ pub struct CommonConfig {
         name = "pdf_service_endpoint"
     )]
     pub pdf_service_endpoint: String,
+
+    #[arg(
+        long = "workday-garbage-retention-days",
+        env = "WORKDAY_GARBAGE_RETENTION_DAYS",
+        default_value = "30",
+        name = "workday_garbage_retention_days"
+    )]
+    pub workday_garbage_retention_days: i64,
+
+    #[arg(
+        long = "support-email",
+        env = "SUPPORT_EMAIL",
+        default_value = "contact@plannify.be",
+        name = "support_email"
+    )]
+    pub support_email: String,
 }
 
 #[derive(Clone, Parser, Debug, Default)]

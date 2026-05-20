@@ -236,6 +236,52 @@
         "security": []
       }
     },
+    "/config": {
+      "get": {
+        "tags": [
+          "config"
+        ],
+        "description": "Get exposed application configuration",
+        "operationId": "get_config",
+        "responses": {
+          "200": {
+            "description": "Configuration retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/formating/email": {
       "get": {
         "tags": [
@@ -1207,6 +1253,22 @@
   },
   "components": {
     "schemas": {
+      "ConfigResponse": {
+        "type": "object",
+        "required": [
+          "workday_garbage_retention_days",
+          "support_email"
+        ],
+        "properties": {
+          "support_email": {
+            "type": "string"
+          },
+          "workday_garbage_retention_days": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "CreateDriverRequest": {
         "type": "object",
         "required": [

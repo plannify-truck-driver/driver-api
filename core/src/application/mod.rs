@@ -6,7 +6,7 @@ use sqlx::{PgPool, postgres::PgPoolOptions};
 use tera::Tera;
 
 use crate::{
-    PostgresHealthRepository, Service,
+    PostgresHealthRepository, Service, ServiceConfig,
     domain::common::CoreError,
     infrastructure::{
         document::repositories::grpc::GrpcDocumentRepository,
@@ -57,6 +57,7 @@ pub struct DriverRepositories {
     pub update_cache_repository: RedisUpdateCacheRepository,
     pub document_external_repository: GrpcDocumentRepository,
     pub storage_repository: S3StorageRepository,
+    pub service_config: ServiceConfig,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -73,6 +74,7 @@ pub async fn create_repositories(
     s3_endpoint: &str,
     s3_region: &str,
     s3_bucket_name: &str,
+    service_config: ServiceConfig,
 ) -> Result<DriverRepositories, CoreError> {
     let pg_pool = PgPoolOptions::new()
         .max_connections(5)
@@ -160,6 +162,7 @@ pub async fn create_repositories(
         update_cache_repository,
         document_external_repository,
         storage_repository,
+        service_config,
     })
 }
 
@@ -177,6 +180,7 @@ impl From<DriverRepositories> for DriverService {
             val.update_cache_repository,
             val.document_external_repository,
             val.storage_repository,
+            val.service_config,
         )
     }
 }

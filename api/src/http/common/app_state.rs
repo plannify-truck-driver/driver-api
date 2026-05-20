@@ -40,6 +40,7 @@ impl From<DriverRepositories> for AppState {
             repositories.update_cache_repository,
             repositories.document_external_repository,
             repositories.storage_repository,
+            repositories.service_config,
         );
         let config = Config::default();
         let jwt_config = &config.jwt;
