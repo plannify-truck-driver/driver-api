@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use dotenv::dotenv;
-use plannify_driver_api_core::application::create_repositories;
+use plannify_driver_api_core::{ServiceConfig, application::create_repositories};
 use tracing_subscriber::EnvFilter;
 
 mod config;
@@ -56,6 +56,9 @@ async fn main() {
         &config.s3.endpoint,
         &config.s3.region,
         &config.s3.bucket_name,
+        ServiceConfig {
+            workday_garbage_retention_days: config.workday_garbage_retention_days,
+        },
     )
     .await
     {

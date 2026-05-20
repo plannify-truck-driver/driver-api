@@ -10,7 +10,9 @@ use axum::{
     },
     middleware::{from_extractor_with_state, from_fn},
 };
-use plannify_driver_api_core::{application::create_repositories, domain::common::CoreError};
+use plannify_driver_api_core::{
+    ServiceConfig, application::create_repositories, domain::common::CoreError,
+};
 use tower::{ServiceBuilder, buffer::BufferLayer, limit::RateLimitLayer};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
@@ -27,6 +29,7 @@ use crate::{
             authentication_routes, refresh_cookie_routes, unauthenticated_routes,
         },
         common::middleware::{auth::AuthRefreshMiddleware, tracing::tracing_middleware},
+        config::routes::config_routes,
         driver::routes::driver_routes,
         formating::routes::formating_routes,
         update::routes::update_routes,
@@ -68,6 +71,9 @@ impl App {
             &config.s3.endpoint,
             &config.s3.region,
             &config.s3.bucket_name,
+            ServiceConfig {
+                workday_garbage_retention_days: config.common.workday_garbage_retention_days,
+            },
         )
         .await
         .map_err(|e| ApiError::StartupError {
@@ -117,6 +123,7 @@ impl App {
         let protected_router = OpenApiRouter::<AppState>::new()
             .merge(driver_routes())
             .merge(workday_routes())
+            .merge(config_routes())
             .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
                 auth_validator.clone(),
             ));

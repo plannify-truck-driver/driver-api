@@ -4,8 +4,11 @@ use api::config::{
 };
 use api::{App, app::AppBuilder};
 use axum_test::TestServer;
-use plannify_driver_api_core::application::{DriverRepositories, create_repositories};
 use plannify_driver_api_core::domain::storage::port::StorageRepository;
+use plannify_driver_api_core::{
+    ServiceConfig,
+    application::{DriverRepositories, create_repositories},
+};
 use test_context::AsyncTestContext;
 use uuid::Uuid;
 
@@ -69,6 +72,8 @@ impl AsyncTestContext for TestContext {
             rate_limit_requests: 100,
             frontend_url: "http://localhost:3000".to_string(),
             pdf_service_endpoint: "http://localhost:4000".to_string(),
+            workday_garbage_retention_days: 30,
+            support_email: "contact@plannify.be".to_string(),
         };
 
         let s3_config = S3Config {
@@ -111,6 +116,9 @@ impl AsyncTestContext for TestContext {
             &config.s3.endpoint,
             &config.s3.region,
             &config.s3.bucket_name,
+            ServiceConfig {
+                workday_garbage_retention_days: config.common.workday_garbage_retention_days,
+            },
         )
         .await
         .expect("Failed to create repositories");

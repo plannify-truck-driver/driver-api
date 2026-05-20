@@ -1,4 +1,5 @@
 use crate::domain::{
+    common::config::ServiceConfig,
     document::port::DocumentExternalRepository,
     driver::port::{DriverCacheRepository, DriverDatabaseRepository},
     health::port::HealthRepository,
@@ -34,6 +35,7 @@ where
     pub(crate) update_cache_repository: UC,
     pub(crate) document_external_repository: DE,
     pub(crate) storage_repository: DS,
+    pub(crate) config: ServiceConfig,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -63,6 +65,7 @@ where
         update_cache_repository: UC,
         document_external_repository: DE,
         storage_repository: DS,
+        config: ServiceConfig,
     ) -> Self {
         Self {
             health_repository,
@@ -76,6 +79,7 @@ where
             update_cache_repository,
             document_external_repository,
             storage_repository,
+            config,
         }
     }
 }

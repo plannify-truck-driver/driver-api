@@ -1,5 +1,6 @@
 pub mod authentication;
 pub mod common;
+pub mod config;
 pub mod driver;
 pub mod formating;
 pub mod health;
