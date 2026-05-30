@@ -44,6 +44,7 @@ use plannify_driver_api_core::domain::workday::{
     ),
     responses(
         (status = 200, description = "Workday retrieved successfully", body = Workday),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 404, description = "Workday not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
@@ -82,6 +83,7 @@ pub async fn get_workday_by_date(
     ),
     responses(
         (status = 200, description = "Monthly workdays retrieved successfully", body = Vec<Workday>),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -123,6 +125,7 @@ pub async fn get_all_workdays_month(
     ),
     responses(
         (status = 200, description = "Period workdays retrieved successfully", body = PaginatedResponse<Workday>),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -172,6 +175,7 @@ pub async fn get_all_workdays_period(
     ),
     responses(
         (status = 201, description = "Workday created successfully", body = Workday),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 409, description = "Workday already exists", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
@@ -209,6 +213,7 @@ pub async fn create_workday(
     ),
     responses(
         (status = 200, description = "Workday updated successfully", body = Workday),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 404, description = "Workday not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
@@ -248,6 +253,7 @@ pub async fn update_workday(
     ),
     responses(
         (status = 200, description = "Workday deleted successfully"),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 404, description = "Workday not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
@@ -283,6 +289,7 @@ pub async fn delete_workday(
     ),
     responses(
         (status = 200, description = "Workdays garbage retrieved successfully", body = Vec<WorkdayGarbage>),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -323,6 +330,7 @@ pub async fn get_all_workday_garbage(
     ),
     responses(
         (status = 200, description = "Workday garbage deleted successfully"),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 404, description = "Workday garbage not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
@@ -358,6 +366,7 @@ pub async fn delete_workday_garbage(
     ),
     responses(
         (status = 200, description = "Workday document years retrieved successfully", body = Vec<i32>),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -396,6 +405,7 @@ pub async fn get_workday_documents(
     ),
     responses(
         (status = 200, description = "Workday document months retrieved successfully", body = GetWorkdayDocumentsByYearResponse),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -437,6 +447,7 @@ pub async fn get_workday_documents_by_year(
     ),
     responses(
         (status = 200, description = "PDF file", body = [u8]),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 404, description = "No document for this month", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )

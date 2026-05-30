@@ -14,6 +14,7 @@ use crate::{
     path = "/formating/first-name",
     tag = "formating",
     description = "Format a first name to title case",
+    security(),
     params(GetValueFormatingParams),
     responses(
         (status = 200, description = "First name formatted successfully", body = String),
@@ -35,6 +36,7 @@ pub async fn get_first_name_formating(
     path = "/formating/last-name",
     tag = "formating",
     description = "Format a last name to title case",
+    security(),
     params(GetValueFormatingParams),
     responses(
         (status = 200, description = "Last name formatted successfully", body = String),
@@ -56,6 +58,7 @@ pub async fn get_last_name_formating(
     path = "/formating/email",
     tag = "formating",
     description = "Format an email to lower case",
+    security(),
     params(GetValueFormatingParams),
     responses(
         (status = 200, description = "Email formatted successfully", body = String),

@@ -48,6 +48,7 @@ type UpdateDriverResponse = Result<
     ),
     responses(
         (status = 200, description = "Driver rest periods retrieved successfully", body = Vec<DriverRestPeriod>),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -85,6 +86,7 @@ pub async fn get_all_rest_periods(
     responses(
         (status = 201, description = "Driver rest periods set successfully"),
         (status = 400, description = "Invalid rest period", body = ErrorBody),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -122,6 +124,7 @@ pub async fn set_rest_periods(
     ),
     responses(
         (status = 200, description = "Driver rest periods deleted successfully"),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -157,6 +160,7 @@ pub async fn delete_rest_periods(
     responses(
         (status = 200, description = "Driver information updated successfully", body = CreateDriverResponse),
         (status = 400, description = "Validation error", body = ErrorBody),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 404, description = "Driver not found", body = ErrorBody),
         (status = 409, description = "Email already taken", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
@@ -231,6 +235,7 @@ pub async fn update_driver_info(
     security(("bearer_auth" = [])),
     responses(
         (status = 200, description = "Account deactivated successfully"),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 409, description = "Account is already deactivated", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
@@ -262,6 +267,7 @@ pub async fn deactivate_driver(
     security(("bearer_auth" = [])),
     responses(
         (status = 200, description = "Account reactivated successfully"),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 409, description = "Account is not deactivated", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
