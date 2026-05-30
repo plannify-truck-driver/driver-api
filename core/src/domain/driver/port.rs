@@ -8,7 +8,7 @@ use tracing::error;
 use crate::{
     domain::driver::entities::{
         CreateDriverRequest, CreateDriverRestPeriodRequest, DriverLimitationRow, DriverRestPeriod,
-        DriverRow, DriverSuspensionRow, LoginDriverRequest,
+        DriverRow, DriverSuspensionRow, LoginDriverRequest, UpdateDriverRequest,
     },
     infrastructure::driver::repositories::error::DriverError,
 };
@@ -169,6 +169,13 @@ pub trait DriverService: Send + Sync {
         &self,
         driver_id: Uuid,
     ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn update_driver_info(
+        &self,
+        driver_id: Uuid,
+        update_request: UpdateDriverRequest,
+        email_list_deny: Vec<String>,
+    ) -> impl Future<Output = Result<(DriverRow, bool), DriverError>> + Send;
 }
 
 #[derive(Clone)]
@@ -253,6 +260,12 @@ impl DriverDatabaseRepository for MockDriverDatabaseRepository {
 
     async fn update_driver(&self, driver: DriverRow) -> Result<DriverRow, DriverError> {
         let mut drivers = self.drivers.lock().unwrap();
+        if drivers
+            .iter()
+            .any(|d| d.email == driver.email && d.pk_driver_id != driver.pk_driver_id)
+        {
+            return Err(DriverError::DriverAlreadyExists);
+        }
         for existing_driver in drivers.iter_mut() {
             if existing_driver.pk_driver_id == driver.pk_driver_id {
                 *existing_driver = driver.clone();

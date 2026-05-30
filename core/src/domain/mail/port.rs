@@ -45,6 +45,11 @@ pub trait MailService: Send + Sync {
         &self,
         driver: DriverRow,
     ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_email_change_verification(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
 }
 
 pub struct MockMailSmtpRepository;

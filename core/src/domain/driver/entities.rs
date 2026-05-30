@@ -8,9 +8,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::domain::common::entities::validate_time;
-
-use crate::domain::common::entities::validate_language;
+use crate::domain::common::entities::{validate_language, validate_phone_number, validate_time};
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 pub struct DriverRow {
@@ -231,4 +229,51 @@ pub struct VerifyDriverAccountRequest {
 
     #[validate(length(min = 1, message = "verified token must be provided"))]
     pub token: String,
+}
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct UpdateDriverRequest {
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "firstname cannot be empty or longer than 255 characters"
+    ))]
+    pub firstname: Option<String>,
+
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "lastname cannot be empty or longer than 255 characters"
+    ))]
+    pub lastname: Option<String>,
+
+    #[validate(length(equal = 1, message = "gender must be 'M' or 'F'"))]
+    pub gender: Option<String>,
+
+    #[validate(email(message = "Invalid email format"))]
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "email cannot be longer than 255 characters"
+    ))]
+    pub email: Option<String>,
+
+    #[validate(length(
+        min = 8,
+        max = 40,
+        message = "password must contain at least 8 characters and at most 40 characters"
+    ))]
+    pub password: Option<String>,
+
+    #[validate(custom(
+        function = "validate_phone_number",
+        message = "phone number must be in the format '+<country_code><numbers>' (e.g. +33612345678)"
+    ))]
+    pub phone_number: Option<String>,
+
+    #[validate(custom(
+        function = "validate_language",
+        message = "language must be 'fr' or 'en'"
+    ))]
+    pub language: Option<DriverLanguage>,
 }

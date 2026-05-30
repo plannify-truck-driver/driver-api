@@ -193,8 +193,18 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|e| {
+            if let sqlx::Error::RowNotFound = e {
+                return DriverError::DriverNotFound;
+            }
+            if e.as_database_error()
+                .and_then(|db| db.code())
+                .map(|c| c == "23505")
+                .unwrap_or(false)
+            {
+                return DriverError::DriverAlreadyExists;
+            }
             error!("Failed to update driver {}: {:?}", driver.pk_driver_id, e);
-            DriverError::DriverNotFound
+            DriverError::DatabaseError
         })
     }
 
