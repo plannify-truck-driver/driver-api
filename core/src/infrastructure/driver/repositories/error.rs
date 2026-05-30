@@ -50,4 +50,10 @@ pub enum DriverError {
 
     #[error("Failed to send email")]
     EmailSendError,
+
+    #[error("Account is already deactivated")]
+    AccountAlreadyDeactivated,
+
+    #[error("Account is not deactivated")]
+    AccountNotDeactivated,
 }

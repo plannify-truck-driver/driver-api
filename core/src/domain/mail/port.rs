@@ -21,6 +21,16 @@ pub trait MailSmtpRepository: Send + Sync {
         verify_value: String,
         verify_ttl: u64,
     ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_driver_deactivation_email(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_driver_reactivation_email(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
 }
 
 pub trait MailDatabaseRepository: Send + Sync {
@@ -42,6 +52,21 @@ pub trait MailDatabaseRepository: Send + Sync {
 
 pub trait MailService: Send + Sync {
     fn send_creation_email(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_email_change_verification(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_deactivation_email(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_reactivation_email(
         &self,
         driver: DriverRow,
     ) -> impl Future<Output = Result<(), MailError>> + Send;
@@ -72,6 +97,14 @@ impl MailSmtpRepository for MockMailSmtpRepository {
         _verify_value: String,
         _verify_ttl: u64,
     ) -> Result<(), MailError> {
+        Ok(())
+    }
+
+    async fn send_driver_deactivation_email(&self, _driver: DriverRow) -> Result<(), MailError> {
+        Ok(())
+    }
+
+    async fn send_driver_reactivation_email(&self, _driver: DriverRow) -> Result<(), MailError> {
         Ok(())
     }
 }

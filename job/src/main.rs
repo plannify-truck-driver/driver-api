@@ -58,6 +58,7 @@ async fn main() {
         &config.s3.bucket_name,
         ServiceConfig {
             workday_garbage_retention_days: config.workday_garbage_retention_days,
+            account_deactivation_days: 30,
         },
     )
     .await

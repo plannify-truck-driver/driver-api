@@ -11,6 +11,7 @@ use crate::{
 pub struct ConfigResponse {
     pub workday_garbage_retention_days: i64,
     pub support_email: String,
+    pub account_deactivation_days: i64,
 }
 
 #[utoipa::path(
@@ -33,5 +34,6 @@ pub async fn get_config(
     Ok(Response::ok(ConfigResponse {
         workday_garbage_retention_days: state.config.common.workday_garbage_retention_days,
         support_email: state.config.common.support_email.clone(),
+        account_deactivation_days: state.config.common.account_deactivation_days,
     }))
 }
