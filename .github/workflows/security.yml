@@ -24,7 +24,14 @@ jobs:
         run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust
-        run: rustup update stable && rustup default stable && rustup component add clippy
+        run: |
+          if [ ! -f "$HOME/.cargo/bin/rustup" ]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable --no-modify-path
+          fi
+          "$HOME/.cargo/bin/rustup" update stable
+          "$HOME/.cargo/bin/rustup" default stable
+          "$HOME/.cargo/bin/rustup" component add clippy
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Add Cargo to PATH
         run: echo "$CARGO_HOME/bin" >> $GITHUB_PATH

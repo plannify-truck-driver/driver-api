@@ -89,7 +89,13 @@ jobs:
         run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust toolchain
-        run: rustup update stable && rustup default stable
+        run: |
+          if [ ! -f "$HOME/.cargo/bin/rustup" ]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable --no-modify-path
+          fi
+          "$HOME/.cargo/bin/rustup" update stable
+          "$HOME/.cargo/bin/rustup" default stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Run integration tests
         run: cargo test -p api
@@ -110,7 +116,13 @@ jobs:
         run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust toolchain
-        run: rustup update stable && rustup default stable
+        run: |
+          if [ ! -f "$HOME/.cargo/bin/rustup" ]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable --no-modify-path
+          fi
+          "$HOME/.cargo/bin/rustup" update stable
+          "$HOME/.cargo/bin/rustup" default stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Run unit tests
         run: cargo test --lib
