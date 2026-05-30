@@ -1078,3 +1078,217 @@ async fn test_update_driver_info_new_token_reflects_updated_claims(ctx: &mut con
         .await
         .unwrap();
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_deactivate_driver_unauthorized(ctx: &mut context::TestContext) {
+    let res = ctx.unauthenticated_router.post("/me/deactivate").await;
+
+    res.assert_status(StatusCode::UNAUTHORIZED);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "UNAUTHORIZED");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_reactivate_driver_unauthorized(ctx: &mut context::TestContext) {
+    let res = ctx.unauthenticated_router.post("/me/reactivate").await;
+
+    res.assert_status(StatusCode::UNAUTHORIZED);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "UNAUTHORIZED");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_deactivate_driver_success(ctx: &mut context::TestContext) {
+    let original = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(ctx.authenticated_user_id)
+        .await
+        .unwrap()
+        .unwrap();
+
+    assert!(
+        original.deactivated_at.is_none(),
+        "Test user must start as active"
+    );
+
+    let before = chrono::Utc::now();
+    let res = ctx.authenticated_router.post("/me/deactivate").await;
+    res.assert_status(StatusCode::OK);
+    let after = chrono::Utc::now();
+
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(ctx.authenticated_user_id)
+        .await
+        .unwrap()
+        .unwrap();
+
+    let deactivated_at = driver
+        .deactivated_at
+        .expect("deactivated_at must be set after deactivation");
+
+    // deactivated_at must be Utc::now() + 30 days (ACCOUNT_DEACTIVATION_DAYS default)
+    let expected_min = before + chrono::Duration::days(30);
+    let expected_max = after + chrono::Duration::days(30);
+    assert!(
+        deactivated_at >= expected_min && deactivated_at <= expected_max,
+        "deactivated_at ({}) must be within [{}, {}]",
+        deactivated_at,
+        expected_min,
+        expected_max
+    );
+
+    ctx.repositories
+        .driver_database_repository
+        .update_driver(original)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_deactivate_driver_already_deactivated(ctx: &mut context::TestContext) {
+    let original = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(ctx.authenticated_user_id)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // First deactivation must succeed
+    ctx.authenticated_router
+        .post("/me/deactivate")
+        .await
+        .assert_status(StatusCode::OK);
+
+    // Second deactivation must be rejected
+    let res = ctx.authenticated_router.post("/me/deactivate").await;
+    res.assert_status(StatusCode::CONFLICT);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "ACCOUNT_ALREADY_DEACTIVATED");
+
+    ctx.repositories
+        .driver_database_repository
+        .update_driver(original)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_reactivate_driver_success(ctx: &mut context::TestContext) {
+    let original = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(ctx.authenticated_user_id)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Deactivate first
+    ctx.authenticated_router
+        .post("/me/deactivate")
+        .await
+        .assert_status(StatusCode::OK);
+
+    // Then reactivate
+    let res = ctx.authenticated_router.post("/me/reactivate").await;
+    res.assert_status(StatusCode::OK);
+
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(ctx.authenticated_user_id)
+        .await
+        .unwrap()
+        .unwrap();
+
+    assert!(
+        driver.deactivated_at.is_none(),
+        "deactivated_at must be cleared after reactivation"
+    );
+
+    ctx.repositories
+        .driver_database_repository
+        .update_driver(original)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_reactivate_driver_not_deactivated(ctx: &mut context::TestContext) {
+    // Account is active — reactivation must be rejected
+    let res = ctx.authenticated_router.post("/me/reactivate").await;
+
+    res.assert_status(StatusCode::CONFLICT);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "ACCOUNT_NOT_DEACTIVATED");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_deactivate_then_reactivate_full_cycle(ctx: &mut context::TestContext) {
+    let original = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(ctx.authenticated_user_id)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Deactivate
+    ctx.authenticated_router
+        .post("/me/deactivate")
+        .await
+        .assert_status(StatusCode::OK);
+
+    let after_deactivation = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(ctx.authenticated_user_id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(after_deactivation.deactivated_at.is_some());
+
+    // Reactivate
+    ctx.authenticated_router
+        .post("/me/reactivate")
+        .await
+        .assert_status(StatusCode::OK);
+
+    let after_reactivation = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(ctx.authenticated_user_id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(after_reactivation.deactivated_at.is_none());
+
+    // A second deactivation must work (account is active again)
+    ctx.authenticated_router
+        .post("/me/deactivate")
+        .await
+        .assert_status(StatusCode::OK);
+
+    ctx.repositories
+        .driver_database_repository
+        .update_driver(original)
+        .await
+        .unwrap();
+}

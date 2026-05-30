@@ -525,4 +525,58 @@ where
 
         Ok((updated_driver, email_changed))
     }
+
+    #[tracing::instrument(
+        name = "driver_service.deactivate_driver",
+        skip(self),
+        fields(driver_id = %driver_id)
+    )]
+    async fn deactivate_driver(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
+        let mut driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?
+            .ok_or(DriverError::DriverNotFound)?;
+
+        if driver.deactivated_at.is_some() {
+            return Err(DriverError::AccountAlreadyDeactivated);
+        }
+
+        driver.deactivated_at = Some(
+            chrono::Utc::now() + chrono::Duration::days(self.config.account_deactivation_days),
+        );
+
+        let updated_driver = self
+            .driver_database_repository
+            .update_driver(driver)
+            .await?;
+
+        Ok(updated_driver)
+    }
+
+    #[tracing::instrument(
+        name = "driver_service.reactivate_driver",
+        skip(self),
+        fields(driver_id = %driver_id)
+    )]
+    async fn reactivate_driver(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
+        let mut driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?
+            .ok_or(DriverError::DriverNotFound)?;
+
+        if driver.deactivated_at.is_none() {
+            return Err(DriverError::AccountNotDeactivated);
+        }
+
+        driver.deactivated_at = None;
+
+        let updated_driver = self
+            .driver_database_repository
+            .update_driver(driver)
+            .await?;
+
+        Ok(updated_driver)
+    }
 }

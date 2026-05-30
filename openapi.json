@@ -435,6 +435,160 @@
         }
       }
     },
+    "/me": {
+      "patch": {
+        "tags": [
+          "driver"
+        ],
+        "description": "Update driver personal information. Only provided fields are updated.",
+        "operationId": "update_driver_info",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDriverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Driver information updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDriverResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Driver not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/me/deactivate": {
+      "post": {
+        "tags": [
+          "driver"
+        ],
+        "description": "Deactivate the authenticated driver's account.",
+        "operationId": "deactivate_driver",
+        "responses": {
+          "200": {
+            "description": "Account deactivated successfully"
+          },
+          "409": {
+            "description": "Account is already deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/me/reactivate": {
+      "post": {
+        "tags": [
+          "driver"
+        ],
+        "description": "Reactivate the authenticated driver's account.",
+        "operationId": "reactivate_driver",
+        "responses": {
+          "200": {
+            "description": "Account reactivated successfully"
+          },
+          "409": {
+            "description": "Account is not deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/rest-periods": {
       "get": {
         "tags": [
@@ -1257,9 +1411,14 @@
         "type": "object",
         "required": [
           "workday_garbage_retention_days",
-          "support_email"
+          "support_email",
+          "account_deactivation_days"
         ],
         "properties": {
+          "account_deactivation_days": {
+            "type": "integer",
+            "format": "int64"
+          },
           "support_email": {
             "type": "string"
           },
@@ -1556,6 +1715,57 @@
           },
           "version": {
             "type": "string"
+          }
+        }
+      },
+      "UpdateDriverRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "firstname": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "gender": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "language": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DriverLanguage"
+              }
+            ]
+          },
+          "lastname": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "password": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone_number": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },

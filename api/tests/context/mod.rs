@@ -74,6 +74,7 @@ impl AsyncTestContext for TestContext {
             pdf_service_endpoint: "http://localhost:4000".to_string(),
             workday_garbage_retention_days: 30,
             support_email: "contact@plannify.be".to_string(),
+            account_deactivation_days: 30,
         };
 
         let s3_config = S3Config {
@@ -118,6 +119,7 @@ impl AsyncTestContext for TestContext {
             &config.s3.bucket_name,
             ServiceConfig {
                 workday_garbage_retention_days: config.common.workday_garbage_retention_days,
+                account_deactivation_days: config.common.account_deactivation_days,
             },
         )
         .await

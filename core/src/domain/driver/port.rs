@@ -176,6 +176,16 @@ pub trait DriverService: Send + Sync {
         update_request: UpdateDriverRequest,
         email_list_deny: Vec<String>,
     ) -> impl Future<Output = Result<(DriverRow, bool), DriverError>> + Send;
+
+    fn deactivate_driver(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
+    fn reactivate_driver(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 }
 
 #[derive(Clone)]

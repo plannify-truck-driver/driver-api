@@ -217,3 +217,65 @@ pub async fn update_driver_info(
         Response::ok(CreateDriverResponse { access_token }),
     ))
 }
+
+#[tracing::instrument(
+    name = "deactivate_driver",
+    skip_all,
+    fields(user_id = %user_identity.user_id)
+)]
+#[utoipa::path(
+    post,
+    path = "/me/deactivate",
+    tag = "driver",
+    description = "Deactivate the authenticated driver's account.",
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, description = "Account deactivated successfully"),
+        (status = 409, description = "Account is already deactivated", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn deactivate_driver(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<()>, ApiError> {
+    let driver = state
+        .service
+        .deactivate_driver(user_identity.user_id)
+        .await?;
+
+    state.service.send_deactivation_email(driver).await?;
+
+    Ok(Response::ok(()))
+}
+
+#[tracing::instrument(
+    name = "reactivate_driver",
+    skip_all,
+    fields(user_id = %user_identity.user_id)
+)]
+#[utoipa::path(
+    post,
+    path = "/me/reactivate",
+    tag = "driver",
+    description = "Reactivate the authenticated driver's account.",
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, description = "Account reactivated successfully"),
+        (status = 409, description = "Account is not deactivated", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn reactivate_driver(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<()>, ApiError> {
+    let driver = state
+        .service
+        .reactivate_driver(user_identity.user_id)
+        .await?;
+
+    state.service.send_reactivation_email(driver).await?;
+
+    Ok(Response::ok(()))
+}

@@ -96,6 +96,90 @@ where
     }
 
     #[tracing::instrument(
+        name = "mail_service.send_deactivation_email",
+        skip(self),
+        fields(driver_id = %driver.pk_driver_id)
+    )]
+    async fn send_deactivation_email(&self, driver: DriverRow) -> Result<(), MailError> {
+        let mail = self
+            .mail_database_repository
+            .create_mail(
+                driver.clone(),
+                EnumDriverMailType::AccountChangement,
+                "Driver account deactivation".to_string(),
+                None,
+            )
+            .await?;
+
+        match self
+            .mail_smtp_repository
+            .send_driver_deactivation_email(driver.clone())
+            .await
+        {
+            Ok(_) => {
+                self.mail_database_repository
+                    .update_mail_status(
+                        mail.pk_driver_mail_id,
+                        MailStatus::SUCCESS,
+                        Some(Utc::now()),
+                    )
+                    .await?;
+            }
+            Err(_) => {
+                let _ = self
+                    .mail_database_repository
+                    .update_mail_status(mail.pk_driver_mail_id, MailStatus::FAILED, None)
+                    .await?;
+                return Err(MailError::Internal);
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
+        name = "mail_service.send_reactivation_email",
+        skip(self),
+        fields(driver_id = %driver.pk_driver_id)
+    )]
+    async fn send_reactivation_email(&self, driver: DriverRow) -> Result<(), MailError> {
+        let mail = self
+            .mail_database_repository
+            .create_mail(
+                driver.clone(),
+                EnumDriverMailType::AccountChangement,
+                "Driver account reactivation".to_string(),
+                None,
+            )
+            .await?;
+
+        match self
+            .mail_smtp_repository
+            .send_driver_reactivation_email(driver.clone())
+            .await
+        {
+            Ok(_) => {
+                self.mail_database_repository
+                    .update_mail_status(
+                        mail.pk_driver_mail_id,
+                        MailStatus::SUCCESS,
+                        Some(Utc::now()),
+                    )
+                    .await?;
+            }
+            Err(_) => {
+                let _ = self
+                    .mail_database_repository
+                    .update_mail_status(mail.pk_driver_mail_id, MailStatus::FAILED, None)
+                    .await?;
+                return Err(MailError::Internal);
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
         name = "mail_service.send_email_change_verification",
         skip(self),
         fields(

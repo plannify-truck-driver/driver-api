@@ -1,0 +1,17 @@
+{% extends "fr/base.html" %} {% block email_title %}Désactivation de compte -
+Plannify{% endblock email_title %} {% block content %}
+<p>Bonjour {{ full_name }},</p>
+<p>
+  Votre demande de désactivation de compte a bien été prise en compte. Votre
+  compte Plannify est désormais désactivé.
+</p>
+{% if deactivation_date %}
+<p>
+  Votre compte sera définitivement supprimé le
+  <span style="font-weight: bold">{{ deactivation_date }}</span>. Vous pouvez
+  réactiver votre compte avant cette date en vous reconnectant à l'application
+  et en effectuant une demande de réactivation.
+</p>
+{% endif %}
+<p>Bien cordialement,<br />L'équipe de Plannify</p>
+{% endblock content %}

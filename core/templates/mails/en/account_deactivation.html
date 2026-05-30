@@ -1,0 +1,17 @@
+{% extends "en/base.html" %} {% block email_title %}Account Deactivation -
+Plannify{% endblock email_title %} {% block content %}
+<p>Hello {{ full_name }},</p>
+<p>
+  Your account deactivation request has been processed. Your Plannify account is
+  now deactivated.
+</p>
+{% if deactivation_date %}
+<p>
+  Your account will be permanently deleted on
+  <span style="font-weight: bold">{{ deactivation_date }}</span>. You can
+  reactivate your account before that date by logging back into the application
+  and submitting a reactivation request.
+</p>
+{% endif %}
+<p>Best regards,<br />The Plannify team</p>
+{% endblock content %}
