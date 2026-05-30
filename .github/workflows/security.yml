@@ -24,9 +24,7 @@ jobs:
         run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
+        run: rustup update stable && rustup default stable && rustup component add clippy
 
       - name: Add Cargo to PATH
         run: echo "$CARGO_HOME/bin" >> $GITHUB_PATH

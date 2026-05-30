@@ -89,7 +89,7 @@ jobs:
         run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup update stable && rustup default stable
 
       - name: Run integration tests
         run: cargo test -p api
@@ -110,7 +110,7 @@ jobs:
         run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup update stable && rustup default stable
 
       - name: Run unit tests
         run: cargo test --lib
