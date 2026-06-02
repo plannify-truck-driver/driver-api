@@ -28,6 +28,7 @@ use crate::{
     path = "/updates",
     tag = "updates",
     description = "Retrieve driver updates",
+    security(),
     params(GetUpdatesByVersionParams),
     responses(
         (status = 200, description = "Updates retrieved successfully", body = PaginatedResponse<Update>),

@@ -9,8 +9,26 @@ pub fn validate_language(lang: &DriverLanguage) -> Result<(), ValidationError> {
     }
 }
 
+pub fn validate_phone_number(phone: &str) -> Result<(), ValidationError> {
+    if !phone.starts_with('+') {
+        return Err(ValidationError::new("phone_format"));
+    }
+    let digits = &phone[1..];
+    if digits.is_empty() || !digits.chars().all(|c| c.is_ascii_digit()) {
+        return Err(ValidationError::new("phone_format"));
+    }
+    let len = digits.len();
+    if !(7..=15).contains(&len) {
+        return Err(ValidationError::new("phone_format"));
+    }
+    if digits.starts_with('0') {
+        return Err(ValidationError::new("phone_format"));
+    }
+    Ok(())
+}
+
 pub fn validate_date(date: &NaiveDate) -> Result<(), ValidationError> {
-    if date.year() < 1900 || date.year() > 2100 {
+    if !(1900..=2100).contains(&date.year()) {
         return Err(ValidationError::new("date must be between 1900 and 2100"));
     }
     Ok(())

@@ -5,7 +5,7 @@ use crate::{
         driver::{
             entities::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverRestPeriod, DriverRow,
-                LoginDriverRequest,
+                LoginDriverRequest, UpdateDriverRequest,
             },
             port::{
                 DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository, DriverService,
@@ -434,5 +434,149 @@ where
         self.driver_database_repository
             .delete_driver_rest_periods(driver_id)
             .await
+    }
+
+    #[tracing::instrument(
+        name = "driver_service.update_driver_info",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            email_changed = tracing::field::Empty,
+            email_in_denylist = tracing::field::Empty,
+        )
+    )]
+    async fn update_driver_info(
+        &self,
+        driver_id: Uuid,
+        update_request: UpdateDriverRequest,
+        email_list_deny: Vec<String>,
+    ) -> Result<(DriverRow, bool), DriverError> {
+        let mut driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?
+            .ok_or(DriverError::DriverNotFound)?;
+
+        let mut email_changed = false;
+
+        if let Some(firstname) = update_request.firstname {
+            driver.firstname = to_title_case(firstname);
+        }
+
+        if let Some(lastname) = update_request.lastname {
+            driver.lastname = to_title_case(lastname);
+        }
+
+        if let Some(gender) = update_request.gender {
+            driver.gender = Some(gender.to_uppercase());
+        }
+
+        if let Some(email) = update_request.email {
+            let new_email = to_email_case(email);
+            if new_email != driver.email {
+                let email_domain = new_email.split('@').next_back().unwrap_or("");
+                if email_list_deny.contains(&email_domain.to_string()) {
+                    error!(
+                        "Attempt to update email to a denylisted domain ({}) for driver {}",
+                        email_domain, driver_id
+                    );
+                    tracing::Span::current().record("email_in_denylist", true);
+                    return Err(DriverError::EmailDomainDenylisted {
+                        domain: email_domain.to_string(),
+                    });
+                }
+                tracing::Span::current().record("email_in_denylist", false);
+                driver.email = new_email;
+                driver.verified_at = None;
+                email_changed = true;
+            }
+        }
+
+        if let Some(password) = update_request.password {
+            let salt = SaltString::generate(&mut OsRng);
+            let params = Params::new(19 * 1024, 2, 1, None).map_err(|e| {
+                error!("Failed to create Argon2 params for password hashing: {}", e);
+                DriverError::Internal
+            })?;
+            let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
+            let password_hash = argon2
+                .hash_password(password.as_bytes(), &salt)
+                .map_err(|e| {
+                    error!("Failed to hash password: {}", e);
+                    DriverError::Internal
+                })?;
+            driver.password_hash = password_hash.to_string();
+        }
+
+        if let Some(phone_number) = update_request.phone_number {
+            driver.phone_number = Some(phone_number);
+        }
+
+        if let Some(language) = update_request.language {
+            driver.language = language.to_string();
+        }
+
+        tracing::Span::current().record("email_changed", email_changed);
+
+        let updated_driver = self
+            .driver_database_repository
+            .update_driver(driver)
+            .await?;
+
+        Ok((updated_driver, email_changed))
+    }
+
+    #[tracing::instrument(
+        name = "driver_service.deactivate_driver",
+        skip(self),
+        fields(driver_id = %driver_id)
+    )]
+    async fn deactivate_driver(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
+        let mut driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?
+            .ok_or(DriverError::DriverNotFound)?;
+
+        if driver.deactivated_at.is_some() {
+            return Err(DriverError::AccountAlreadyDeactivated);
+        }
+
+        driver.deactivated_at = Some(
+            chrono::Utc::now() + chrono::Duration::days(self.config.account_deactivation_days),
+        );
+
+        let updated_driver = self
+            .driver_database_repository
+            .update_driver(driver)
+            .await?;
+
+        Ok(updated_driver)
+    }
+
+    #[tracing::instrument(
+        name = "driver_service.reactivate_driver",
+        skip(self),
+        fields(driver_id = %driver_id)
+    )]
+    async fn reactivate_driver(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
+        let mut driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?
+            .ok_or(DriverError::DriverNotFound)?;
+
+        if driver.deactivated_at.is_none() {
+            return Err(DriverError::AccountNotDeactivated);
+        }
+
+        driver.deactivated_at = None;
+
+        let updated_driver = self
+            .driver_database_repository
+            .update_driver(driver)
+            .await?;
+
+        Ok(updated_driver)
     }
 }

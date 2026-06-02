@@ -176,6 +176,14 @@ pub struct CommonConfig {
         name = "support_email"
     )]
     pub support_email: String,
+
+    #[arg(
+        long = "account-deactivation-days",
+        env = "ACCOUNT_DEACTIVATION_DAYS",
+        default_value = "30",
+        name = "account_deactivation_days"
+    )]
+    pub account_deactivation_days: i64,
 }
 
 #[derive(Clone, Parser, Debug, Default)]

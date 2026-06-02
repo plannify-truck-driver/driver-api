@@ -250,6 +250,12 @@ impl From<DriverError> for ApiError {
                 }
             }
             DriverError::EmailSendError => ApiError::InternalServerError,
+            DriverError::AccountAlreadyDeactivated => ApiError::Conflict {
+                error_code: "ACCOUNT_ALREADY_DEACTIVATED".to_string(),
+            },
+            DriverError::AccountNotDeactivated => ApiError::Conflict {
+                error_code: "ACCOUNT_NOT_DEACTIVATED".to_string(),
+            },
         }
     }
 }
