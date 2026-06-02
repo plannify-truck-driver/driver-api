@@ -91,6 +91,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: "1.91.1"
           components: clippy
 
       - name: Run integration tests
@@ -114,6 +115,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: "1.91.1"
           components: clippy
 
       - name: Run unit tests
