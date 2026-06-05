@@ -15,6 +15,7 @@ type RefreshResponse = Result<
     ),
     ApiError,
 >;
+use crate::http::common::middleware::auth::entities::RawRefreshToken;
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{
@@ -25,7 +26,6 @@ use plannify_driver_api_core::domain::{
     },
     mail::port::MailService,
 };
-use crate::http::common::middleware::auth::entities::RawRefreshToken;
 use plannify_driver_api_core::infrastructure::driver::repositories::error::DriverError;
 
 use tracing::error;

@@ -254,7 +254,10 @@ where
             .ok_or(DriverError::InvalidRefreshToken)?;
 
         let parsed_hash = PasswordHash::new(stored_hash).map_err(|e| {
-            error!("Failed to parse refresh token hash for driver {}: {}", driver_id, e);
+            error!(
+                "Failed to parse refresh token hash for driver {}: {}",
+                driver_id, e
+            );
             DriverError::Internal
         })?;
 

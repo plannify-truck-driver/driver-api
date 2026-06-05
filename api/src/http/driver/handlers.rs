@@ -2,8 +2,10 @@ use axum::{Extension, extract::State, http::header::SET_COOKIE, response::Append
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{
-            CreateDriverResponse, CreateDriverRestPeriodsRequest, DriverRestPeriod, DriverRow, GetDriverResponse, UpdateDriverRequest
-        }, port::DriverService
+            CreateDriverResponse, CreateDriverRestPeriodsRequest, DriverRestPeriod, DriverRow,
+            GetDriverResponse, UpdateDriverRequest,
+        },
+        port::DriverService,
     },
     mail::port::MailService,
 };
@@ -138,10 +140,7 @@ pub async fn delete_rest_periods(
     Ok(Response::ok(()))
 }
 
-#[tracing::instrument(
-    name = "get_driver_info",
-    skip_all,
-)]
+#[tracing::instrument(name = "get_driver_info", skip_all)]
 #[utoipa::path(
     get,
     path = "/me",
