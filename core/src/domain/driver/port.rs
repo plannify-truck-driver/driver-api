@@ -138,6 +138,12 @@ pub trait DriverService: Send + Sync {
         token: String,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 
+    fn get_driver_for_refresh(
+        &self,
+        driver_id: Uuid,
+        raw_refresh_token: &str,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
     fn generate_tokens<F>(
         &self,
         driver: DriverRow,

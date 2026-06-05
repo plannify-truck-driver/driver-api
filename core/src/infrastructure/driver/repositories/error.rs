@@ -56,4 +56,7 @@ pub enum DriverError {
 
     #[error("Account is not deactivated")]
     AccountNotDeactivated,
+
+    #[error("Invalid refresh token")]
+    InvalidRefreshToken,
 }

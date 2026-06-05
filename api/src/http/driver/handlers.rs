@@ -2,10 +2,8 @@ use axum::{Extension, extract::State, http::header::SET_COOKIE, response::Append
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{
-            CreateDriverResponse, CreateDriverRestPeriodsRequest, DriverRestPeriod, DriverRow,
-            UpdateDriverRequest,
-        },
-        port::DriverService,
+            CreateDriverResponse, CreateDriverRestPeriodsRequest, DriverRestPeriod, DriverRow, GetDriverResponse, UpdateDriverRequest
+        }, port::DriverService
     },
     mail::port::MailService,
 };
@@ -138,6 +136,50 @@ pub async fn delete_rest_periods(
         .await?;
 
     Ok(Response::ok(()))
+}
+
+#[tracing::instrument(
+    name = "get_driver_info",
+    skip_all,
+)]
+#[utoipa::path(
+    get,
+    path = "/me",
+    tag = "driver",
+    description = "Get driver personal information.",
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Driver information retrieved successfully", body = GetDriverResponse),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_driver_info(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<GetDriverResponse>, ApiError> {
+    let driver = state
+        .service
+        .get_driver_by_id(user_identity.user_id)
+        .await?
+        .ok_or(ApiError::from(DriverError::DriverNotFound))?;
+
+    Ok(Response::ok(GetDriverResponse {
+        pk_driver_id: driver.pk_driver_id,
+        firstname: driver.firstname,
+        lastname: driver.lastname,
+        gender: driver.gender,
+        email: driver.email,
+        phone_number: driver.phone_number,
+        is_searchable: driver.is_searchable,
+        allow_request_professional_agreement: driver.allow_request_professional_agreement,
+        created_at: driver.created_at,
+        verified_at: driver.verified_at,
+        last_login_at: driver.last_login_at,
+        deactivated_at: driver.deactivated_at,
+    }))
 }
 
 #[tracing::instrument(

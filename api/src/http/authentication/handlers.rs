@@ -25,6 +25,7 @@ use plannify_driver_api_core::domain::{
     },
     mail::port::MailService,
 };
+use crate::http::common::middleware::auth::entities::RawRefreshToken;
 use plannify_driver_api_core::infrastructure::driver::repositories::error::DriverError;
 
 use tracing::error;
@@ -244,15 +245,12 @@ pub async fn verify_driver_account(
 pub async fn refresh_token(
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
+    Extension(raw_refresh_token): Extension<RawRefreshToken>,
 ) -> AuthResponse {
     let driver = state
         .service
-        .get_driver_by_id(user_identity.user_id)
+        .get_driver_for_refresh(user_identity.user_id, &raw_refresh_token.0)
         .await?;
-
-    let driver = driver.ok_or_else(|| ApiError::Unauthorized {
-        error_code: "INVALID_TOKEN".to_string(),
-    })?;
 
     let auth_validator = &state.auth_validator;
     let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {

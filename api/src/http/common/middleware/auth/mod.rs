@@ -6,7 +6,10 @@ use axum_extra::extract::CookieJar;
 
 use tracing::error;
 
-use crate::http::common::{api_error::ApiError, middleware::auth::entities::TokenValidator};
+use crate::http::common::{
+    api_error::ApiError,
+    middleware::auth::entities::{RawRefreshToken, TokenValidator},
+};
 pub mod entities;
 
 pub struct AuthMiddleware;
@@ -92,6 +95,7 @@ where
         let user_identity = state.validate_refresh_token(&token)?;
 
         parts.extensions.insert(user_identity);
+        parts.extensions.insert(RawRefreshToken(token));
         Ok(Self)
     }
 }

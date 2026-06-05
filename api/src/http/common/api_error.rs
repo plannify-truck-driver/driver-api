@@ -256,6 +256,9 @@ impl From<DriverError> for ApiError {
             DriverError::AccountNotDeactivated => ApiError::Conflict {
                 error_code: "ACCOUNT_NOT_DEACTIVATED".to_string(),
             },
+            DriverError::InvalidRefreshToken => ApiError::Unauthorized {
+                error_code: "INVALID_REFRESH_TOKEN".to_string(),
+            },
         }
     }
 }

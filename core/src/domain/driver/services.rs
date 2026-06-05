@@ -237,6 +237,34 @@ where
         Ok(driver)
     }
 
+    async fn get_driver_for_refresh(
+        &self,
+        driver_id: Uuid,
+        raw_refresh_token: &str,
+    ) -> Result<DriverRow, DriverError> {
+        let driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?
+            .ok_or(DriverError::InvalidRefreshToken)?;
+
+        let stored_hash = driver
+            .refresh_token_hash
+            .as_deref()
+            .ok_or(DriverError::InvalidRefreshToken)?;
+
+        let parsed_hash = PasswordHash::new(stored_hash).map_err(|e| {
+            error!("Failed to parse refresh token hash for driver {}: {}", driver_id, e);
+            DriverError::Internal
+        })?;
+
+        Argon2::default()
+            .verify_password(raw_refresh_token.as_bytes(), &parsed_hash)
+            .map_err(|_| DriverError::InvalidRefreshToken)?;
+
+        Ok(driver)
+    }
+
     async fn generate_tokens<F>(
         &self,
         mut driver: DriverRow,
@@ -295,6 +323,7 @@ where
             })?;
 
         driver.refresh_token_hash = Some(token_hash.to_string());
+        driver.last_login_at = Some(chrono::Utc::now());
         self.driver_database_repository
             .update_driver(driver)
             .await?;
@@ -467,8 +496,10 @@ where
             driver.lastname = to_title_case(lastname);
         }
 
-        if let Some(gender) = update_request.gender {
-            driver.gender = Some(gender.to_uppercase());
+        match update_request.gender {
+            Some(Some(gender)) => driver.gender = Some(gender.to_uppercase()),
+            Some(None) => driver.gender = None,
+            None => {}
         }
 
         if let Some(email) = update_request.email {
@@ -508,8 +539,10 @@ where
             driver.password_hash = password_hash.to_string();
         }
 
-        if let Some(phone_number) = update_request.phone_number {
-            driver.phone_number = Some(phone_number);
+        match update_request.phone_number {
+            Some(Some(phone_number)) => driver.phone_number = Some(phone_number),
+            Some(None) => driver.phone_number = None,
+            None => {}
         }
 
         if let Some(language) = update_request.language {

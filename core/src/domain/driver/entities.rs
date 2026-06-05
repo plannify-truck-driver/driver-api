@@ -8,7 +8,9 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::domain::common::entities::{validate_language, validate_phone_number, validate_time};
+use crate::domain::common::entities::{
+    deserialize_optional_nullable, validate_language, validate_phone_number, validate_time,
+};
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 pub struct DriverRow {
@@ -113,6 +115,22 @@ pub struct LoginDriverRequest {
 
     #[validate(length(min = 1, message = "password must be provided"))]
     pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct GetDriverResponse {
+    pub pk_driver_id: Uuid,
+    pub firstname: String,
+    pub lastname: String,
+    pub gender: Option<String>,
+    pub email: String,
+    pub phone_number: Option<String>,
+    pub is_searchable: bool,
+    pub allow_request_professional_agreement: bool,
+    pub created_at: DateTime<Utc>,
+    pub verified_at: Option<DateTime<Utc>>,
+    pub last_login_at: Option<DateTime<Utc>>,
+    pub deactivated_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, sqlx::Type)]
@@ -247,8 +265,10 @@ pub struct UpdateDriverRequest {
     ))]
     pub lastname: Option<String>,
 
+    #[serde(default, deserialize_with = "deserialize_optional_nullable")]
+    #[schema(value_type = Option<String>)]
     #[validate(length(equal = 1, message = "gender must be 'M' or 'F'"))]
-    pub gender: Option<String>,
+    pub gender: Option<Option<String>>,
 
     #[validate(email(message = "Invalid email format"))]
     #[validate(length(
@@ -265,11 +285,13 @@ pub struct UpdateDriverRequest {
     ))]
     pub password: Option<String>,
 
+    #[serde(default, deserialize_with = "deserialize_optional_nullable")]
+    #[schema(value_type = Option<String>)]
     #[validate(custom(
         function = "validate_phone_number",
         message = "phone number must be in the format '+<country_code><numbers>' (e.g. +33612345678)"
     ))]
-    pub phone_number: Option<String>,
+    pub phone_number: Option<Option<String>>,
 
     #[validate(custom(
         function = "validate_language",

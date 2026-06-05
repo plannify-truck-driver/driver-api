@@ -1,7 +1,21 @@
 use chrono::{Datelike, NaiveDate, NaiveTime, Timelike};
+use serde::Deserialize;
 use validator::ValidationError;
 
 use crate::domain::driver::entities::DriverLanguage;
+
+/// Deserializer that distinguishes between a missing field (`None`), an explicit
+/// `null` (`Some(None)`), and a present value (`Some(Some(v))`). Use with
+/// `#[serde(default, deserialize_with = "deserialize_optional_nullable")]`.
+pub fn deserialize_optional_nullable<'de, D, T>(
+    deserializer: D,
+) -> Result<Option<Option<T>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Ok(Some(Option::deserialize(deserializer)?))
+}
 
 pub fn validate_language(lang: &DriverLanguage) -> Result<(), ValidationError> {
     match lang {
