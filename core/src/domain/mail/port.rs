@@ -12,7 +12,7 @@ use crate::{
         common::constants::EnumDriverMailType,
         driver::entities::DriverRow,
         mail::entities::{
-            DriverMail, DriverMailAttachment, DriverMailAttachmentRow, DriverMailPreference,
+            DriverMail, DriverMailAttachmentRow, DriverMailPreference,
             DriverMailRow, DriverMailType, DriverMailTypeRow, MailStatus,
         },
     },
@@ -148,11 +148,11 @@ pub trait MailService: Send + Sync {
         mail_id: Uuid,
     ) -> impl Future<Output = Result<DriverMail, MailError>> + Send;
 
-    fn get_mail_attachment(
+    fn download_mail_attachment(
         &self,
         driver_id: Uuid,
         attachment_id: Uuid,
-    ) -> impl Future<Output = Result<DriverMailAttachment, MailError>> + Send;
+    ) -> impl Future<Output = Result<(bytes::Bytes, String), MailError>> + Send;
 }
 
 pub struct MockMailSmtpRepository;

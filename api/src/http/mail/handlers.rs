@@ -1,11 +1,13 @@
 use axum::{
     Extension,
+    body::Body,
     extract::{Path, State},
+    http::{StatusCode, header, HeaderValue},
+    response::IntoResponse,
 };
 use plannify_driver_api_core::domain::mail::{
     entities::{
-        DriverMail, DriverMailAttachment, DriverMailPreference, DriverMailType, GetMailsParams,
-        UpdateMailPreferenceRequest,
+        DriverMail, DriverMailPreference, DriverMailType, GetMailsParams, UpdateMailPreferenceRequest,
     },
     port::MailService,
 };
@@ -218,13 +220,13 @@ pub async fn get_mail(
     get,
     path = "/mails/attachments/{attachment_id}",
     tag = "mails",
-    description = "Retrieve a single mail attachment by ID",
+    description = "Download a mail attachment file",
     params(
         ("attachment_id" = Uuid, Path, description = "The attachment ID")
     ),
     security(("bearer_auth" = [])),
     responses(
-        (status = 200, description = "Attachment retrieved successfully", body = DriverMailAttachment),
+        (status = 200, description = "File downloaded successfully", body = [u8]),
         (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 404, description = "Attachment not found", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
@@ -234,11 +236,22 @@ pub async fn get_mail_attachment(
     Path(attachment_id): Path<Uuid>,
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
-) -> Result<Response<DriverMailAttachment>, ApiError> {
-    let attachment = state
+) -> Result<impl IntoResponse, ApiError> {
+    let (bytes, file_name) = state
         .service
-        .get_mail_attachment(user_identity.user_id, attachment_id)
+        .download_mail_attachment(user_identity.user_id, attachment_id)
         .await?;
 
-    Ok(Response::ok(attachment))
+    let mut headers = axum::http::HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/octet-stream"),
+    );
+    headers.insert(
+        header::CONTENT_DISPOSITION,
+        HeaderValue::try_from(format!("attachment; filename=\"{}\"", file_name))
+            .unwrap_or(HeaderValue::from_static("attachment")),
+    );
+
+    Ok((StatusCode::OK, (headers, Body::from(bytes.to_vec()))))
 }

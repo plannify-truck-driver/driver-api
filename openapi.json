@@ -511,7 +511,7 @@
         "tags": [
           "mails"
         ],
-        "description": "Retrieve a single mail attachment by ID",
+        "description": "Download a mail attachment file",
         "operationId": "get_mail_attachment",
         "parameters": [
           {
@@ -527,11 +527,16 @@
         ],
         "responses": {
           "200": {
-            "description": "Attachment retrieved successfully",
+            "description": "File downloaded successfully",
             "content": {
-              "application/json": {
+              "application/octet-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriverMailAttachment"
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
                 }
               }
             }

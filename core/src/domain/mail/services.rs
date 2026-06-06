@@ -14,9 +14,7 @@ use crate::{
         },
         health::port::HealthRepository,
         mail::{
-            entities::{
-                DriverMail, DriverMailAttachment, DriverMailPreference, DriverMailType, MailStatus,
-            },
+            entities::{DriverMail, DriverMailPreference, DriverMailType, MailStatus},
             port::{MailCacheRepository, MailDatabaseRepository, MailService, MailSmtpRepository},
         },
         storage::port::StorageRepository,
@@ -402,11 +400,11 @@ where
         skip(self),
         fields(driver_id = %driver_id, attachment_id = %attachment_id)
     )]
-    async fn get_mail_attachment(
+    async fn download_mail_attachment(
         &self,
         driver_id: Uuid,
         attachment_id: Uuid,
-    ) -> Result<DriverMailAttachment, MailError> {
+    ) -> Result<(bytes::Bytes, String), MailError> {
         let attachment_row = self
             .mail_database_repository
             .get_mail_attachment_by_id(attachment_id)
@@ -421,7 +419,13 @@ where
             return Err(MailError::MailAttachmentNotFound);
         }
 
-        Ok(attachment_row.to_driver_mail_attachment())
+        let bytes = self
+            .storage_repository
+            .download(&attachment_row.s3_file_path)
+            .await
+            .map_err(|_| MailError::Internal)?;
+
+        Ok((bytes, attachment_row.file_name))
     }
 
     #[tracing::instrument(
