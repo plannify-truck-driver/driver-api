@@ -36,6 +36,7 @@ impl From<DriverRepositories> for AppState {
             repositories.workday_cache_repository,
             repositories.mail_smtp_repository,
             repositories.mail_database_repository,
+            repositories.mail_cache_repository,
             repositories.update_database_repository,
             repositories.update_cache_repository,
             repositories.document_external_repository,

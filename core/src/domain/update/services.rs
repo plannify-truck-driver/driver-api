@@ -4,7 +4,7 @@ use crate::{
         document::port::DocumentExternalRepository,
         driver::port::{DriverCacheRepository, DriverDatabaseRepository},
         health::port::HealthRepository,
-        mail::port::{MailDatabaseRepository, MailSmtpRepository},
+        mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository},
         storage::port::StorageRepository,
         update::{
             entities::UpdateCache,
@@ -15,8 +15,8 @@ use crate::{
     infrastructure::update::repositories::error::UpdateError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS> UpdateService
-    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS> UpdateService
+    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -25,6 +25,7 @@ where
     WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
+    MC: MailCacheRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,

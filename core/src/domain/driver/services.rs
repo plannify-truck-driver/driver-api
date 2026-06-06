@@ -13,7 +13,7 @@ use crate::{
             },
         },
         health::port::HealthRepository,
-        mail::port::{MailDatabaseRepository, MailSmtpRepository},
+        mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository},
         storage::port::StorageRepository,
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
@@ -28,8 +28,8 @@ use argon2::{
 use tracing::error;
 use uuid::Uuid;
 
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS> DriverService
-    for Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS> DriverService
+    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -38,6 +38,7 @@ where
     WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
+    MC: MailCacheRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,

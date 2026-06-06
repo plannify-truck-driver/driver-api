@@ -438,6 +438,401 @@
         "security": []
       }
     },
+    "/mails": {
+      "get": {
+        "tags": [
+          "mails"
+        ],
+        "description": "Retrieve driver mails with pagination",
+        "operationId": "get_mails",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mails retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_DriverMail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/mails/attachments/{attachment_id}": {
+      "get": {
+        "tags": [
+          "mails"
+        ],
+        "description": "Download a mail attachment file",
+        "operationId": "get_mail_attachment",
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "description": "The attachment ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File downloaded successfully",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/mails/preferences": {
+      "get": {
+        "tags": [
+          "mails/preferences"
+        ],
+        "description": "Retrieve driver mail preferences",
+        "operationId": "get_mail_preferences",
+        "responses": {
+          "200": {
+            "description": "Mail preferences retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DriverMailPreference"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/mails/preferences/{mail_type_id}": {
+      "put": {
+        "tags": [
+          "mails/preferences"
+        ],
+        "description": "Update a driver mail preference",
+        "operationId": "update_mail_preference",
+        "parameters": [
+          {
+            "name": "mail_type_id",
+            "in": "path",
+            "description": "The mail type ID to update the preference for",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMailPreferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mail preference updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverMailPreference"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Mail preference is not editable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mail type not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/mails/types": {
+      "get": {
+        "tags": [
+          "mails"
+        ],
+        "description": "Retrieve all mail types",
+        "operationId": "get_mail_types",
+        "responses": {
+          "200": {
+            "description": "Mail types retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DriverMailType"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/mails/{mail_id}": {
+      "get": {
+        "tags": [
+          "mails"
+        ],
+        "description": "Retrieve a single driver mail by ID",
+        "operationId": "get_mail",
+        "parameters": [
+          {
+            "name": "mail_id",
+            "in": "path",
+            "description": "The mail ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mail retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverMail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mail not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/me": {
       "get": {
         "tags": [
@@ -1760,6 +2155,124 @@
           "en"
         ]
       },
+      "DriverMail": {
+        "type": "object",
+        "required": [
+          "pk_driver_mail_id",
+          "mail_type",
+          "email_used",
+          "status",
+          "description",
+          "created_at",
+          "attachments"
+        ],
+        "properties": {
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriverMailAttachment"
+            }
+          },
+          "content": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string"
+          },
+          "email_used": {
+            "type": "string"
+          },
+          "mail_type": {
+            "$ref": "#/components/schemas/DriverMailType"
+          },
+          "pk_driver_mail_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sent_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MailStatus"
+          }
+        }
+      },
+      "DriverMailAttachment": {
+        "type": "object",
+        "required": [
+          "pk_driver_mail_attachment_id",
+          "file_name",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "pk_driver_mail_attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "DriverMailPreference": {
+        "type": "object",
+        "required": [
+          "mail_type_id",
+          "label",
+          "is_editable",
+          "is_enabled"
+        ],
+        "properties": {
+          "is_editable": {
+            "type": "boolean"
+          },
+          "is_enabled": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "mail_type_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DriverMailType": {
+        "type": "object",
+        "required": [
+          "pk_driver_mail_type_id",
+          "label",
+          "is_editable"
+        ],
+        "properties": {
+          "is_editable": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "pk_driver_mail_type_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "DriverRestPeriod": {
         "type": "object",
         "required": [
@@ -1883,6 +2396,90 @@
           },
           "password": {
             "type": "string"
+          }
+        }
+      },
+      "MailStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "SUCCESS",
+          "FAILED"
+        ]
+      },
+      "PaginatedResponse_DriverMail": {
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "pk_driver_mail_id",
+                "mail_type",
+                "email_used",
+                "status",
+                "description",
+                "created_at",
+                "attachments"
+              ],
+              "properties": {
+                "attachments": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DriverMailAttachment"
+                  }
+                },
+                "content": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "email_used": {
+                  "type": "string"
+                },
+                "mail_type": {
+                  "$ref": "#/components/schemas/DriverMailType"
+                },
+                "pk_driver_mail_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "sent_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "status": {
+                  "$ref": "#/components/schemas/MailStatus"
+                }
+              }
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           }
         }
       },
@@ -2054,6 +2651,17 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "UpdateMailPreferenceRequest": {
+        "type": "object",
+        "required": [
+          "is_enabled"
+        ],
+        "properties": {
+          "is_enabled": {
+            "type": "boolean"
           }
         }
       },

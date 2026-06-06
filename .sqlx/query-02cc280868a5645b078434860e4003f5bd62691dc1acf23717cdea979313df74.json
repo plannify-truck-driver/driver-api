@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT pk_driver_mail_type_id, label, index, is_editable FROM driver_mail_types WHERE pk_driver_mail_type_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pk_driver_mail_type_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "label",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "index",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_editable",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "02cc280868a5645b078434860e4003f5bd62691dc1acf23717cdea979313df74"
+}

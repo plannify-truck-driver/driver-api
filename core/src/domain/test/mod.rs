@@ -4,7 +4,7 @@ use crate::{
         document::port::MockDocumentExternalRepository,
         driver::port::{MockDriverCacheRepository, MockDriverDatabaseRepository},
         health::port::MockHealthRepository,
-        mail::port::{MockMailDatabaseRepository, MockMailSmtpRepository},
+        mail::port::{MockMailCacheRepository, MockMailDatabaseRepository, MockMailSmtpRepository},
         storage::port::MockStorageRepository,
         update::port::{MockUpdateCacheRepository, MockUpdateDatabaseRepository},
         workday::port::{MockWorkdayCacheRepository, MockWorkdayDatabaseRepository},
@@ -21,6 +21,7 @@ pub type MockService = Service<
     MockWorkdayCacheRepository,
     MockMailSmtpRepository,
     MockMailDatabaseRepository,
+    MockMailCacheRepository,
     MockUpdateDatabaseRepository,
     MockUpdateCacheRepository,
     MockDocumentExternalRepository,
@@ -35,6 +36,7 @@ pub fn create_mock_service() -> MockService {
     let workday_cache_repository = MockWorkdayCacheRepository::new();
     let mail_smtp_repository = MockMailSmtpRepository::new();
     let mail_database_repository = MockMailDatabaseRepository::new();
+    let mail_cache_repository = MockMailCacheRepository::new();
     let update_database_repository = MockUpdateDatabaseRepository::new();
     let update_cache_repository = MockUpdateCacheRepository::new();
     let document_external_repository = MockDocumentExternalRepository;
@@ -48,6 +50,7 @@ pub fn create_mock_service() -> MockService {
         workday_cache_repository,
         mail_smtp_repository,
         mail_database_repository,
+        mail_cache_repository,
         update_database_repository,
         update_cache_repository,
         document_external_repository,

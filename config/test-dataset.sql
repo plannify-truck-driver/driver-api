@@ -23,9 +23,18 @@ INSERT INTO "workday_garbage" ("workday_date", "fk_driver_id", "created_at", "sc
 INSERT INTO "documents" ("pk_document_id", "s3_file_path", "file_name", "created_at") VALUES
 ('123e4567-e89b-12d3-a456-426614174100', 'drivers/123e4567-e89b-12d3-a456-426614174000/2026/02/workdays-2026-02.pdf', 'workdays-2026-02.pdf', '2026-03-01 10:00:00'),
 ('123e4567-e89b-12d3-a456-426614174101', 'drivers/123e4567-e89b-12d3-a456-426614174000/2027/01/workdays-2027-01.pdf', 'workdays-2027-01.pdf', '2027-02-01 10:00:00'),
-('123e4567-e89b-12d3-a456-426614174102', 'drivers/123e4567-e89b-12d3-a456-426614174000/2031/01/workdays-2031-01.pdf', 'workdays-2031-01.pdf', '2031-02-01 10:00:00');
+('123e4567-e89b-12d3-a456-426614174102', 'drivers/123e4567-e89b-12d3-a456-426614174000/2031/01/workdays-2031-01.pdf', 'workdays-2031-01.pdf', '2031-02-01 10:00:00'),
+('323e4567-e89b-12d3-a456-426614174000', 'drivers/123e4567-e89b-12d3-a456-426614174000/mails/attachment-1.pdf', 'attachment-1.pdf', '2026-02-01 11:00:00');
 
 INSERT INTO "workday_documents" ("fk_driver_id", "month", "year", "fk_document_id") VALUES
 ('123e4567-e89b-12d3-a456-426614174000', 2, 2026, '123e4567-e89b-12d3-a456-426614174100'),
 ('123e4567-e89b-12d3-a456-426614174000', 1, 2027, '123e4567-e89b-12d3-a456-426614174101'),
 ('123e4567-e89b-12d3-a456-426614174000', 1, 2031, '123e4567-e89b-12d3-a456-426614174102');
+
+INSERT INTO "driver_mails" ("pk_driver_mail_id", "fk_driver_id", "fk_employee_id", "fk_mail_type_id", "email_used", "status", "description", "content", "created_at", "sent_at") VALUES
+('223e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174000', NULL, 1, 'test.user@example.be', 'SUCCESS', 'Account verification email', NULL, '2026-01-01 10:00:00+00', '2026-01-01 10:00:05+00'),
+('223e4567-e89b-12d3-a456-426614174001', '123e4567-e89b-12d3-a456-426614174000', NULL, 4, 'test.user@example.be', 'PENDING', 'Monthly report email', NULL, '2026-02-01 10:00:00+00', NULL),
+('223e4567-e89b-12d3-a456-426614174002', '123e4567-e89b-12d3-a456-426614174001', NULL, 1, 'test-bis.user@example.be', 'SUCCESS', 'Account verification email', NULL, '2026-01-01 10:00:00+00', '2026-01-01 10:00:05+00');
+
+INSERT INTO "driver_mail_attachments" ("pk_driver_mail_attachment_id", "fk_driver_mail_id", "fk_document_id") VALUES
+('423e4567-e89b-12d3-a456-426614174000', '223e4567-e89b-12d3-a456-426614174001', '323e4567-e89b-12d3-a456-426614174000');

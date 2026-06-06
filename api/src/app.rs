@@ -32,6 +32,7 @@ use crate::{
         config::routes::config_routes,
         driver::routes::driver_routes,
         formating::routes::formating_routes,
+        mail::routes::mail_routes,
         update::routes::update_routes,
         workday::routes::workday_routes,
     },
@@ -126,6 +127,7 @@ impl App {
             .merge(driver_routes())
             .merge(workday_routes())
             .merge(config_routes())
+            .merge(mail_routes())
             .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
                 auth_validator.clone(),
             ));

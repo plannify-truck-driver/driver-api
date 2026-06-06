@@ -14,7 +14,10 @@ use crate::{
             postgres::PostgresDriverRepository, redis::RedisDriverCacheRepository,
         },
         employee::repositories::postgres::PostgresEmployeeRepository,
-        mail::repositories::{postgres::PostgresMailRepository, smtp::SmtpMailRepository},
+        mail::repositories::{
+            postgres::PostgresMailRepository, redis::RedisMailCacheRepository,
+            smtp::SmtpMailRepository,
+        },
         storage::repositories::s3::S3StorageRepository,
         update::repositories::{
             postgres::PostgresUpdateRepository, redis::RedisUpdateCacheRepository,
@@ -35,6 +38,7 @@ pub type DriverService = Service<
     RedisWorkdayRepository,
     SmtpMailRepository,
     PostgresMailRepository,
+    RedisMailCacheRepository,
     PostgresUpdateRepository,
     RedisUpdateCacheRepository,
     GrpcDocumentRepository,
@@ -53,6 +57,7 @@ pub struct DriverRepositories {
     pub workday_cache_repository: RedisWorkdayRepository,
     pub mail_smtp_repository: SmtpMailRepository,
     pub mail_database_repository: PostgresMailRepository,
+    pub mail_cache_repository: RedisMailCacheRepository,
     pub update_database_repository: PostgresUpdateRepository,
     pub update_cache_repository: RedisUpdateCacheRepository,
     pub document_external_repository: GrpcDocumentRepository,
@@ -135,6 +140,7 @@ pub async fn create_repositories(
         is_test_environment,
     );
     let mail_database_repository = PostgresMailRepository::new(pg_pool.clone());
+    let mail_cache_repository = RedisMailCacheRepository::new(redis_manager.clone());
     let update_database_repository = PostgresUpdateRepository::new(pg_pool.clone());
     let update_cache_repository = RedisUpdateCacheRepository::new(redis_manager.clone());
 
@@ -158,6 +164,7 @@ pub async fn create_repositories(
         workday_cache_repository,
         mail_smtp_repository,
         mail_database_repository,
+        mail_cache_repository,
         update_database_repository,
         update_cache_repository,
         document_external_repository,
@@ -176,6 +183,7 @@ impl From<DriverRepositories> for DriverService {
             val.workday_cache_repository,
             val.mail_smtp_repository,
             val.mail_database_repository,
+            val.mail_cache_repository,
             val.update_database_repository,
             val.update_cache_repository,
             val.document_external_repository,

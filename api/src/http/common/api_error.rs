@@ -301,6 +301,13 @@ impl From<MailError> for ApiError {
             MailError::MailTypeNotFound => ApiError::NotFound {
                 error_code: "MAIL_TYPE_NOT_FOUND".to_string(),
             },
+            MailError::MailPreferenceNotEditable => ApiError::BadRequest {
+                error_code: "MAIL_PREFERENCE_NOT_EDITABLE".to_string(),
+                content: None,
+            },
+            MailError::MailAttachmentNotFound => ApiError::NotFound {
+                error_code: "MAIL_ATTACHMENT_NOT_FOUND".to_string(),
+            },
         }
     }
 }
