@@ -4,5 +4,6 @@ pub mod config;
 pub mod driver;
 pub mod formating;
 pub mod health;
+pub mod mail;
 pub mod update;
 pub mod workday;

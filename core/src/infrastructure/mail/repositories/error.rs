@@ -19,4 +19,10 @@ pub enum MailError {
 
     #[error("Mail type not found")]
     MailTypeNotFound,
+
+    #[error("Mail preference is not editable")]
+    MailPreferenceNotEditable,
+
+    #[error("Mail attachment not found")]
+    MailAttachmentNotFound,
 }

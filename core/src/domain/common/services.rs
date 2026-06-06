@@ -3,14 +3,14 @@ use crate::domain::{
     document::port::DocumentExternalRepository,
     driver::port::{DriverCacheRepository, DriverDatabaseRepository},
     health::port::HealthRepository,
-    mail::port::{MailDatabaseRepository, MailSmtpRepository},
+    mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository},
     storage::port::StorageRepository,
     update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
     workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
 };
 
 #[derive(Clone)]
-pub struct Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
+pub struct Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -19,6 +19,7 @@ where
     WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
+    MC: MailCacheRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
@@ -31,6 +32,7 @@ where
     pub(crate) workday_cache_repository: WC,
     pub(crate) mail_smtp_repository: MS,
     pub(crate) mail_database_repository: MD,
+    pub(crate) mail_cache_repository: MC,
     pub(crate) update_database_repository: UD,
     pub(crate) update_cache_repository: UC,
     pub(crate) document_external_repository: DE,
@@ -39,7 +41,8 @@ where
 }
 
 #[allow(clippy::too_many_arguments)]
-impl<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS> Service<H, DD, DC, WD, WC, MS, MD, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+    Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -48,6 +51,7 @@ where
     WC: WorkdayCacheRepository,
     MS: MailSmtpRepository,
     MD: MailDatabaseRepository,
+    MC: MailCacheRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
@@ -61,6 +65,7 @@ where
         workday_cache_repository: WC,
         mail_smtp_repository: MS,
         mail_database_repository: MD,
+        mail_cache_repository: MC,
         update_database_repository: UD,
         update_cache_repository: UC,
         document_external_repository: DE,
@@ -75,6 +80,7 @@ where
             workday_cache_repository,
             mail_smtp_repository,
             mail_database_repository,
+            mail_cache_repository,
             update_database_repository,
             update_cache_repository,
             document_external_repository,
