@@ -6,7 +6,7 @@ use test_context::test_context;
 
 use crate::context;
 
-// IDs définis dans config/test-dataset.sql
+// IDs are hardcoded for test purposes and correspond to entries in the test database
 const MAIL_USER_A_1: &str = "223e4567-e89b-12d3-a456-426614174000"; // SUCCESS, type 1, sans PJ
 const MAIL_USER_A_2: &str = "223e4567-e89b-12d3-a456-426614174001"; // PENDING, type 4, avec PJ
 const MAIL_USER_B: &str = "223e4567-e89b-12d3-a456-426614174002"; // appartient à User B
@@ -92,7 +92,7 @@ async fn test_get_mail_success_with_attachment(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_get_mail_cross_user_isolation(ctx: &mut context::TestContext) {
-    // User B essaie d'accéder au mail de User A → 404
+    // User B tries to access the mail of User A → 404
     let other_router = ctx.create_authenticated_router_with_different_user().await;
 
     let res = other_router.get(&format!("/mails/{}", MAIL_USER_A_1)).await;
@@ -107,7 +107,7 @@ async fn test_get_mail_cross_user_isolation(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_get_mail_cross_user_can_access_own(ctx: &mut context::TestContext) {
-    // User B peut accéder à son propre mail
+    // User B can access their own mail
     let other_router = ctx.create_authenticated_router_with_different_user().await;
 
     let res = other_router.get(&format!("/mails/{}", MAIL_USER_B)).await;

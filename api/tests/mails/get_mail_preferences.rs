@@ -30,16 +30,16 @@ async fn test_get_mail_preferences_success(ctx: &mut context::TestContext) {
     assert_eq!(
         body.len(),
         4,
-        "4 préférences doivent exister (une par type)"
+        "4 preferences must exist (one per type)"
     );
 
-    // mail_preferences = 0 dans le dataset → toutes désactivées
+    // mail_preferences = 0 in dataset → all preferences should be disabled
     assert!(
         body.iter().all(|p| !p.is_enabled),
-        "toutes les préférences doivent être désactivées (bitmask = 0)"
+        "all preferences should be disabled (bitmask = 0)"
     );
 
-    // Seul MONTHLY_REPORTS (id=4) est éditable
+    // only MONTHLY_REPORTS (id=4) is editable
     let editable: Vec<&DriverMailPreference> = body.iter().filter(|p| p.is_editable).collect();
     assert_eq!(editable.len(), 1);
     assert_eq!(editable[0].mail_type_id, 4);

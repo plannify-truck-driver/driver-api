@@ -111,7 +111,7 @@ async fn test_get_mails_cross_user_isolation(ctx: &mut context::TestContext) {
     let body: PaginatedResponse<DriverMail> = res.json();
     assert_eq!(
         body.total, 1,
-        "User B doit avoir uniquement son propre mail"
+        "User B must have only their own mail"
     );
     assert_eq!(
         body.data[0].pk_driver_mail_id,

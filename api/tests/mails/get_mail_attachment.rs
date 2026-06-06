@@ -6,8 +6,8 @@ use test_context::test_context;
 
 use crate::context;
 
-// IDs définis dans config/test-dataset.sql
-const ATTACHMENT_USER_A: &str = "423e4567-e89b-12d3-a456-426614174000"; // appartient au mail de User A
+// IDs defined in config/test-dataset.sql
+const ATTACHMENT_USER_A: &str = "423e4567-e89b-12d3-a456-426614174000"; // belongs to User A's mail
 
 #[test_context(context::TestContext)]
 #[tokio::test]
@@ -62,7 +62,7 @@ async fn test_get_mail_attachment_success(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_get_mail_attachment_cross_user_isolation(ctx: &mut context::TestContext) {
-    // User B essaie d'accéder à la PJ de User A → 404
+    // User B tries to access User A's attachment → 404
     let other_router = ctx.create_authenticated_router_with_different_user().await;
 
     let res = other_router

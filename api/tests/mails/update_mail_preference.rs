@@ -7,8 +7,8 @@ use test_context::test_context;
 
 use crate::context;
 
-// Type 1 (ACCOUNT_VERIFICATION) : non éditable
-// Type 4 (MONTHLY_REPORTS) : éditable
+// Type 1 (ACCOUNT_VERIFICATION) : not editable
+// Type 4 (MONTHLY_REPORTS) : editable
 const EDITABLE_TYPE_ID: i32 = 4;
 const NON_EDITABLE_TYPE_ID: i32 = 1;
 
@@ -90,14 +90,14 @@ async fn test_update_mail_preference_enable_success(ctx: &mut context::TestConte
 #[tokio::test]
 #[serial]
 async fn test_update_mail_preference_disable_success(ctx: &mut context::TestContext) {
-    // Setup : activer d'abord
+    // Setup : activate the preference first
     ctx.authenticated_router
         .put(&format!("/mails/preferences/{}", EDITABLE_TYPE_ID))
         .json(&json!({ "is_enabled": true }))
         .await
         .assert_status(StatusCode::OK);
 
-    // Désactiver
+    // Deactivate the preference
     let res = ctx
         .authenticated_router
         .put(&format!("/mails/preferences/{}", EDITABLE_TYPE_ID))
@@ -115,7 +115,7 @@ async fn test_update_mail_preference_disable_success(ctx: &mut context::TestCont
 #[tokio::test]
 #[serial]
 async fn test_update_mail_preference_invalidates_cache(ctx: &mut context::TestContext) {
-    // Chauffer le cache des préférences
+    // Put preference in cache
     let res = ctx.authenticated_router.get("/mails/preferences").await;
     res.assert_status(StatusCode::OK);
     let before: Vec<DriverMailPreference> = res.json();
@@ -125,14 +125,14 @@ async fn test_update_mail_preference_invalidates_cache(ctx: &mut context::TestCo
         .unwrap();
     assert!(!pref_before.is_enabled);
 
-    // Modifier la préférence (doit invalider le cache)
+    // Update preference (must invalidate the cache)
     ctx.authenticated_router
         .put(&format!("/mails/preferences/{}", EDITABLE_TYPE_ID))
         .json(&json!({ "is_enabled": true }))
         .await
         .assert_status(StatusCode::OK);
 
-    // Le cache étant invalidé, la prochaine lecture doit retourner la nouvelle valeur
+    // The cache being invalidated, the next read must return the new value
     let res = ctx.authenticated_router.get("/mails/preferences").await;
     res.assert_status(StatusCode::OK);
     let after: Vec<DriverMailPreference> = res.json();
@@ -142,7 +142,7 @@ async fn test_update_mail_preference_invalidates_cache(ctx: &mut context::TestCo
         .unwrap();
     assert!(
         pref_after.is_enabled,
-        "le cache doit être invalidé après la mise à jour"
+        "the cache must be invalidated after the update"
     );
 
     // Cleanup
