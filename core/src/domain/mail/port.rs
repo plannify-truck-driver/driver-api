@@ -335,9 +335,9 @@ impl MailCacheKeyType {
 
     pub fn to_ttl(&self) -> u64 {
         match self {
-            MailCacheKeyType::MailsList { .. } => 300, // 5 min
-            MailCacheKeyType::Mail { .. } => 300,      // 5 min
-            MailCacheKeyType::MailPreferences => 3600, // 1 h
+            MailCacheKeyType::MailsList { .. } => 3600, // 1h
+            MailCacheKeyType::Mail { .. } => 3600,      // 1h
+            MailCacheKeyType::MailPreferences => 3600,  // 1h
         }
     }
 }
