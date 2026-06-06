@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                a.pk_driver_mail_attachment_id,\n                a.fk_driver_mail_id,\n                d.file_name,\n                d.s3_file_path,\n                d.created_at\n            FROM driver_mail_attachments a\n            JOIN documents d ON d.pk_document_id = a.fk_document_id\n            WHERE a.pk_driver_mail_attachment_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pk_driver_mail_attachment_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "fk_driver_mail_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "file_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "s3_file_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "50feca847344b84d8d663f553f227e9850d06e4a9ea5fc3d52c433c1c0740300"
+}

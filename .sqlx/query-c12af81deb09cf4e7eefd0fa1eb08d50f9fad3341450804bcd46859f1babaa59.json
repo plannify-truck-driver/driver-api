@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE drivers SET mail_preferences = $2 WHERE pk_driver_id = $1 RETURNING mail_preferences",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "mail_preferences",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c12af81deb09cf4e7eefd0fa1eb08d50f9fad3341450804bcd46859f1babaa59"
+}
