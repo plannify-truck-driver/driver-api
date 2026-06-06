@@ -67,7 +67,10 @@ async fn test_get_mail_attachment_success(ctx: &mut context::TestContext) {
     );
 
     let bytes = res.into_bytes();
-    assert!(!bytes.is_empty(), "the response body should contain the attachment data");
+    assert!(
+        !bytes.is_empty(),
+        "the response body should contain the attachment data"
+    );
 }
 
 #[test_context(context::TestContext)]

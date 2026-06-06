@@ -12,8 +12,8 @@ use crate::{
         common::constants::EnumDriverMailType,
         driver::entities::DriverRow,
         mail::entities::{
-            DriverMail, DriverMailAttachmentRow, DriverMailPreference,
-            DriverMailRow, DriverMailType, DriverMailTypeRow, MailStatus,
+            DriverMail, DriverMailAttachmentRow, DriverMailPreference, DriverMailRow,
+            DriverMailType, DriverMailTypeRow, MailStatus,
         },
     },
     infrastructure::mail::repositories::error::MailError,

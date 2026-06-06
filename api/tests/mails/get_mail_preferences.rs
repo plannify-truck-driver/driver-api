@@ -27,11 +27,7 @@ async fn test_get_mail_preferences_success(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::OK);
 
     let body: Vec<DriverMailPreference> = res.json();
-    assert_eq!(
-        body.len(),
-        4,
-        "4 preferences must exist (one per type)"
-    );
+    assert_eq!(body.len(), 4, "4 preferences must exist (one per type)");
 
     // mail_preferences = 0 in dataset → all preferences should be disabled
     assert!(

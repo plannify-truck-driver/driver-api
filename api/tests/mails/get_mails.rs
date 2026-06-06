@@ -93,7 +93,10 @@ async fn test_get_mails_pagination(ctx: &mut context::TestContext) {
     let body: PaginatedResponse<DriverMail> = res.json();
     assert_eq!(body.data.len(), 1);
 
-    let res = ctx.authenticated_router.get("/mails?page=3&limit=100").await;
+    let res = ctx
+        .authenticated_router
+        .get("/mails?page=3&limit=100")
+        .await;
     res.assert_status(StatusCode::OK);
     let body: PaginatedResponse<DriverMail> = res.json();
     assert_eq!(body.data.len(), 0);
@@ -109,10 +112,7 @@ async fn test_get_mails_cross_user_isolation(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::OK);
 
     let body: PaginatedResponse<DriverMail> = res.json();
-    assert_eq!(
-        body.total, 1,
-        "User B must have only their own mail"
-    );
+    assert_eq!(body.total, 1, "User B must have only their own mail");
     assert_eq!(
         body.data[0].pk_driver_mail_id,
         Uuid::parse_str("223e4567-e89b-12d3-a456-426614174002").unwrap()

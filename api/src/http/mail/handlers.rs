@@ -2,12 +2,13 @@ use axum::{
     Extension,
     body::Body,
     extract::{Path, State},
-    http::{StatusCode, header, HeaderValue},
+    http::{HeaderValue, StatusCode, header},
     response::IntoResponse,
 };
 use plannify_driver_api_core::domain::mail::{
     entities::{
-        DriverMail, DriverMailPreference, DriverMailType, GetMailsParams, UpdateMailPreferenceRequest,
+        DriverMail, DriverMailPreference, DriverMailType, GetMailsParams,
+        UpdateMailPreferenceRequest,
     },
     port::MailService,
 };

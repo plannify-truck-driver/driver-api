@@ -27,7 +27,11 @@ async fn test_get_mail_types_success(ctx: &mut context::TestContext) {
     res.assert_status(StatusCode::OK);
 
     let body: Vec<DriverMailType> = res.json();
-    assert_eq!(body.len(), 4, "4 types of mail must exist in the test database");
+    assert_eq!(
+        body.len(),
+        4,
+        "4 types of mail must exist in the test database"
+    );
 
     assert_eq!(body[0].pk_driver_mail_type_id, 1);
     assert_eq!(body[0].label, "ACCOUNT_VERIFICATION");
