@@ -21,7 +21,10 @@ use crate::{
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
-    infrastructure::mail::repositories::error::MailError,
+    infrastructure::{
+        mail::repositories::error::MailError,
+        storage::repositories::error::StorageError,
+    },
 };
 
 impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS> MailService
@@ -423,7 +426,10 @@ where
             .storage_repository
             .download(&attachment_row.s3_file_path)
             .await
-            .map_err(|_| MailError::Internal)?;
+            .map_err(|e| match e {
+                StorageError::ObjectNotFound => MailError::MailAttachmentNotFound,
+                _ => MailError::Internal,
+            })?;
 
         Ok((bytes, attachment_row.file_name))
     }
