@@ -15,6 +15,11 @@ use crate::{
 };
 use tracing::error;
 
+#[derive(sqlx::FromRow)]
+struct DocumentIdRow {
+    pk_document_id: Uuid,
+}
+
 #[derive(Clone)]
 pub struct PostgresMailRepository {
     pool: PgPool,
@@ -277,6 +282,104 @@ impl MailDatabaseRepository for PostgresMailRepository {
             MailError::DatabaseError
         })?
         .ok_or(MailError::MailNotFound)
+    }
+
+    #[tracing::instrument(
+        name = "db.mails.has_monthly_report_this_month",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "SELECT", driver_id = %driver_id)
+    )]
+    async fn has_monthly_report_this_month(
+        &self,
+        driver_id: Uuid,
+        month: u32,
+        year: i32,
+    ) -> Result<bool, MailError> {
+        let count = sqlx::query_scalar!(
+            r#"
+            SELECT COUNT(*)
+            FROM driver_mails
+            WHERE fk_driver_id = $1
+            AND fk_mail_type_id = 4
+            AND EXTRACT(MONTH FROM created_at)::INTEGER = $2
+            AND EXTRACT(YEAR FROM created_at)::INTEGER = $3
+            "#,
+            driver_id,
+            month as i32,
+            year,
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to check monthly report for driver {}: {:?}",
+                driver_id, e
+            );
+            MailError::DatabaseError
+        })?
+        .unwrap_or(0);
+
+        Ok(count > 0)
+    }
+
+    #[tracing::instrument(
+        name = "db.mails.create_document",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "INSERT")
+    )]
+    async fn create_document(
+        &self,
+        s3_file_path: String,
+        file_name: String,
+    ) -> Result<Uuid, MailError> {
+        let row = sqlx::query_as::<_, DocumentIdRow>(
+            r#"
+            INSERT INTO documents (s3_file_path, file_name, created_at)
+            VALUES ($1, $2, NOW())
+            RETURNING pk_document_id
+            "#,
+        )
+        .bind(&s3_file_path)
+        .bind(&file_name)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to create document ({}): {:?}", s3_file_path, e);
+            MailError::DatabaseError
+        })?;
+
+        Ok(row.pk_document_id)
+    }
+
+    #[tracing::instrument(
+        name = "db.mails.create_mail_attachment",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "INSERT", mail_id = %mail_id)
+    )]
+    async fn create_mail_attachment(
+        &self,
+        mail_id: Uuid,
+        document_id: Uuid,
+    ) -> Result<(), MailError> {
+        sqlx::query(
+            r#"
+            INSERT INTO driver_mail_attachments (fk_driver_mail_id, fk_document_id)
+            VALUES ($1, $2)
+            "#,
+        )
+        .bind(mail_id)
+        .bind(document_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to create mail attachment for mail {}: {:?}",
+                mail_id, e
+            );
+            MailError::DatabaseError
+        })?;
+
+        Ok(())
     }
 
     #[tracing::instrument(

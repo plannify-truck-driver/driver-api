@@ -28,6 +28,9 @@ enum JobCommand {
         #[arg(long, help = "Number of months in the past to use as cutoff")]
         months_ago: u32,
     },
+
+    /// Send monthly workday reports by email to drivers who have enabled the preference
+    SendMonthlyReports,
 }
 
 #[tokio::main]
@@ -75,6 +78,7 @@ async fn main() {
         JobCommand::GenerateDocuments { months_ago } => {
             jobs::generate_documents::run(&repos, months_ago).await
         }
+        JobCommand::SendMonthlyReports => jobs::send_monthly_reports::run(&repos).await,
     };
 
     repos.shutdown_pool().await;

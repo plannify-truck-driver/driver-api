@@ -565,4 +565,32 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
 
         Ok(())
     }
+
+    #[tracing::instrument(
+        name = "db.drivers.get_drivers_with_monthly_report_preference",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "SELECT")
+    )]
+    async fn get_drivers_with_monthly_report_preference(
+        &self,
+    ) -> Result<Vec<DriverRow>, DriverError> {
+        sqlx::query_as!(
+            DriverRow,
+            r#"
+            SELECT *
+            FROM drivers
+            WHERE (mail_preferences & 8) != 0
+            AND deactivated_at IS NULL
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to get drivers with monthly report preference: {:?}",
+                e
+            );
+            DriverError::DatabaseError
+        })
+    }
 }

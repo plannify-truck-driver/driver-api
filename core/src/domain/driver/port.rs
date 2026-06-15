@@ -90,6 +90,10 @@ pub trait DriverDatabaseRepository: Send + Sync {
         &self,
         driver_id: Uuid,
     ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn get_drivers_with_monthly_report_preference(
+        &self,
+    ) -> impl Future<Output = Result<Vec<DriverRow>, DriverError>> + Send;
 }
 
 pub fn to_title_case(name: String) -> String {
@@ -423,6 +427,21 @@ impl DriverDatabaseRepository for MockDriverDatabaseRepository {
             }
         }
         Err(DriverError::DriverNotFound)
+    }
+
+    async fn get_drivers_with_monthly_report_preference(
+        &self,
+    ) -> Result<Vec<DriverRow>, DriverError> {
+        let monthly_report_bit = 1 << (4 - 1);
+        let drivers = self.drivers.lock().unwrap();
+        let result = drivers
+            .iter()
+            .filter(|d| {
+                (d.mail_preferences & monthly_report_bit) != 0 && d.deactivated_at.is_none()
+            })
+            .cloned()
+            .collect();
+        Ok(result)
     }
 }
 

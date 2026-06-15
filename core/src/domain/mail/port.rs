@@ -4,6 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
@@ -51,6 +52,15 @@ pub trait MailSmtpRepository: Send + Sync {
         driver: DriverRow,
         reset_value: String,
         reset_ttl: u64,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_driver_monthly_report_email(
+        &self,
+        driver: DriverRow,
+        month: u32,
+        year: i32,
+        pdf_bytes: Bytes,
+        file_name: String,
     ) -> impl Future<Output = Result<(), MailError>> + Send;
 }
 
@@ -111,6 +121,25 @@ pub trait MailDatabaseRepository: Send + Sync {
         &self,
         attachment_id: Uuid,
     ) -> impl Future<Output = Result<DriverMailAttachmentRow, MailError>> + Send;
+
+    fn has_monthly_report_this_month(
+        &self,
+        driver_id: Uuid,
+        month: u32,
+        year: i32,
+    ) -> impl Future<Output = Result<bool, MailError>> + Send;
+
+    fn create_document(
+        &self,
+        s3_file_path: String,
+        file_name: String,
+    ) -> impl Future<Output = Result<Uuid, MailError>> + Send;
+
+    fn create_mail_attachment(
+        &self,
+        mail_id: Uuid,
+        document_id: Uuid,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
 }
 
 pub trait MailService: Send + Sync {
@@ -224,6 +253,17 @@ impl MailSmtpRepository for MockMailSmtpRepository {
         _driver: DriverRow,
         _reset_value: String,
         _reset_ttl: u64,
+    ) -> Result<(), MailError> {
+        Ok(())
+    }
+
+    async fn send_driver_monthly_report_email(
+        &self,
+        _driver: DriverRow,
+        _month: u32,
+        _year: i32,
+        _pdf_bytes: Bytes,
+        _file_name: String,
     ) -> Result<(), MailError> {
         Ok(())
     }
@@ -350,6 +390,39 @@ impl MailDatabaseRepository for MockMailDatabaseRepository {
         _attachment_id: Uuid,
     ) -> Result<DriverMailAttachmentRow, MailError> {
         Err(MailError::MailAttachmentNotFound)
+    }
+
+    async fn has_monthly_report_this_month(
+        &self,
+        driver_id: Uuid,
+        month: u32,
+        year: i32,
+    ) -> Result<bool, MailError> {
+        use chrono::Datelike;
+        let mails = self.mails.lock().unwrap();
+        let found = mails.iter().any(|m| {
+            m.fk_driver_id == driver_id
+                && m.fk_mail_type_id == 4
+                && m.created_at.month() == month
+                && m.created_at.year() == year
+        });
+        Ok(found)
+    }
+
+    async fn create_document(
+        &self,
+        _s3_file_path: String,
+        _file_name: String,
+    ) -> Result<Uuid, MailError> {
+        Ok(Uuid::new_v4())
+    }
+
+    async fn create_mail_attachment(
+        &self,
+        _mail_id: Uuid,
+        _document_id: Uuid,
+    ) -> Result<(), MailError> {
+        Ok(())
     }
 }
 

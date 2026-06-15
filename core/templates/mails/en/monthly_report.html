@@ -1,0 +1,9 @@
+{% extends "en/base.html" %} {% block email_title %}Monthly Report - Plannify{% endblock email_title %} {% block content %}
+<p>Hello {{ full_name }},</p>
+<p>
+  Please find attached your Plannify monthly report for
+  <span style="font-weight: bold">{{ month }}/{{ year }}</span>.
+</p>
+<p>This report summarizes all your recorded workdays for this month.</p>
+<p>Best regards,<br />Baptiste, the moderator of Plannify</p>
+{% endblock content %}

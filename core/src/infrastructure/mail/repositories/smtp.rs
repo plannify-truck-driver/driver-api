@@ -1,12 +1,17 @@
 use std::sync::Arc;
 
-use lettre::{SmtpTransport, Transport, message::MessageBuilder};
+use bytes::Bytes;
+use lettre::{
+    SmtpTransport, Transport,
+    message::{Attachment, MessageBuilder, MultiPart, SinglePart, header::ContentType},
+};
 use tera::{Context, Tera};
 
 use crate::{
     domain::{driver::entities::DriverRow, mail::port::MailSmtpRepository},
     infrastructure::mail::repositories::error::MailError,
 };
+
 use tracing::{error, warn};
 
 #[derive(Clone)]
@@ -258,6 +263,79 @@ impl MailSmtpRepository for SmtpMailRepository {
         };
 
         self.send_email(to, subject, html_body)
+    }
+
+    #[tracing::instrument(
+        name = "smtp.mails.send_driver_monthly_report_email",
+        skip(self, pdf_bytes),
+        fields(driver_id = %driver.pk_driver_id, month = %month, year = %year)
+    )]
+    async fn send_driver_monthly_report_email(
+        &self,
+        driver: DriverRow,
+        month: u32,
+        year: i32,
+        pdf_bytes: Bytes,
+        file_name: String,
+    ) -> Result<(), MailError> {
+        if self.is_test_environment {
+            warn!(
+                "Test Environment: Monthly report email to {} not sent.",
+                driver.email
+            );
+            return Ok(());
+        }
+
+        let mut context = Context::new();
+        context.insert("full_name", driver.firstname.as_str());
+        context.insert("month", &month);
+        context.insert("year", &year);
+
+        let template_path = format!("{}/monthly_report.html", driver.language.as_str());
+        let html_body = self.tera.render(&template_path, &context).map_err(|e| {
+            error!("Could not render monthly report template: {:?}", e);
+            MailError::CannotCreateMessage
+        })?;
+
+        let subject = match driver.language.as_str() {
+            "fr" => format!("Votre rapport mensuel Plannify - {}/{}", month, year),
+            "en" => format!("Your Plannify monthly report - {}/{}", month, year),
+            _ => {
+                error!("Unsupported driver language: {}", driver.language);
+                return Err(MailError::Internal);
+            }
+        };
+
+        let content_type = ContentType::parse("application/pdf").map_err(|e| {
+            error!("Failed to parse PDF content type: {:?}", e);
+            MailError::CannotCreateMessage
+        })?;
+
+        let email = self
+            .mail_client
+            .clone()
+            .to(driver.email.parse().map_err(|e| {
+                error!("Failed to parse recipient address: {:?}", e);
+                MailError::CannotCreateMessage
+            })?)
+            .subject(subject)
+            .multipart(
+                MultiPart::mixed()
+                    .singlepart(SinglePart::html(html_body))
+                    .singlepart(Attachment::new(file_name).body(pdf_bytes.to_vec(), content_type)),
+            )
+            .map_err(|e| {
+                error!("Could not build monthly report email: {:?}", e);
+                MailError::CannotCreateMessage
+            })?;
+
+        match self.transport.send(&email) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                error!("Could not send monthly report email: {:?}", e);
+                Err(MailError::CannotSendMessage)
+            }
+        }
     }
 
     async fn send_driver_verification_email(
