@@ -593,4 +593,69 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
             DriverError::DatabaseError
         })
     }
+
+    #[tracing::instrument(
+        name = "db.drivers.get_drivers_to_delete",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "SELECT")
+    )]
+    async fn get_drivers_to_delete(&self) -> Result<Vec<DriverRow>, DriverError> {
+        sqlx::query_as!(
+            DriverRow,
+            r#"
+            SELECT *
+            FROM drivers
+            WHERE deactivated_at IS NOT NULL
+            AND deactivated_at <= NOW()
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get drivers to delete: {:?}", e);
+            DriverError::DatabaseError
+        })
+    }
+
+    #[tracing::instrument(
+        name = "db.drivers.collect_and_delete_driver_documents",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "DELETE", driver_id = %driver_id)
+    )]
+    async fn collect_and_delete_driver_documents(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Vec<String>, DriverError> {
+        let rows = sqlx::query_as::<_, (String,)>(
+            r#"
+            DELETE FROM documents
+            WHERE pk_document_id IN (
+                SELECT wd.fk_document_id
+                FROM workday_documents wd
+                WHERE wd.fk_driver_id = $1
+                AND wd.fk_document_id IS NOT NULL
+
+                UNION
+
+                SELECT dma.fk_document_id
+                FROM driver_mail_attachments dma
+                JOIN driver_mails dm ON dm.pk_driver_mail_id = dma.fk_driver_mail_id
+                WHERE dm.fk_driver_id = $1
+            )
+            RETURNING s3_file_path
+            "#,
+        )
+        .bind(driver_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to collect and delete documents for driver {}: {:?}",
+                driver_id, e
+            );
+            DriverError::DatabaseError
+        })?;
+
+        Ok(rows.into_iter().map(|(path,)| path).collect())
+    }
 }

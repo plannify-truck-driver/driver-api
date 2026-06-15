@@ -31,6 +31,9 @@ enum JobCommand {
 
     /// Send monthly workday reports by email to drivers who have enabled the preference
     SendMonthlyReports,
+
+    /// Permanently delete accounts whose deactivation date has passed (DB + S3)
+    PurgeDeactivatedAccounts,
 }
 
 #[tokio::main]
@@ -79,6 +82,7 @@ async fn main() {
             jobs::generate_documents::run(&repos, months_ago).await
         }
         JobCommand::SendMonthlyReports => jobs::send_monthly_reports::run(&repos).await,
+        JobCommand::PurgeDeactivatedAccounts => jobs::purge_deactivated_accounts::run(&repos).await,
     };
 
     repos.shutdown_pool().await;

@@ -94,6 +94,15 @@ pub trait DriverDatabaseRepository: Send + Sync {
     fn get_drivers_with_monthly_report_preference(
         &self,
     ) -> impl Future<Output = Result<Vec<DriverRow>, DriverError>> + Send;
+
+    fn get_drivers_to_delete(
+        &self,
+    ) -> impl Future<Output = Result<Vec<DriverRow>, DriverError>> + Send;
+
+    fn collect_and_delete_driver_documents(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<String>, DriverError>> + Send;
 }
 
 pub fn to_title_case(name: String) -> String {
@@ -442,6 +451,24 @@ impl DriverDatabaseRepository for MockDriverDatabaseRepository {
             .cloned()
             .collect();
         Ok(result)
+    }
+
+    async fn get_drivers_to_delete(&self) -> Result<Vec<DriverRow>, DriverError> {
+        let now = Utc::now();
+        let drivers = self.drivers.lock().unwrap();
+        let result = drivers
+            .iter()
+            .filter(|d| d.deactivated_at.map(|t| t <= now).unwrap_or(false))
+            .cloned()
+            .collect();
+        Ok(result)
+    }
+
+    async fn collect_and_delete_driver_documents(
+        &self,
+        _driver_id: Uuid,
+    ) -> Result<Vec<String>, DriverError> {
+        Ok(Vec::new())
     }
 }
 
