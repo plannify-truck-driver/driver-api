@@ -62,4 +62,7 @@ pub enum DriverError {
 
     #[error("A password reset token already exists")]
     ResetPasswordTokenAlreadyExists,
+
+    #[error("Invalid password reset token")]
+    InvalidResetPasswordToken,
 }

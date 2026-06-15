@@ -10,6 +10,7 @@ use reqwest::StatusCode;
 use serde_json::json;
 use serial_test::serial;
 use test_context::test_context;
+use uuid::Uuid;
 
 pub mod context;
 pub mod helpers;
@@ -670,6 +671,135 @@ async fn test_request_password_reset_invalid_body(ctx: &mut context::TestContext
         .unauthenticated_router
         .post("/authentication/reset-password")
         .json(&json!({ "email": "not-an-email" }))
+        .await;
+
+    res.assert_status(StatusCode::BAD_REQUEST);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "BODY_VALIDATION");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_confirm_password_reset_success(ctx: &mut context::TestContext) {
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_email("test.user@example.be".to_string())
+        .await
+        .unwrap();
+
+    let (redis_key, redis_ttl) = ctx
+        .repositories
+        .driver_cache_repository
+        .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::ResetPassword);
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(redis_key.clone(), "valid-token".to_string(), redis_ttl)
+        .await
+        .unwrap();
+
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/confirm-reset-password")
+        .json(&json!({
+            "driver_id": driver.pk_driver_id,
+            "token": "valid-token",
+            "password": "newPassword123"
+        }))
+        .await;
+
+    res.assert_status(StatusCode::OK);
+
+    let token_after = ctx
+        .repositories
+        .driver_cache_repository
+        .get_redis(redis_key)
+        .await
+        .unwrap();
+    assert!(
+        token_after.is_none(),
+        "Token should be deleted from Redis after use"
+    );
+
+    let res_login = ctx
+        .unauthenticated_router
+        .post("/authentication/login")
+        .json(&json!({
+            "email": "test.user@example.be",
+            "password": "newPassword123"
+        }))
+        .await;
+    res_login.assert_status(StatusCode::OK);
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_confirm_password_reset_invalid_token(ctx: &mut context::TestContext) {
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_email("test.user@example.be".to_string())
+        .await
+        .unwrap();
+
+    let (redis_key, redis_ttl) = ctx
+        .repositories
+        .driver_cache_repository
+        .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::ResetPassword);
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(redis_key, "correct-token".to_string(), redis_ttl)
+        .await
+        .unwrap();
+
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/confirm-reset-password")
+        .json(&json!({
+            "driver_id": driver.pk_driver_id,
+            "token": "wrong-token",
+            "password": "newPassword123"
+        }))
+        .await;
+
+    res.assert_status(StatusCode::BAD_REQUEST);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "INVALID_RESET_PASSWORD_TOKEN");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_confirm_password_reset_no_token_in_redis(ctx: &mut context::TestContext) {
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/confirm-reset-password")
+        .json(&json!({
+            "driver_id": Uuid::new_v4(),
+            "token": "some-token",
+            "password": "newPassword123"
+        }))
+        .await;
+
+    res.assert_status(StatusCode::BAD_REQUEST);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "INVALID_RESET_PASSWORD_TOKEN");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_confirm_password_reset_invalid_body(ctx: &mut context::TestContext) {
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/confirm-reset-password")
+        .json(&json!({
+            "driver_id": Uuid::new_v4(),
+            "token": "some-token",
+            "password": "short"
+        }))
         .await;
 
     res.assert_status(StatusCode::BAD_REQUEST);

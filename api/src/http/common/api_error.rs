@@ -262,6 +262,10 @@ impl From<DriverError> for ApiError {
             DriverError::ResetPasswordTokenAlreadyExists => ApiError::Conflict {
                 error_code: "RESET_PASSWORD_TOKEN_ALREADY_EXISTS".to_string(),
             },
+            DriverError::InvalidResetPasswordToken => ApiError::BadRequest {
+                error_code: "INVALID_RESET_PASSWORD_TOKEN".to_string(),
+                content: None,
+            },
         }
     }
 }

@@ -21,6 +21,50 @@
     }
   ],
   "paths": {
+    "/authentication/confirm-reset-password": {
+      "post": {
+        "tags": [
+          "authentication"
+        ],
+        "operationId": "confirm_password_reset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Password updated successfully"
+          },
+          "400": {
+            "description": "Invalid or expired reset token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/authentication/login": {
       "post": {
         "tags": [
@@ -2092,6 +2136,26 @@
           "workday_garbage_retention_days": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "ConfirmPasswordResetRequest": {
+        "type": "object",
+        "required": [
+          "driver_id",
+          "token",
+          "password"
+        ],
+        "properties": {
+          "driver_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "password": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
           }
         }
       },

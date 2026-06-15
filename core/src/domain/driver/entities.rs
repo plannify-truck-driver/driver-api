@@ -257,6 +257,21 @@ pub struct RequestPasswordResetRequest {
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct ConfirmPasswordResetRequest {
+    pub driver_id: Uuid,
+
+    #[validate(length(min = 1, message = "token must be provided"))]
+    pub token: String,
+
+    #[validate(length(
+        min = 8,
+        max = 40,
+        message = "password must contain at least 8 characters and at most 40 characters"
+    ))]
+    pub password: String,
+}
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct UpdateDriverRequest {
     #[validate(length(
         min = 1,

@@ -197,6 +197,13 @@ pub trait DriverService: Send + Sync {
         &self,
         email: String,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
+    fn confirm_password_reset(
+        &self,
+        driver_id: Uuid,
+        token: String,
+        new_password: String,
+    ) -> impl Future<Output = Result<(), DriverError>> + Send;
 }
 
 #[derive(Clone)]
@@ -460,6 +467,8 @@ pub trait DriverCacheRepository: Send + Sync {
         key: String,
     ) -> impl Future<Output = Result<Option<String>, DriverError>> + Send;
 
+    fn delete_redis(&self, key: String) -> impl Future<Output = Result<(), DriverError>> + Send;
+
     fn get_key_by_type(&self, driver_id: Uuid, key_type: DriverCacheKeyType) -> (String, u64) {
         (
             self.generate_redis_key(driver_id, key_type.as_str()),
@@ -537,5 +546,10 @@ impl DriverCacheRepository for MockDriverCacheRepository {
             }
         }
         Ok(None)
+    }
+
+    async fn delete_redis(&self, key: String) -> Result<(), DriverError> {
+        self.cache.lock().unwrap().remove(&key);
+        Ok(())
     }
 }

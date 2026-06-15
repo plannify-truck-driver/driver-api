@@ -88,4 +88,22 @@ impl DriverCacheRepository for RedisDriverCacheRepository {
 
         Ok(result)
     }
+
+    #[tracing::instrument(
+        name = "cache.drivers.delete_redis",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "DEL",
+        )
+    )]
+    async fn delete_redis(&self, key: String) -> Result<(), DriverError> {
+        let mut conn = self.connection.clone();
+        let _: () = conn.del(key.clone()).await.map_err(|e| {
+            error!("Failed to delete redis key {}: {:?}", key, e);
+            DriverError::Internal
+        })?;
+
+        Ok(())
+    }
 }

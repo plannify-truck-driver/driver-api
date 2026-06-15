@@ -640,4 +640,56 @@ where
 
         Ok(driver)
     }
+
+    #[tracing::instrument(
+        name = "driver_service.confirm_password_reset",
+        skip(self),
+        fields(driver_id = %driver_id)
+    )]
+    async fn confirm_password_reset(
+        &self,
+        driver_id: Uuid,
+        token: String,
+        new_password: String,
+    ) -> Result<(), DriverError> {
+        let (redis_key, _) = self
+            .driver_cache_repository
+            .get_key_by_type(driver_id, DriverCacheKeyType::ResetPassword);
+        let stored_token = self
+            .driver_cache_repository
+            .get_redis(redis_key.clone())
+            .await?;
+
+        if stored_token != Some(token) {
+            return Err(DriverError::InvalidResetPasswordToken);
+        }
+
+        let mut driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?
+            .ok_or(DriverError::InvalidResetPasswordToken)?;
+
+        let salt = SaltString::generate(&mut OsRng);
+        let params = Params::new(19 * 1024, 2, 1, None).map_err(|e| {
+            error!("Failed to create Argon2 params for password hashing: {}", e);
+            DriverError::Internal
+        })?;
+        let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
+        let password_hash = argon2
+            .hash_password(new_password.as_bytes(), &salt)
+            .map_err(|e| {
+                error!("Failed to hash password: {}", e);
+                DriverError::Internal
+            })?;
+        driver.password_hash = password_hash.to_string();
+
+        self.driver_database_repository
+            .update_driver(driver)
+            .await?;
+
+        self.driver_cache_repository.delete_redis(redis_key).await?;
+
+        Ok(())
+    }
 }

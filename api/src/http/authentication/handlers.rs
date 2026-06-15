@@ -19,8 +19,8 @@ use crate::http::common::middleware::auth::entities::RawRefreshToken;
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{
-            CreateDriverRequest, CreateDriverResponse, DriverRow, LoginDriverRequest,
-            RequestPasswordResetRequest, VerifyDriverAccountRequest,
+            ConfirmPasswordResetRequest, CreateDriverRequest, CreateDriverResponse, DriverRow,
+            LoginDriverRequest, RequestPasswordResetRequest, VerifyDriverAccountRequest,
         },
         port::DriverService,
     },
@@ -311,6 +311,36 @@ pub async fn request_password_reset(
 ) -> Result<Response<()>, ApiError> {
     let driver = state.service.request_password_reset(request.email).await?;
     state.service.send_reset_password_email(driver).await?;
+    Ok(Response::ok(()))
+}
+
+#[tracing::instrument(
+    name = "confirm_password_reset",
+    skip_all,
+    fields(
+        driver_id = %request.driver_id,
+    )
+)]
+#[utoipa::path(
+    post,
+    path = "/authentication/confirm-reset-password",
+    tag = "authentication",
+    security(),
+    request_body = ConfirmPasswordResetRequest,
+    responses(
+        (status = 200, description = "Password updated successfully"),
+        (status = 400, description = "Invalid or expired reset token", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn confirm_password_reset(
+    State(state): State<AppState>,
+    ValidatedJson(request): ValidatedJson<ConfirmPasswordResetRequest>,
+) -> Result<Response<()>, ApiError> {
+    state
+        .service
+        .confirm_password_reset(request.driver_id, request.token, request.password)
+        .await?;
     Ok(Response::ok(()))
 }
 
