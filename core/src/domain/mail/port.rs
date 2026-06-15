@@ -207,8 +207,7 @@ impl MailSmtpRepository for MockMailSmtpRepository {
         _driver: DriverRow,
         _verify_value: String,
         _verify_ttl: u64,
-    ) -> Result<(), MailError>
-    {
+    ) -> Result<(), MailError> {
         Ok(())
     }
 

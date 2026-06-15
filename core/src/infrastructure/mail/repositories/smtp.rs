@@ -265,8 +265,7 @@ impl MailSmtpRepository for SmtpMailRepository {
         driver: DriverRow,
         verify_value: String,
         verify_ttl: u64,
-    ) -> Result<(), MailError>
-    {
+    ) -> Result<(), MailError> {
         if self.is_test_environment {
             warn!(
                 "Test Environment: Driver verification email to {} not sent.",

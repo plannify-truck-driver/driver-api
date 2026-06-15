@@ -22,8 +22,7 @@ use crate::{
         workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
     },
     infrastructure::{
-        mail::repositories::error::MailError,
-        storage::repositories::error::StorageError,
+        mail::repositories::error::MailError, storage::repositories::error::StorageError,
     },
 };
 

@@ -620,7 +620,10 @@ async fn test_request_password_reset_success(ctx: &mut context::TestContext) {
         .await
         .unwrap();
 
-    assert!(token.is_some(), "Reset password token should be stored in Redis");
+    assert!(
+        token.is_some(),
+        "Reset password token should be stored in Redis"
+    );
 }
 
 #[test_context(context::TestContext)]

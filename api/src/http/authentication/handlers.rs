@@ -309,10 +309,7 @@ pub async fn request_password_reset(
     State(state): State<AppState>,
     ValidatedJson(request): ValidatedJson<RequestPasswordResetRequest>,
 ) -> Result<Response<()>, ApiError> {
-    let driver = state
-        .service
-        .request_password_reset(request.email)
-        .await?;
+    let driver = state.service.request_password_reset(request.email).await?;
     state.service.send_reset_password_email(driver).await?;
     Ok(Response::ok(()))
 }
