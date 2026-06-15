@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT COUNT(*)\n            FROM driver_mails\n            WHERE fk_driver_id = $1\n            AND fk_mail_type_id = 4\n            AND EXTRACT(MONTH FROM created_at)::INTEGER = $2\n            AND EXTRACT(YEAR FROM created_at)::INTEGER = $3\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "5cdeacd13031a655b1bcb0771abfe72dbd29ba52ade6a5ee1b674f656bc0bb06"
+}
