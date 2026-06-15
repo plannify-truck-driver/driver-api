@@ -157,6 +157,56 @@ impl MailSmtpRepository for SmtpMailRepository {
     }
 
     #[tracing::instrument(
+        name = "smtp.mails.send_driver_reset_password_email",
+        skip(self),
+        fields(driver_id = %driver.pk_driver_id)
+    )]
+    async fn send_driver_reset_password_email(
+        &self,
+        driver: DriverRow,
+        reset_value: String,
+        reset_ttl: u64,
+    ) -> Result<(), MailError> {
+        if self.is_test_environment {
+            warn!(
+                "Test Environment: Driver reset password email to {} not sent.",
+                driver.email
+            );
+            return Ok(());
+        }
+
+        let mut context = Context::new();
+        context.insert("full_name", driver.firstname.as_str());
+        context.insert(
+            "token_url",
+            &format!(
+                "{}/authentication/reset-password?token={}&id={}",
+                self.frontend_url,
+                reset_value.as_str(),
+                driver.pk_driver_id
+            ),
+        );
+        context.insert("duration", &(reset_ttl / 60).to_string());
+
+        let template_path = format!("{}/password_reset.html", driver.language.as_str());
+        let html_body = self.tera.render(&template_path, &context).map_err(|e| {
+            error!("Could not render email template: {:?}", e);
+            MailError::CannotCreateMessage
+        })?;
+
+        let subject = match driver.language.as_str() {
+            "fr" => "Réinitialisation de votre mot de passe Plannify".to_string(),
+            "en" => "Reset your Plannify password".to_string(),
+            _ => {
+                error!("Unsupported driver language: {}", driver.language);
+                return Err(MailError::Internal);
+            }
+        };
+
+        self.send_email(driver.email, subject, html_body)
+    }
+
+    #[tracing::instrument(
         name = "smtp.mails.send_driver_creation_email",
         skip(self),
         fields(
@@ -191,6 +241,54 @@ impl MailSmtpRepository for SmtpMailRepository {
         context.insert("duration", &(verify_ttl / 60).to_string());
 
         let template_path = format!("{}/account_creation.html", driver.language.as_str());
+        let html_body = self.tera.render(&template_path, &context).map_err(|e| {
+            error!("Could not render email template: {:?}", e);
+            MailError::CannotCreateMessage
+        })?;
+
+        let to = driver.email;
+
+        let subject = match driver.language.as_str() {
+            "fr" => "Bienvenue sur Plannify !".to_string(),
+            "en" => "Welcome to Plannify!".to_string(),
+            _ => {
+                error!("Unsupported driver language: {}", driver.language);
+                return Err(MailError::Internal);
+            }
+        };
+
+        self.send_email(to, subject, html_body)
+    }
+
+    async fn send_driver_verification_email(
+        &self,
+        driver: DriverRow,
+        verify_value: String,
+        verify_ttl: u64,
+    ) -> Result<(), MailError>
+    {
+        if self.is_test_environment {
+            warn!(
+                "Test Environment: Driver verification email to {} not sent.",
+                driver.email
+            );
+            return Ok(());
+        }
+
+        let mut context = Context::new();
+        context.insert("full_name", driver.firstname.as_str());
+        context.insert(
+            "token_url",
+            &format!(
+                "{}/authentication/token/verify-account?token={}&id={}",
+                self.frontend_url,
+                verify_value.as_str(),
+                driver.pk_driver_id
+            ),
+        );
+        context.insert("duration", &(verify_ttl / 60).to_string());
+
+        let template_path = format!("{}/verify_account.html", driver.language.as_str());
         let html_body = self.tera.render(&template_path, &context).map_err(|e| {
             error!("Could not render email template: {:?}", e);
             MailError::CannotCreateMessage

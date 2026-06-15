@@ -435,6 +435,62 @@ where
     }
 
     #[tracing::instrument(
+        name = "mail_service.send_reset_password_email",
+        skip(self),
+        fields(driver_id = %driver.pk_driver_id)
+    )]
+    async fn send_reset_password_email(&self, driver: DriverRow) -> Result<(), MailError> {
+        let reset_value = self
+            .driver_cache_repository
+            .generate_random_value(100)
+            .await
+            .map_err(|_| MailError::Internal)?;
+
+        let (redis_key, redis_ttl) = self
+            .driver_cache_repository
+            .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::ResetPassword);
+        let _ = self
+            .driver_cache_repository
+            .set_redis(redis_key, reset_value.clone(), redis_ttl)
+            .await;
+
+        let mail = self
+            .mail_database_repository
+            .create_mail(
+                driver.clone(),
+                EnumDriverMailType::PasswordReset,
+                "Driver password reset".to_string(),
+                None,
+            )
+            .await?;
+
+        match self
+            .mail_smtp_repository
+            .send_driver_reset_password_email(driver.clone(), reset_value, redis_ttl)
+            .await
+        {
+            Ok(_) => {
+                self.mail_database_repository
+                    .update_mail_status(
+                        mail.pk_driver_mail_id,
+                        MailStatus::SUCCESS,
+                        Some(Utc::now()),
+                    )
+                    .await?;
+            }
+            Err(_) => {
+                let _ = self
+                    .mail_database_repository
+                    .update_mail_status(mail.pk_driver_mail_id, MailStatus::FAILED, None)
+                    .await?;
+                return Err(MailError::Internal);
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
         name = "mail_service.send_email_change_verification",
         skip(self),
         fields(

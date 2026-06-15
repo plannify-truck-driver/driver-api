@@ -616,4 +616,28 @@ where
 
         Ok(updated_driver)
     }
+
+    #[tracing::instrument(
+        name = "driver_service.request_password_reset",
+        skip(self),
+        fields(email = %email)
+    )]
+    async fn request_password_reset(&self, email: String) -> Result<DriverRow, DriverError> {
+        let email = to_email_case(email);
+        let driver = self
+            .driver_database_repository
+            .get_driver_by_email(email)
+            .await?;
+
+        let (redis_key, _) = self
+            .driver_cache_repository
+            .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::ResetPassword);
+        let existing_token = self.driver_cache_repository.get_redis(redis_key).await?;
+
+        if existing_token.is_some() {
+            return Err(DriverError::ResetPasswordTokenAlreadyExists);
+        }
+
+        Ok(driver)
+    }
 }

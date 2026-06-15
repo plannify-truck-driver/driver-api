@@ -250,6 +250,13 @@ pub struct VerifyDriverAccountRequest {
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct RequestPasswordResetRequest {
+    #[validate(email(message = "Invalid email format"))]
+    #[validate(length(max = 255, message = "email cannot be longer than 255 characters"))]
+    pub email: String,
+}
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct UpdateDriverRequest {
     #[validate(length(
         min = 1,

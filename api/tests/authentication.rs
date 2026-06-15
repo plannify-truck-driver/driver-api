@@ -2,7 +2,7 @@ use api::http::common::api_error::ErrorBody;
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{CreateDriverResponse, DriverLimitationRow, DriverSuspensionRow, EntityType},
-        port::DriverDatabaseRepository,
+        port::{DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository},
     },
     employee::port::EmployeeRepository,
 };
@@ -588,4 +588,88 @@ async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut contex
         .delete_driver_suspension(suspension.pk_driver_suspension_id)
         .await
         .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_request_password_reset_success(ctx: &mut context::TestContext) {
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/reset-password")
+        .json(&json!({ "email": "TeST.uSeR@eXaMpLe.Be" }))
+        .await;
+
+    res.assert_status(StatusCode::OK);
+
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_email("test.user@example.be".to_string())
+        .await
+        .unwrap();
+
+    let (redis_key, _) = ctx
+        .repositories
+        .driver_cache_repository
+        .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::ResetPassword);
+    let token = ctx
+        .repositories
+        .driver_cache_repository
+        .get_redis(redis_key)
+        .await
+        .unwrap();
+
+    assert!(token.is_some(), "Reset password token should be stored in Redis");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_request_password_reset_token_already_exists(ctx: &mut context::TestContext) {
+    ctx.unauthenticated_router
+        .post("/authentication/reset-password")
+        .json(&json!({ "email": "test.user@example.be" }))
+        .await
+        .assert_status(StatusCode::OK);
+
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/reset-password")
+        .json(&json!({ "email": "test.user@example.be" }))
+        .await;
+
+    res.assert_status(StatusCode::CONFLICT);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "RESET_PASSWORD_TOKEN_ALREADY_EXISTS");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_request_password_reset_driver_not_found(ctx: &mut context::TestContext) {
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/reset-password")
+        .json(&json!({ "email": "unknown.driver@example.be" }))
+        .await;
+
+    res.assert_status(StatusCode::NOT_FOUND);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "DRIVER_NOT_FOUND");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_request_password_reset_invalid_body(ctx: &mut context::TestContext) {
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/reset-password")
+        .json(&json!({ "email": "not-an-email" }))
+        .await;
+
+    res.assert_status(StatusCode::BAD_REQUEST);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "BODY_VALIDATION");
 }

@@ -192,6 +192,11 @@ pub trait DriverService: Send + Sync {
         &self,
         driver_id: Uuid,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
+    fn request_password_reset(
+        &self,
+        email: String,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 }
 
 #[derive(Clone)]

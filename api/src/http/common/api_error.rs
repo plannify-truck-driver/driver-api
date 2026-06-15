@@ -259,6 +259,9 @@ impl From<DriverError> for ApiError {
             DriverError::InvalidRefreshToken => ApiError::Unauthorized {
                 error_code: "INVALID_REFRESH_TOKEN".to_string(),
             },
+            DriverError::ResetPasswordTokenAlreadyExists => ApiError::Conflict {
+                error_code: "RESET_PASSWORD_TOKEN_ALREADY_EXISTS".to_string(),
+            },
         }
     }
 }

@@ -20,7 +20,7 @@ use plannify_driver_api_core::domain::{
     driver::{
         entities::{
             CreateDriverRequest, CreateDriverResponse, DriverRow, LoginDriverRequest,
-            VerifyDriverAccountRequest,
+            RequestPasswordResetRequest, VerifyDriverAccountRequest,
         },
         port::DriverService,
     },
@@ -283,6 +283,38 @@ pub async fn refresh_token(
         AppendHeaders(headers),
         Response::ok(CreateDriverResponse { access_token }),
     ))
+}
+
+#[tracing::instrument(
+    name = "request_password_reset",
+    skip_all,
+    fields(
+        email = %request.email,
+    )
+)]
+#[utoipa::path(
+    post,
+    path = "/authentication/reset-password",
+    tag = "authentication",
+    security(),
+    request_body = RequestPasswordResetRequest,
+    responses(
+        (status = 200, description = "Password reset email sent successfully"),
+        (status = 404, description = "Driver not found", body = ErrorBody),
+        (status = 409, description = "Reset password token already exists", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn request_password_reset(
+    State(state): State<AppState>,
+    ValidatedJson(request): ValidatedJson<RequestPasswordResetRequest>,
+) -> Result<Response<()>, ApiError> {
+    let driver = state
+        .service
+        .request_password_reset(request.email)
+        .await?;
+    state.service.send_reset_password_email(driver).await?;
+    Ok(Response::ok(()))
 }
 
 #[tracing::instrument(name = "delete_refresh_token", skip_all)]
