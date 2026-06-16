@@ -689,6 +689,8 @@ async fn test_confirm_password_reset_success(ctx: &mut context::TestContext) {
         .await
         .unwrap();
 
+    let original_driver = driver.clone();
+
     let (redis_key, redis_ttl) = ctx
         .repositories
         .driver_cache_repository
@@ -731,6 +733,12 @@ async fn test_confirm_password_reset_success(ctx: &mut context::TestContext) {
         }))
         .await;
     res_login.assert_status(StatusCode::OK);
+
+    ctx.repositories
+        .driver_database_repository
+        .update_driver(original_driver)
+        .await
+        .unwrap();
 }
 
 #[test_context(context::TestContext)]
