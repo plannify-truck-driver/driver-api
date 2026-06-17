@@ -129,6 +129,11 @@ pub trait MailDatabaseRepository: Send + Sync {
         year: i32,
     ) -> impl Future<Output = Result<bool, MailError>> + Send;
 
+    fn has_document_at_path(
+        &self,
+        s3_file_path: &str,
+    ) -> impl Future<Output = Result<bool, MailError>> + Send;
+
     fn create_document(
         &self,
         s3_file_path: String,
@@ -407,6 +412,10 @@ impl MailDatabaseRepository for MockMailDatabaseRepository {
                 && m.created_at.year() == year
         });
         Ok(found)
+    }
+
+    async fn has_document_at_path(&self, _s3_file_path: &str) -> Result<bool, MailError> {
+        Ok(false)
     }
 
     async fn create_document(

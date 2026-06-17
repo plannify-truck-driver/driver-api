@@ -323,6 +323,27 @@ impl MailDatabaseRepository for PostgresMailRepository {
     }
 
     #[tracing::instrument(
+        name = "db.mails.has_document_at_path",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "SELECT", s3_file_path = %s3_file_path)
+    )]
+    async fn has_document_at_path(&self, s3_file_path: &str) -> Result<bool, MailError> {
+        let count = sqlx::query_scalar!(
+            r#"SELECT COUNT(*) FROM documents WHERE s3_file_path = $1"#,
+            s3_file_path,
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to check document at path {}: {:?}", s3_file_path, e);
+            MailError::DatabaseError
+        })?
+        .unwrap_or(0);
+
+        Ok(count > 0)
+    }
+
+    #[tracing::instrument(
         name = "db.mails.create_document",
         skip(self),
         fields(db.system = "postgresql", db.operation = "INSERT")

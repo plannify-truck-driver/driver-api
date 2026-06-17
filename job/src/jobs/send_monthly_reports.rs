@@ -102,6 +102,33 @@ where
             }
         }
 
+        let s3_key = format!(
+            "drivers/{}/mails/monthly-{}-{:02}.pdf",
+            driver_id, year, month
+        );
+
+        match mail_db.has_document_at_path(&s3_key).await {
+            Ok(true) => {
+                warn!(
+                    driver_id = %driver_id,
+                    "Document already exists at {} for mail type 4, skipping",
+                    s3_key
+                );
+                skipped += 1;
+                continue;
+            }
+            Ok(false) => {}
+            Err(e) => {
+                failed += 1;
+                error!(
+                    driver_id = %driver_id,
+                    error = ?e,
+                    "Failed to check existing document"
+                );
+                continue;
+            }
+        }
+
         let pdf = match workday_service
             .get_workday_document_by_month(driver_id, month, year)
             .await
@@ -131,10 +158,6 @@ where
         };
 
         let file_name = format!("workdays-{}-{:02}.pdf", year, month);
-        let s3_key = format!(
-            "drivers/{}/mails/monthly-{}-{:02}.pdf",
-            driver_id, year, month
-        );
 
         if let Err(e) = storage
             .upload(&s3_key, pdf.clone(), "application/pdf")

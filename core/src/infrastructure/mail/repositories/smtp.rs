@@ -288,7 +288,8 @@ impl MailSmtpRepository for SmtpMailRepository {
 
         let mut context = Context::new();
         context.insert("full_name", driver.firstname.as_str());
-        context.insert("month", &month);
+        let month_padded = format!("{:02}", month);
+        context.insert("month", &month_padded);
         context.insert("year", &year);
 
         let template_path = format!("{}/monthly_report.html", driver.language.as_str());
@@ -298,8 +299,8 @@ impl MailSmtpRepository for SmtpMailRepository {
         })?;
 
         let subject = match driver.language.as_str() {
-            "fr" => format!("Votre rapport mensuel Plannify - {}/{}", month, year),
-            "en" => format!("Your Plannify monthly report - {}/{}", month, year),
+            "fr" => format!("Votre rapport mensuel Plannify - {}/{}", month_padded, year),
+            "en" => format!("Your Plannify monthly report - {}/{}", month_padded, year),
             _ => {
                 error!("Unsupported driver language: {}", driver.language);
                 return Err(MailError::Internal);
