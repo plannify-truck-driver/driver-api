@@ -261,6 +261,7 @@ impl S3Config {
 #[derive(Clone, Debug, ValueEnum, Default, PartialEq)]
 pub enum Environment {
     #[default]
+    Local,
     Development,
     Production,
     Test,

@@ -165,14 +165,15 @@ impl App {
             api.servers = Some(vec![utoipa::openapi::Server::new(
                 "https://api.plannify.be/driver/v1",
             )]);
+        } else if config.environment.eq(&Environment::Development) {
+            api.servers = Some(vec![utoipa::openapi::Server::new(
+                "https://api-dev.plannify.be/driver/v1",
+            )]);
         } else {
-            api.servers = Some(vec![
-                utoipa::openapi::Server::new("https://api-dev.plannify.be/driver/v1"),
-                utoipa::openapi::Server::new(format!(
-                    "http://localhost:{}",
-                    config.common.api_port
-                )),
-            ]);
+            api.servers = Some(vec![utoipa::openapi::Server::new(format!(
+                "http://localhost:{}",
+                config.common.api_port
+            ))]);
         }
 
         let openapi_json = api.to_pretty_json().map_err(|e| ApiError::StartupError {
