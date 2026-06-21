@@ -6,10 +6,7 @@ use axum_extra::extract::CookieJar;
 
 use tracing::error;
 
-use crate::http::common::{
-    api_error::ApiError,
-    middleware::auth::entities::TokenValidator,
-};
+use crate::http::common::{api_error::ApiError, middleware::auth::entities::TokenValidator};
 pub mod entities;
 
 pub struct AuthMiddleware;

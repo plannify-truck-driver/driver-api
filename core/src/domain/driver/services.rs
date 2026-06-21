@@ -238,10 +238,7 @@ where
         Ok(driver)
     }
 
-    async fn get_driver_for_refresh(
-        &self,
-        driver_id: Uuid,
-    ) -> Result<DriverRow, DriverError> {
+    async fn get_driver_for_refresh(&self, driver_id: Uuid) -> Result<DriverRow, DriverError> {
         let driver = self
             .driver_database_repository
             .get_driver_by_id(driver_id)
