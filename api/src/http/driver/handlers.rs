@@ -3,7 +3,7 @@ use plannify_driver_api_core::domain::{
     driver::{
         entities::{
             CreateDriverResponse, CreateDriverRestPeriodsRequest, DriverRestPeriod, DriverRow,
-            GetDriverResponse, UpdateDriverRequest,
+            GetDriverLimitationResponse, GetDriverResponse, UpdateDriverRequest,
         },
         port::DriverService,
     },
@@ -325,4 +325,30 @@ pub async fn reactivate_driver(
     state.service.send_reactivation_email(driver).await?;
 
     Ok(Response::ok(()))
+}
+
+#[tracing::instrument(name = "get_current_limitation", skip_all)]
+#[utoipa::path(
+    get,
+    path = "/limitation",
+    tag = "driver",
+    description = "Retrieve the current active driver registration limitation, if any.",
+    security(),
+    responses(
+        (status = 200, description = "Current limitation retrieved successfully", body = Option<GetDriverLimitationResponse>),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_current_limitation(
+    State(state): State<AppState>,
+) -> Result<Response<Option<GetDriverLimitationResponse>>, ApiError> {
+    let limitation = state.service.get_current_limitation().await?;
+
+    Ok(Response::ok(limitation.map(|l| {
+        GetDriverLimitationResponse {
+            maximum_limit: l.maximum_limit,
+            start_at: l.start_at,
+            end_at: l.end_at,
+        }
+    })))
 }

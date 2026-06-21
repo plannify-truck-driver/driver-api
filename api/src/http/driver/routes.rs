@@ -4,9 +4,10 @@ use crate::{
     AppState,
     http::driver::handlers::{
         __path_deactivate_driver, __path_delete_rest_periods, __path_get_all_rest_periods,
-        __path_get_driver_info, __path_reactivate_driver, __path_set_rest_periods,
-        __path_update_driver_info, deactivate_driver, delete_rest_periods, get_all_rest_periods,
-        get_driver_info, reactivate_driver, set_rest_periods, update_driver_info,
+        __path_get_current_limitation, __path_get_driver_info, __path_reactivate_driver,
+        __path_set_rest_periods, __path_update_driver_info, deactivate_driver, delete_rest_periods,
+        get_all_rest_periods, get_current_limitation, get_driver_info, reactivate_driver,
+        set_rest_periods, update_driver_info,
     },
 };
 
@@ -19,4 +20,8 @@ pub fn driver_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(update_driver_info))
         .routes(routes!(deactivate_driver))
         .routes(routes!(reactivate_driver))
+}
+
+pub fn public_driver_routes() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new().routes(routes!(get_current_limitation))
 }

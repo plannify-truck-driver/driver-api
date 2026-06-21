@@ -1,14 +1,21 @@
 use api::http::common::api_error::ErrorBody;
 use api::http::common::middleware::auth::entities::AccessClaims;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
-use plannify_driver_api_core::domain::driver::{
-    entities::{CreateDriverResponse, DriverRestPeriod},
-    port::DriverDatabaseRepository,
+use plannify_driver_api_core::domain::{
+    driver::{
+        entities::{
+            CreateDriverResponse, DriverLimitationRow, DriverRestPeriod, EntityType,
+            GetDriverLimitationResponse,
+        },
+        port::{DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository},
+    },
+    employee::port::EmployeeRepository,
 };
 use reqwest::StatusCode;
 use serde_json::json;
 use serial_test::serial;
 use test_context::test_context;
+use uuid::Uuid;
 
 pub mod context;
 pub mod helpers;
@@ -1289,6 +1296,273 @@ async fn test_deactivate_then_reactivate_full_cycle(ctx: &mut context::TestConte
     ctx.repositories
         .driver_database_repository
         .update_driver(original)
+        .await
+        .unwrap();
+}
+
+// ── GET /limitation ─────────────────────────────────────────────────────────
+
+fn active_limitation(employee_id: Uuid, maximum_limit: i32) -> DriverLimitationRow {
+    let now = chrono::Utc::now();
+    DriverLimitationRow {
+        pk_maximum_entity_limit_id: 0,
+        entity_type: EntityType::DRIVER,
+        maximum_limit,
+        fk_created_employee_id: employee_id,
+        start_at: now - chrono::Duration::hours(1),
+        end_at: None,
+        created_at: now,
+    }
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_current_limitation_is_public(ctx: &mut context::TestContext) {
+    // Endpoint must be reachable without an auth token
+    ctx.unauthenticated_router
+        .get("/limitation")
+        .await
+        .assert_status(StatusCode::OK);
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_current_limitation_no_active_limitation(ctx: &mut context::TestContext) {
+    // No limitation row in DB → body must be null
+    let res = ctx.unauthenticated_router.get("/limitation").await;
+
+    res.assert_status(StatusCode::OK);
+    let body: Option<GetDriverLimitationResponse> = res.json();
+    assert!(
+        body.is_none(),
+        "body must be null when no limitation is active"
+    );
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_current_limitation_active_open_ended(ctx: &mut context::TestContext) {
+    let employee = ctx
+        .repositories
+        .employee_repository
+        .get_first_employee()
+        .await
+        .unwrap()
+        .unwrap();
+
+    let row = active_limitation(employee.pk_employee_id, 50);
+    let created = ctx
+        .repositories
+        .driver_database_repository
+        .create_driver_limitation(row)
+        .await
+        .unwrap();
+
+    let res = ctx.unauthenticated_router.get("/limitation").await;
+    res.assert_status(StatusCode::OK);
+    let body: Option<GetDriverLimitationResponse> = res.json();
+    let body = body.expect("body must not be null when a limitation is active");
+
+    assert_eq!(body.maximum_limit, 50);
+    assert!(
+        body.end_at.is_none(),
+        "end_at must be null for an open-ended limitation"
+    );
+
+    ctx.repositories
+        .driver_database_repository
+        .delete_driver_limitation(created.pk_maximum_entity_limit_id)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_current_limitation_active_with_end_date(ctx: &mut context::TestContext) {
+    let employee = ctx
+        .repositories
+        .employee_repository
+        .get_first_employee()
+        .await
+        .unwrap()
+        .unwrap();
+
+    let now = chrono::Utc::now();
+    let row = DriverLimitationRow {
+        pk_maximum_entity_limit_id: 0,
+        entity_type: EntityType::DRIVER,
+        maximum_limit: 100,
+        fk_created_employee_id: employee.pk_employee_id,
+        start_at: now - chrono::Duration::hours(1),
+        end_at: Some(now + chrono::Duration::days(30)),
+        created_at: now,
+    };
+    let created = ctx
+        .repositories
+        .driver_database_repository
+        .create_driver_limitation(row)
+        .await
+        .unwrap();
+
+    let res = ctx.unauthenticated_router.get("/limitation").await;
+    res.assert_status(StatusCode::OK);
+    let body: Option<GetDriverLimitationResponse> = res.json();
+    let body = body.expect("body must not be null for a limitation with a future end date");
+
+    assert_eq!(body.maximum_limit, 100);
+    assert!(body.end_at.is_some(), "end_at must be present");
+
+    ctx.repositories
+        .driver_database_repository
+        .delete_driver_limitation(created.pk_maximum_entity_limit_id)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_current_limitation_expired_not_returned(ctx: &mut context::TestContext) {
+    let employee = ctx
+        .repositories
+        .employee_repository
+        .get_first_employee()
+        .await
+        .unwrap()
+        .unwrap();
+
+    let now = chrono::Utc::now();
+    let row = DriverLimitationRow {
+        pk_maximum_entity_limit_id: 0,
+        entity_type: EntityType::DRIVER,
+        maximum_limit: 10,
+        fk_created_employee_id: employee.pk_employee_id,
+        start_at: now - chrono::Duration::days(30),
+        end_at: Some(now - chrono::Duration::days(1)),
+        created_at: now,
+    };
+    let created = ctx
+        .repositories
+        .driver_database_repository
+        .create_driver_limitation(row)
+        .await
+        .unwrap();
+
+    let res = ctx.unauthenticated_router.get("/limitation").await;
+    res.assert_status(StatusCode::OK);
+    let body: Option<GetDriverLimitationResponse> = res.json();
+    assert!(body.is_none(), "an expired limitation must not be returned");
+
+    ctx.repositories
+        .driver_database_repository
+        .delete_driver_limitation(created.pk_maximum_entity_limit_id)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_current_limitation_future_not_returned(ctx: &mut context::TestContext) {
+    let employee = ctx
+        .repositories
+        .employee_repository
+        .get_first_employee()
+        .await
+        .unwrap()
+        .unwrap();
+
+    let now = chrono::Utc::now();
+    let row = DriverLimitationRow {
+        pk_maximum_entity_limit_id: 0,
+        entity_type: EntityType::DRIVER,
+        maximum_limit: 10,
+        fk_created_employee_id: employee.pk_employee_id,
+        start_at: now + chrono::Duration::days(1),
+        end_at: Some(now + chrono::Duration::days(30)),
+        created_at: now,
+    };
+    let created = ctx
+        .repositories
+        .driver_database_repository
+        .create_driver_limitation(row)
+        .await
+        .unwrap();
+
+    let res = ctx.unauthenticated_router.get("/limitation").await;
+    res.assert_status(StatusCode::OK);
+    let body: Option<GetDriverLimitationResponse> = res.json();
+    assert!(
+        body.is_none(),
+        "a limitation that hasn't started yet must not be returned"
+    );
+
+    ctx.repositories
+        .driver_database_repository
+        .delete_driver_limitation(created.pk_maximum_entity_limit_id)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_current_limitation_result_is_cached(ctx: &mut context::TestContext) {
+    let employee = ctx
+        .repositories
+        .employee_repository
+        .get_first_employee()
+        .await
+        .unwrap()
+        .unwrap();
+
+    let row = active_limitation(employee.pk_employee_id, 75);
+    let created = ctx
+        .repositories
+        .driver_database_repository
+        .create_driver_limitation(row)
+        .await
+        .unwrap();
+
+    // First call → cache miss, DB fetch, stored in Redis
+    ctx.unauthenticated_router
+        .get("/limitation")
+        .await
+        .assert_status(StatusCode::OK);
+
+    // Cache key must now exist in Redis
+    let (cache_key, _) = ctx
+        .repositories
+        .driver_cache_repository
+        .get_key_by_type(Uuid::nil(), DriverCacheKeyType::CurrentLimitation);
+    let cached = ctx
+        .repositories
+        .driver_cache_repository
+        .get_redis(cache_key)
+        .await
+        .unwrap();
+    assert!(
+        cached.is_some(),
+        "result must be stored in Redis after the first call"
+    );
+
+    // Second call → cache hit, same data
+    let res2 = ctx.unauthenticated_router.get("/limitation").await;
+    res2.assert_status(StatusCode::OK);
+    let body: Option<GetDriverLimitationResponse> = res2.json();
+    assert_eq!(
+        body.map(|b| b.maximum_limit),
+        Some(75),
+        "cached response must return the same maximum_limit"
+    );
+
+    ctx.repositories
+        .driver_database_repository
+        .delete_driver_limitation(created.pk_maximum_entity_limit_id)
         .await
         .unwrap();
 }

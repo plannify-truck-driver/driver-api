@@ -536,6 +536,45 @@
         "security": []
       }
     },
+    "/limitation": {
+      "get": {
+        "tags": [
+          "driver"
+        ],
+        "description": "Retrieve the current active driver registration limitation, if any.",
+        "operationId": "get_current_limitation",
+        "responses": {
+          "200": {
+            "description": "Current limitation retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GetDriverLimitationResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/mails": {
       "get": {
         "tags": [
@@ -2429,6 +2468,30 @@
             "type": "integer",
             "format": "int32",
             "minimum": 0
+          }
+        }
+      },
+      "GetDriverLimitationResponse": {
+        "type": "object",
+        "required": [
+          "maximum_limit",
+          "start_at"
+        ],
+        "properties": {
+          "end_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "maximum_limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

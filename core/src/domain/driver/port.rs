@@ -216,6 +216,10 @@ pub trait DriverService: Send + Sync {
         token: String,
         new_password: String,
     ) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    fn get_current_limitation(
+        &self,
+    ) -> impl Future<Output = Result<Option<DriverLimitationRow>, DriverError>> + Send;
 }
 
 #[derive(Clone)]
@@ -473,6 +477,7 @@ impl DriverDatabaseRepository for MockDriverDatabaseRepository {
 pub enum DriverCacheKeyType {
     VerifyEmail,
     ResetPassword,
+    CurrentLimitation,
 }
 
 impl DriverCacheKeyType {
@@ -480,6 +485,7 @@ impl DriverCacheKeyType {
         match self {
             DriverCacheKeyType::VerifyEmail => "verify_email",
             DriverCacheKeyType::ResetPassword => "reset_password",
+            DriverCacheKeyType::CurrentLimitation => "current_limitation",
         }
     }
 
@@ -487,6 +493,7 @@ impl DriverCacheKeyType {
         match self {
             DriverCacheKeyType::VerifyEmail => 15 * 60,
             DriverCacheKeyType::ResetPassword => 15 * 60,
+            DriverCacheKeyType::CurrentLimitation => 5 * 60,
         }
     }
 }

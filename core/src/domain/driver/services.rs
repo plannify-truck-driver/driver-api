@@ -4,8 +4,8 @@ use crate::{
         document::port::DocumentExternalRepository,
         driver::{
             entities::{
-                CreateDriverRequest, CreateDriverRestPeriodRequest, DriverRestPeriod, DriverRow,
-                LoginDriverRequest, UpdateDriverRequest,
+                CreateDriverRequest, CreateDriverRestPeriodRequest, DriverLimitationRow,
+                DriverRestPeriod, DriverRow, LoginDriverRequest, UpdateDriverRequest,
             },
             port::{
                 DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository, DriverService,
@@ -25,6 +25,7 @@ use argon2::{
     password_hash::PasswordHash,
     password_hash::{PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
+use serde_json;
 use tracing::error;
 use uuid::Uuid;
 
@@ -652,5 +653,35 @@ where
         self.driver_cache_repository.delete_redis(redis_key).await?;
 
         Ok(())
+    }
+
+    #[tracing::instrument(name = "driver_service.get_current_limitation", skip(self))]
+    async fn get_current_limitation(&self) -> Result<Option<DriverLimitationRow>, DriverError> {
+        let (key, ttl) = self
+            .driver_cache_repository
+            .get_key_by_type(Uuid::nil(), DriverCacheKeyType::CurrentLimitation);
+
+        if let Some(cached) = self.driver_cache_repository.get_redis(key.clone()).await? {
+            return serde_json::from_str(&cached).map_err(|e| {
+                error!("Failed to deserialize current limitation from cache: {}", e);
+                DriverError::Internal
+            });
+        }
+
+        let limitation = self
+            .driver_database_repository
+            .get_actual_driver_limitation()
+            .await?;
+
+        let serialized = serde_json::to_string(&limitation).map_err(|e| {
+            error!("Failed to serialize current limitation for cache: {}", e);
+            DriverError::Internal
+        })?;
+
+        self.driver_cache_repository
+            .set_redis(key, serialized, ttl)
+            .await?;
+
+        Ok(limitation)
     }
 }

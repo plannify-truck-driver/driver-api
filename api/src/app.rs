@@ -30,7 +30,7 @@ use crate::{
         },
         common::middleware::{auth::AuthRefreshMiddleware, tracing::tracing_middleware},
         config::routes::config_routes,
-        driver::routes::driver_routes,
+        driver::routes::{driver_routes, public_driver_routes},
         formating::routes::formating_routes,
         mail::routes::mail_routes,
         update::routes::update_routes,
@@ -137,6 +137,7 @@ impl App {
             .merge(protected_router)
             .merge(authentication_routes())
             .merge(unauthenticated_routes())
+            .merge(public_driver_routes())
             .merge(formating_routes())
             .merge(update_routes())
             .layer(cors)
