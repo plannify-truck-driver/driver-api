@@ -30,7 +30,6 @@ pub struct DriverRow {
     pub verified_at: Option<DateTime<Utc>>,
     pub last_login_at: Option<DateTime<Utc>>,
     pub deactivated_at: Option<DateTime<Utc>>,
-    pub refresh_token_hash: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]

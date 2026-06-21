@@ -66,9 +66,6 @@ impl AuthValidator {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct RawRefreshToken(pub String);
-
 pub trait TokenValidator: Send + Sync {
     fn create_tokens(&self, driver: &DriverRow) -> Result<(String, String), ApiError>;
     fn validate_token(&self, token: &str) -> Result<UserIdentity, ApiError>;

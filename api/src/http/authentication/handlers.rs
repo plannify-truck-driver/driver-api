@@ -15,7 +15,7 @@ type RefreshResponse = Result<
     ),
     ApiError,
 >;
-use crate::http::common::middleware::auth::entities::RawRefreshToken;
+
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{
@@ -245,11 +245,10 @@ pub async fn verify_driver_account(
 pub async fn refresh_token(
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
-    Extension(raw_refresh_token): Extension<RawRefreshToken>,
 ) -> AuthResponse {
     let driver = state
         .service
-        .get_driver_for_refresh(user_identity.user_id, &raw_refresh_token.0)
+        .get_driver_for_refresh(user_identity.user_id)
         .await?;
 
     let auth_validator = &state.auth_validator;

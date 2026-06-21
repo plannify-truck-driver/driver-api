@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE drivers\n            SET firstname = $1,\n                lastname = $2,\n                gender = $3,\n                email = $4,\n                password_hash = $5,\n                phone_number = $6,\n                is_searchable = $7,\n                allow_request_professional_agreement = $8,\n                language = $9,\n                rest_json = $10,\n                mail_preferences = $11,\n                verified_at = $12,\n                last_login_at = $13,\n                deactivated_at = $14,\n                refresh_token_hash = $15\n            WHERE pk_driver_id = $16\n            RETURNING *\n            ",
+  "query": "\n            UPDATE drivers\n            SET firstname = $1,\n                lastname = $2,\n                gender = $3,\n                email = $4,\n                password_hash = $5,\n                phone_number = $6,\n                is_searchable = $7,\n                allow_request_professional_agreement = $8,\n                language = $9,\n                rest_json = $10,\n                mail_preferences = $11,\n                verified_at = $12,\n                last_login_at = $13,\n                deactivated_at = $14\n            WHERE pk_driver_id = $15\n            RETURNING *\n            ",
   "describe": {
     "columns": [
       {
@@ -82,11 +82,6 @@
         "ordinal": 15,
         "name": "deactivated_at",
         "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 16,
-        "name": "refresh_token_hash",
-        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -105,7 +100,6 @@
         "Timestamptz",
         "Timestamptz",
         "Timestamptz",
-        "Text",
         "Uuid"
       ]
     },
@@ -125,9 +119,8 @@
       false,
       true,
       true,
-      true,
       true
     ]
   },
-  "hash": "59f32eace6e0ae3c382a8eb278c1322c165327070e45eb9ae177e36a270c5be2"
+  "hash": "926e06a47409b20e2f2aa80f205e8cfde17386981ca66835f72425acc16ced27"
 }

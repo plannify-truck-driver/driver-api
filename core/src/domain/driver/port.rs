@@ -154,7 +154,6 @@ pub trait DriverService: Send + Sync {
     fn get_driver_for_refresh(
         &self,
         driver_id: Uuid,
-        raw_refresh_token: &str,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 
     fn generate_tokens<F>(
@@ -292,7 +291,6 @@ impl DriverDatabaseRepository for MockDriverDatabaseRepository {
             verified_at: None,
             last_login_at: None,
             deactivated_at: None,
-            refresh_token_hash: None,
         };
 
         drivers.push(new_driver.clone());

@@ -241,30 +241,12 @@ where
     async fn get_driver_for_refresh(
         &self,
         driver_id: Uuid,
-        raw_refresh_token: &str,
     ) -> Result<DriverRow, DriverError> {
         let driver = self
             .driver_database_repository
             .get_driver_by_id(driver_id)
             .await?
             .ok_or(DriverError::InvalidRefreshToken)?;
-
-        let stored_hash = driver
-            .refresh_token_hash
-            .as_deref()
-            .ok_or(DriverError::InvalidRefreshToken)?;
-
-        let parsed_hash = PasswordHash::new(stored_hash).map_err(|e| {
-            error!(
-                "Failed to parse refresh token hash for driver {}: {}",
-                driver_id, e
-            );
-            DriverError::Internal
-        })?;
-
-        Argon2::default()
-            .verify_password(raw_refresh_token.as_bytes(), &parsed_hash)
-            .map_err(|_| DriverError::InvalidRefreshToken)?;
 
         Ok(driver)
     }
@@ -309,24 +291,6 @@ where
             refresh_token, domain, refresh_ttl
         );
 
-        let salt = SaltString::generate(&mut OsRng);
-        let params = Params::new(19 * 1024, 2, 1, None).map_err(|e| {
-            error!(
-                "Failed to create Argon2 params for refresh token hashing: {}",
-                e
-            );
-            DriverError::Internal
-        })?; // 19 MiB, 2 itérations, 1 thread
-        let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
-
-        let token_hash = argon2
-            .hash_password(refresh_token.as_bytes(), &salt)
-            .map_err(|e| {
-                error!("Failed to hash refresh token: {}", e);
-                DriverError::Internal
-            })?;
-
-        driver.refresh_token_hash = Some(token_hash.to_string());
         driver.last_login_at = Some(chrono::Utc::now());
         self.driver_database_repository
             .update_driver(driver)

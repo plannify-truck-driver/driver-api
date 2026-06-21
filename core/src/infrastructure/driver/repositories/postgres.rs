@@ -168,9 +168,8 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
                 mail_preferences = $11,
                 verified_at = $12,
                 last_login_at = $13,
-                deactivated_at = $14,
-                refresh_token_hash = $15
-            WHERE pk_driver_id = $16
+                deactivated_at = $14
+            WHERE pk_driver_id = $15
             RETURNING *
             "#,
             driver.firstname,
@@ -187,7 +186,6 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
             driver.verified_at,
             driver.last_login_at,
             driver.deactivated_at,
-            driver.refresh_token_hash,
             driver.pk_driver_id
         )
         .fetch_one(&self.pool)

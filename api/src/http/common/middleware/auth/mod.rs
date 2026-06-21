@@ -8,7 +8,7 @@ use tracing::error;
 
 use crate::http::common::{
     api_error::ApiError,
-    middleware::auth::entities::{RawRefreshToken, TokenValidator},
+    middleware::auth::entities::TokenValidator,
 };
 pub mod entities;
 
@@ -95,7 +95,6 @@ where
         let user_identity = state.validate_refresh_token(&token)?;
 
         parts.extensions.insert(user_identity);
-        parts.extensions.insert(RawRefreshToken(token));
         Ok(Self)
     }
 }
