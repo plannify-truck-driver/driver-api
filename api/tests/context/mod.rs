@@ -129,6 +129,17 @@ impl AsyncTestContext for TestContext {
         .await
         .expect("Failed to create repositories");
 
+        // Clean stale state from previous test runs
+        let mut redis_conn = repositories.redis_manager.clone();
+        let _: () = redis::cmd("FLUSHDB")
+            .query_async(&mut redis_conn)
+            .await
+            .unwrap_or(());
+        sqlx::query("DELETE FROM maximum_entity_limits")
+            .execute(&repositories.pool)
+            .await
+            .ok();
+
         // Seed Garage with the PDF files referenced in config/test-dataset.sql
         // (workday_documents rows). These are cleaned up in teardown().
         for (s3_key, file_name) in S3_TEST_FILES {
