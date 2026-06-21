@@ -185,7 +185,7 @@ impl MailSmtpRepository for SmtpMailRepository {
         context.insert(
             "token_url",
             &format!(
-                "{}/authentication/reset-password?token={}&id={}",
+                "{}/authentication/token/reset-password?token={}&id={}",
                 self.frontend_url,
                 reset_value.as_str(),
                 driver.pk_driver_id
