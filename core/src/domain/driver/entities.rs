@@ -118,7 +118,6 @@ pub struct LoginDriverRequest {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GetDriverLimitationResponse {
-    pub maximum_limit: i32,
     pub start_at: DateTime<Utc>,
     pub end_at: Option<DateTime<Utc>>,
 }

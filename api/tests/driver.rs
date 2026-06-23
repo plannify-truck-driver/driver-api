@@ -1353,7 +1353,7 @@ async fn test_get_current_limitation_active_open_ended(ctx: &mut context::TestCo
         .unwrap()
         .unwrap();
 
-    let row = active_limitation(employee.pk_employee_id, 50);
+    let row = active_limitation(employee.pk_employee_id, 1);
     let created = ctx
         .repositories
         .driver_database_repository
@@ -1366,7 +1366,6 @@ async fn test_get_current_limitation_active_open_ended(ctx: &mut context::TestCo
     let body: Option<GetDriverLimitationResponse> = res.json();
     let body = body.expect("body must not be null when a limitation is active");
 
-    assert_eq!(body.maximum_limit, 50);
     assert!(
         body.end_at.is_none(),
         "end_at must be null for an open-ended limitation"
@@ -1395,7 +1394,7 @@ async fn test_get_current_limitation_active_with_end_date(ctx: &mut context::Tes
     let row = DriverLimitationRow {
         pk_maximum_entity_limit_id: 0,
         entity_type: EntityType::DRIVER,
-        maximum_limit: 100,
+        maximum_limit: 1,
         fk_created_employee_id: employee.pk_employee_id,
         start_at: now - chrono::Duration::hours(1),
         end_at: Some(now + chrono::Duration::days(30)),
@@ -1413,7 +1412,6 @@ async fn test_get_current_limitation_active_with_end_date(ctx: &mut context::Tes
     let body: Option<GetDriverLimitationResponse> = res.json();
     let body = body.expect("body must not be null for a limitation with a future end date");
 
-    assert_eq!(body.maximum_limit, 100);
     assert!(body.end_at.is_some(), "end_at must be present");
 
     ctx.repositories
@@ -1520,7 +1518,7 @@ async fn test_get_current_limitation_result_is_cached(ctx: &mut context::TestCon
         .unwrap()
         .unwrap();
 
-    let row = active_limitation(employee.pk_employee_id, 75);
+    let row = active_limitation(employee.pk_employee_id, 1);
     let created = ctx
         .repositories
         .driver_database_repository
@@ -1553,11 +1551,40 @@ async fn test_get_current_limitation_result_is_cached(ctx: &mut context::TestCon
     // Second call → cache hit, same data
     let res2 = ctx.unauthenticated_router.get("/limitation").await;
     res2.assert_status(StatusCode::OK);
-    let body: Option<GetDriverLimitationResponse> = res2.json();
-    assert_eq!(
-        body.map(|b| b.maximum_limit),
-        Some(75),
-        "cached response must return the same maximum_limit"
+
+    ctx.repositories
+        .driver_database_repository
+        .delete_driver_limitation(created.pk_maximum_entity_limit_id)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_current_limitation_with_more_limits(ctx: &mut context::TestContext) {
+    let employee = ctx
+        .repositories
+        .employee_repository
+        .get_first_employee()
+        .await
+        .unwrap()
+        .unwrap();
+
+    let row = active_limitation(employee.pk_employee_id, 100);
+    let created = ctx
+        .repositories
+        .driver_database_repository
+        .create_driver_limitation(row)
+        .await
+        .unwrap();
+
+    let res = ctx.unauthenticated_router.get("/limitation").await;
+    res.assert_status(StatusCode::OK);
+    let body: Option<GetDriverLimitationResponse> = res.json();
+    assert!(
+        body.is_none(),
+        "The limitation must not be returned when the limit is higher than the current number of drivers"
     );
 
     ctx.repositories

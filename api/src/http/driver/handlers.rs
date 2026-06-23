@@ -346,7 +346,6 @@ pub async fn get_current_limitation(
 
     Ok(Response::ok(limitation.map(|l| {
         GetDriverLimitationResponse {
-            maximum_limit: l.maximum_limit,
             start_at: l.start_at,
             end_at: l.end_at,
         }

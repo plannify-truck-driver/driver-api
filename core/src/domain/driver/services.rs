@@ -673,6 +673,13 @@ where
             .get_actual_driver_limitation()
             .await?;
 
+        let current_drivers = self
+            .driver_database_repository
+            .get_number_of_drivers()
+            .await?;
+
+        let limitation = limitation.filter(|l| l.maximum_limit as i64 <= current_drivers);
+
         let serialized = serde_json::to_string(&limitation).map_err(|e| {
             error!("Failed to serialize current limitation for cache: {}", e);
             DriverError::Internal
