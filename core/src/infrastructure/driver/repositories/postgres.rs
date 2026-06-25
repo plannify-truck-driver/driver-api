@@ -119,8 +119,11 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         sqlx::query_as!(
             DriverRow,
             r#"
-            INSERT INTO drivers (firstname, lastname, gender, email, password_hash, language)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO drivers (firstname, lastname, gender, email, password_hash, language, mail_preferences)
+            VALUES (
+                $1, $2, $3, $4, $5, $6,
+                (SELECT COALESCE(SUM(POWER(2, pk_driver_mail_type_id - 1))::integer, 0) FROM driver_mail_types)
+            )
             RETURNING *
             "#,
             create_request.firstname,

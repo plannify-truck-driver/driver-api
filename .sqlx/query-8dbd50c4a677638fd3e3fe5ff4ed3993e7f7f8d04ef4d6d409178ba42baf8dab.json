@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO drivers (firstname, lastname, gender, email, password_hash, language)\n            VALUES ($1, $2, $3, $4, $5, $6)\n            RETURNING *\n            ",
+  "query": "\n            INSERT INTO drivers (firstname, lastname, gender, email, password_hash, language, mail_preferences)\n            VALUES (\n                $1, $2, $3, $4, $5, $6,\n                (SELECT COALESCE(SUM(POWER(2, pk_driver_mail_type_id - 1))::integer, 0) FROM driver_mail_types)\n            )\n            RETURNING *\n            ",
   "describe": {
     "columns": [
       {
@@ -113,5 +113,5 @@
       true
     ]
   },
-  "hash": "c2720eecae2a44e896990e56af68f5090fa5b813d0fb0444bb640e4c19494a56"
+  "hash": "8dbd50c4a677638fd3e3fe5ff4ed3993e7f7f8d04ef4d6d409178ba42baf8dab"
 }
