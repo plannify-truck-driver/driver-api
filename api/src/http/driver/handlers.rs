@@ -212,7 +212,8 @@ pub async fn update_driver_info(
     Extension(user_identity): Extension<UserIdentity>,
     ValidatedJson(request): ValidatedJson<UpdateDriverRequest>,
 ) -> UpdateDriverResponse {
-    let (driver, email_changed) = state
+    let previous_email = request.email.clone();
+    let (driver, email_changed, password_changed) = state
         .service
         .update_driver_info(
             user_identity.user_id,
@@ -227,6 +228,20 @@ pub async fn update_driver_info(
         state
             .service
             .send_email_change_verification(driver.clone())
+            .await?;
+
+        let mut previous_driver = driver.clone();
+        previous_driver.email = previous_email.unwrap_or_else(|| driver.email.clone());
+        state
+            .service
+            .send_email_change_notification(previous_driver)
+            .await?;
+    }
+
+    if password_changed {
+        state
+            .service
+            .send_password_change_notification(driver.clone())
             .await?;
     }
 

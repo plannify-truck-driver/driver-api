@@ -25,4 +25,7 @@ pub enum MailError {
 
     #[error("Mail attachment not found")]
     MailAttachmentNotFound,
+
+    #[error("Mail preference is disabled")]
+    MailPreferenceDisabled,
 }

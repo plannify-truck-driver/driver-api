@@ -445,7 +445,7 @@ where
         driver_id: Uuid,
         update_request: UpdateDriverRequest,
         email_list_deny: Vec<String>,
-    ) -> Result<(DriverRow, bool), DriverError> {
+    ) -> Result<(DriverRow, bool, bool), DriverError> {
         let mut driver = self
             .driver_database_repository
             .get_driver_by_id(driver_id)
@@ -453,6 +453,7 @@ where
             .ok_or(DriverError::DriverNotFound)?;
 
         let mut email_changed = false;
+        let mut password_changed = false;
 
         if let Some(firstname) = update_request.firstname {
             driver.firstname = to_title_case(firstname);
@@ -503,6 +504,7 @@ where
                     DriverError::Internal
                 })?;
             driver.password_hash = password_hash.to_string();
+            password_changed = true;
         }
 
         match update_request.phone_number {
@@ -522,7 +524,7 @@ where
             .update_driver(driver)
             .await?;
 
-        Ok((updated_driver, email_changed))
+        Ok((updated_driver, email_changed, password_changed))
     }
 
     #[tracing::instrument(
@@ -613,7 +615,7 @@ where
         driver_id: Uuid,
         token: String,
         new_password: String,
-    ) -> Result<(), DriverError> {
+    ) -> Result<DriverRow, DriverError> {
         let (redis_key, _) = self
             .driver_cache_repository
             .get_key_by_type(driver_id, DriverCacheKeyType::ResetPassword);
@@ -646,13 +648,14 @@ where
             })?;
         driver.password_hash = password_hash.to_string();
 
-        self.driver_database_repository
+        let updated_driver = self
+            .driver_database_repository
             .update_driver(driver)
             .await?;
 
         self.driver_cache_repository.delete_redis(redis_key).await?;
 
-        Ok(())
+        Ok(updated_driver)
     }
 
     #[tracing::instrument(name = "driver_service.get_current_limitation", skip(self))]

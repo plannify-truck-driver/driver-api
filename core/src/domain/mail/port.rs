@@ -54,6 +54,16 @@ pub trait MailSmtpRepository: Send + Sync {
         reset_ttl: u64,
     ) -> impl Future<Output = Result<(), MailError>> + Send;
 
+    fn send_driver_email_change_email(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_driver_password_change_email(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
     fn send_driver_monthly_report_email(
         &self,
         driver: DriverRow,
@@ -173,6 +183,16 @@ pub trait MailService: Send + Sync {
         driver: DriverRow,
     ) -> impl Future<Output = Result<(), MailError>> + Send;
 
+    fn send_email_change_notification(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
+    fn send_password_change_notification(
+        &self,
+        driver: DriverRow,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
     fn get_mails(
         &self,
         driver_id: Uuid,
@@ -259,6 +279,14 @@ impl MailSmtpRepository for MockMailSmtpRepository {
         _reset_value: String,
         _reset_ttl: u64,
     ) -> Result<(), MailError> {
+        Ok(())
+    }
+
+    async fn send_driver_email_change_email(&self, _driver: DriverRow) -> Result<(), MailError> {
+        Ok(())
+    }
+
+    async fn send_driver_password_change_email(&self, _driver: DriverRow) -> Result<(), MailError> {
         Ok(())
     }
 

@@ -19,12 +19,9 @@ pub struct ConfigResponse {
     path = "/config",
     tag = "config",
     description = "Get exposed application configuration",
-    security(
-        ("bearer_auth" = [])
-    ),
+    security(),
     responses(
         (status = 200, description = "Configuration retrieved successfully", body = ConfigResponse),
-        (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]

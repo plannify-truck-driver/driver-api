@@ -1,3 +1,5 @@
 **/target/
 .env
 .claude
+common-services/garage.env
+common-services/garage.toml
