@@ -126,7 +126,6 @@ impl App {
         let protected_router = OpenApiRouter::<AppState>::new()
             .merge(driver_routes())
             .merge(workday_routes())
-            .merge(config_routes())
             .merge(mail_routes())
             .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
                 auth_validator.clone(),
@@ -138,6 +137,7 @@ impl App {
             .merge(authentication_routes())
             .merge(unauthenticated_routes())
             .merge(public_driver_routes())
+            .merge(config_routes())
             .merge(formating_routes())
             .merge(update_routes())
             .layer(cors)

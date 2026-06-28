@@ -553,6 +553,15 @@ where
         fields(driver_id = %driver.pk_driver_id)
     )]
     async fn send_reset_password_email(&self, driver: DriverRow) -> Result<(), MailError> {
+        let bitmask = self
+            .mail_database_repository
+            .get_driver_mail_preferences(driver.pk_driver_id)
+            .await?;
+        let bit = 1 << (EnumDriverMailType::PasswordReset.as_id() - 1);
+        if bitmask & bit == 0 {
+            return Err(MailError::MailPreferenceDisabled);
+        }
+
         let reset_value = self
             .driver_cache_repository
             .generate_random_value(100)

@@ -300,6 +300,7 @@ pub async fn refresh_token(
     request_body = RequestPasswordResetRequest,
     responses(
         (status = 200, description = "Password reset email sent successfully"),
+        (status = 403, description = "Password reset mail preference is disabled", body = ErrorBody),
         (status = 404, description = "Driver not found", body = ErrorBody),
         (status = 409, description = "Reset password token already exists", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
