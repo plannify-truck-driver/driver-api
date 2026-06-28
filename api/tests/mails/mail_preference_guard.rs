@@ -6,8 +6,7 @@ use test_context::test_context;
 use crate::context;
 
 const BASELINE_EMAIL: &str = "test.user@example.be";
-const BASELINE_PASSWORD_HASH: &str =
-    "$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48";
+const BASELINE_PASSWORD_HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48";
 /// AccountChangement mail type (id=3): bit = 1 << (3 - 1) = 4
 const ACCOUNT_CHANGEMENT_BIT: i32 = 4;
 
@@ -205,7 +204,9 @@ async fn test_password_change_notification_created_when_preference_enabled(
 async fn test_confirm_reset_password_notification_skipped_when_preference_disabled(
     ctx: &mut context::TestContext,
 ) {
-    use plannify_driver_api_core::domain::driver::port::{DriverCacheKeyType, DriverCacheRepository};
+    use plannify_driver_api_core::domain::driver::port::{
+        DriverCacheKeyType, DriverCacheRepository,
+    };
 
     reset_driver_to_baseline(ctx).await;
     disable_account_changement(ctx).await;
@@ -249,7 +250,9 @@ async fn test_confirm_reset_password_notification_skipped_when_preference_disabl
 async fn test_confirm_reset_password_notification_created_when_preference_enabled(
     ctx: &mut context::TestContext,
 ) {
-    use plannify_driver_api_core::domain::driver::port::{DriverCacheKeyType, DriverCacheRepository};
+    use plannify_driver_api_core::domain::driver::port::{
+        DriverCacheKeyType, DriverCacheRepository,
+    };
 
     reset_driver_to_baseline(ctx).await;
     enable_account_changement(ctx).await;

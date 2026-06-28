@@ -681,10 +681,11 @@ mod tests {
             },
             health::port::MockHealthRepository,
             mail::{
-                entities::{
-                    DriverMailAttachmentRow, DriverMailRow, DriverMailTypeRow, MailStatus,
+                entities::{DriverMailAttachmentRow, DriverMailRow, DriverMailTypeRow, MailStatus},
+                port::{
+                    MailDatabaseRepository, MailService, MockMailCacheRepository,
+                    MockMailSmtpRepository,
                 },
-                port::{MailDatabaseRepository, MailService, MockMailCacheRepository, MockMailSmtpRepository},
             },
             storage::port::MockStorageRepository,
             update::port::{MockUpdateCacheRepository, MockUpdateDatabaseRepository},
@@ -772,7 +773,10 @@ mod tests {
             Ok(Vec::new())
         }
 
-        async fn get_mail_type_by_id(&self, _mail_type_id: i32) -> Result<DriverMailTypeRow, MailError> {
+        async fn get_mail_type_by_id(
+            &self,
+            _mail_type_id: i32,
+        ) -> Result<DriverMailTypeRow, MailError> {
             Err(MailError::MailTypeNotFound)
         }
 
@@ -919,7 +923,11 @@ mod tests {
         let result = service.send_creation_email(make_driver()).await;
 
         assert!(result.is_ok(), "expected Ok, got {:?}", result);
-        assert_eq!(spy.create_mail_call_count(), 1, "one mail should be created");
+        assert_eq!(
+            spy.create_mail_call_count(),
+            1,
+            "one mail should be created"
+        );
     }
 
     // ── send_email_change_notification ──────────────────────────────────────────
@@ -931,7 +939,11 @@ mod tests {
 
         let result = service.send_email_change_notification(make_driver()).await;
 
-        assert!(result.is_ok(), "expected Ok(()) silent skip, got {:?}", result);
+        assert!(
+            result.is_ok(),
+            "expected Ok(()) silent skip, got {:?}",
+            result
+        );
         assert_eq!(spy.create_mail_call_count(), 0, "no mail should be created");
     }
 
@@ -944,7 +956,11 @@ mod tests {
         let result = service.send_email_change_notification(make_driver()).await;
 
         assert!(result.is_ok(), "expected Ok, got {:?}", result);
-        assert_eq!(spy.create_mail_call_count(), 1, "one mail should be created");
+        assert_eq!(
+            spy.create_mail_call_count(),
+            1,
+            "one mail should be created"
+        );
     }
 
     // ── send_password_change_notification ───────────────────────────────────────
@@ -954,9 +970,15 @@ mod tests {
         let spy = MailDbSpy::new(0);
         let service = make_service(spy.clone());
 
-        let result = service.send_password_change_notification(make_driver()).await;
+        let result = service
+            .send_password_change_notification(make_driver())
+            .await;
 
-        assert!(result.is_ok(), "expected Ok(()) silent skip, got {:?}", result);
+        assert!(
+            result.is_ok(),
+            "expected Ok(()) silent skip, got {:?}",
+            result
+        );
         assert_eq!(spy.create_mail_call_count(), 0, "no mail should be created");
     }
 
@@ -966,9 +988,15 @@ mod tests {
         let spy = MailDbSpy::new(account_changement_bit);
         let service = make_service(spy.clone());
 
-        let result = service.send_password_change_notification(make_driver()).await;
+        let result = service
+            .send_password_change_notification(make_driver())
+            .await;
 
         assert!(result.is_ok(), "expected Ok, got {:?}", result);
-        assert_eq!(spy.create_mail_call_count(), 1, "one mail should be created");
+        assert_eq!(
+            spy.create_mail_call_count(),
+            1,
+            "one mail should be created"
+        );
     }
 }
