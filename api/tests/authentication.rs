@@ -1,4 +1,5 @@
 use api::http::common::api_error::ErrorBody;
+use sqlx;
 use plannify_driver_api_core::domain::{
     driver::{
         entities::{CreateDriverResponse, DriverLimitationRow, DriverSuspensionRow, EntityType},
@@ -595,6 +596,12 @@ async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut contex
 #[tokio::test]
 #[serial]
 async fn test_request_password_reset_success(ctx: &mut context::TestContext) {
+    sqlx::query("UPDATE drivers SET mail_preferences = mail_preferences | 2 WHERE pk_driver_id = $1")
+        .bind(ctx.authenticated_user_id)
+        .execute(&ctx.repositories.pool)
+        .await
+        .unwrap();
+
     let res = ctx
         .unauthenticated_router
         .post("/authentication/reset-password")
@@ -625,12 +632,24 @@ async fn test_request_password_reset_success(ctx: &mut context::TestContext) {
         token.is_some(),
         "Reset password token should be stored in Redis"
     );
+
+    sqlx::query("UPDATE drivers SET mail_preferences = mail_preferences & ~2 WHERE pk_driver_id = $1")
+        .bind(ctx.authenticated_user_id)
+        .execute(&ctx.repositories.pool)
+        .await
+        .unwrap();
 }
 
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
 async fn test_request_password_reset_token_already_exists(ctx: &mut context::TestContext) {
+    sqlx::query("UPDATE drivers SET mail_preferences = mail_preferences | 2 WHERE pk_driver_id = $1")
+        .bind(ctx.authenticated_user_id)
+        .execute(&ctx.repositories.pool)
+        .await
+        .unwrap();
+
     ctx.unauthenticated_router
         .post("/authentication/reset-password")
         .json(&json!({ "email": "test.user@example.be" }))
@@ -646,6 +665,12 @@ async fn test_request_password_reset_token_already_exists(ctx: &mut context::Tes
     res.assert_status(StatusCode::CONFLICT);
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "RESET_PASSWORD_TOKEN_ALREADY_EXISTS");
+
+    sqlx::query("UPDATE drivers SET mail_preferences = mail_preferences & ~2 WHERE pk_driver_id = $1")
+        .bind(ctx.authenticated_user_id)
+        .execute(&ctx.repositories.pool)
+        .await
+        .unwrap();
 }
 
 #[test_context(context::TestContext)]
