@@ -1,0 +1,10 @@
+{% extends "en/base.html" %} {% block email_title %}Email Address Changed -
+Plannify{% endblock email_title %} {% block content %}
+<p>Hello {{ full_name }},</p>
+<p>
+  We confirm that the email address associated with your Plannify account has
+  been successfully updated.
+</p>
+<p>If you did not make this change, please contact our support immediately.</p>
+<p>Best regards,<br />The Plannify team</p>
+{% endblock content %}

@@ -315,6 +315,10 @@ impl From<MailError> for ApiError {
             MailError::MailAttachmentNotFound => ApiError::NotFound {
                 error_code: "MAIL_ATTACHMENT_NOT_FOUND".to_string(),
             },
+            MailError::MailPreferenceDisabled => ApiError::Forbidden {
+                error_code: "MAIL_PREFERENCE_DISABLED".to_string(),
+                content: None,
+            },
         }
     }
 }

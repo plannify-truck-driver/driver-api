@@ -473,6 +473,12 @@ mod tests {
         ) -> Result<(), MailError> {
             Ok(())
         }
+        async fn send_driver_email_change_email(&self, _: DriverRow) -> Result<(), MailError> {
+            Ok(())
+        }
+        async fn send_driver_password_change_email(&self, _: DriverRow) -> Result<(), MailError> {
+            Ok(())
+        }
         async fn send_driver_deactivation_email(&self, _: DriverRow) -> Result<(), MailError> {
             Ok(())
         }

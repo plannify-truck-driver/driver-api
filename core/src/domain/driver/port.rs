@@ -193,7 +193,7 @@ pub trait DriverService: Send + Sync {
         driver_id: Uuid,
         update_request: UpdateDriverRequest,
         email_list_deny: Vec<String>,
-    ) -> impl Future<Output = Result<(DriverRow, bool), DriverError>> + Send;
+    ) -> impl Future<Output = Result<(DriverRow, bool, bool), DriverError>> + Send;
 
     fn deactivate_driver(
         &self,
@@ -215,7 +215,7 @@ pub trait DriverService: Send + Sync {
         driver_id: Uuid,
         token: String,
         new_password: String,
-    ) -> impl Future<Output = Result<(), DriverError>> + Send;
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 
     fn get_current_limitation(
         &self,

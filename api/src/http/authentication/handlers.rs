@@ -58,6 +58,7 @@ use crate::{
     responses(
         (status = 201, description = "Driver signed up successfully", body = CreateDriverResponse),
         (status = 400, description = "Email domain denylisted", body = ErrorBody),
+        (status = 403, description = "Account verification mail preference is disabled", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
@@ -336,9 +337,13 @@ pub async fn confirm_password_reset(
     State(state): State<AppState>,
     ValidatedJson(request): ValidatedJson<ConfirmPasswordResetRequest>,
 ) -> Result<Response<()>, ApiError> {
-    state
+    let driver = state
         .service
         .confirm_password_reset(request.driver_id, request.token, request.password)
+        .await?;
+    state
+        .service
+        .send_password_change_notification(driver)
         .await?;
     Ok(Response::ok(()))
 }
