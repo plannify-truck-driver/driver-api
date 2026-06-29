@@ -721,4 +721,72 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
             created_at: document.created_at,
         }))
     }
+
+    #[tracing::instrument(
+        name = "db.workdays.get_all_document_s3_paths",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "SELECT")
+    )]
+    async fn get_all_document_s3_paths(&self) -> Result<Vec<String>, WorkdayError> {
+        let rows = sqlx::query_as::<_, (String,)>(r#"SELECT s3_file_path FROM documents"#)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| {
+                error!("Failed to get all document s3 paths: {:?}", e);
+                WorkdayError::DatabaseError
+            })?;
+
+        Ok(rows.into_iter().map(|(path,)| path).collect())
+    }
+
+    #[tracing::instrument(
+        name = "db.workdays.get_document_s3_paths_batch",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "SELECT", after = ?after, limit = %limit)
+    )]
+    async fn get_document_s3_paths_batch(
+        &self,
+        after: Option<&str>,
+        limit: i64,
+    ) -> Result<Vec<String>, WorkdayError> {
+        let rows = sqlx::query_as::<_, (String,)>(
+            r#"
+            SELECT s3_file_path
+            FROM documents
+            WHERE ($1::TEXT IS NULL OR s3_file_path > $1)
+            ORDER BY s3_file_path ASC
+            LIMIT $2
+            "#,
+        )
+        .bind(after)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to get document s3 paths batch: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(rows.into_iter().map(|(path,)| path).collect())
+    }
+
+    #[tracing::instrument(
+        name = "db.workdays.delete_document_by_s3_path",
+        skip(self),
+        fields(db.system = "postgresql", db.operation = "DELETE", s3_file_path = %s3_file_path)
+    )]
+    async fn delete_document_by_s3_path(&self, s3_file_path: &str) -> Result<(), WorkdayError> {
+        sqlx::query!(
+            r#"DELETE FROM documents WHERE s3_file_path = $1"#,
+            s3_file_path
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to delete document by s3_file_path: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        Ok(())
+    }
 }

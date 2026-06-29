@@ -184,6 +184,23 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         s3_file_path: String,
         file_name: String,
     ) -> impl Future<Output = Result<WorkdayDocument, WorkdayError>> + Send;
+
+    fn get_all_document_s3_paths(
+        &self,
+    ) -> impl Future<Output = Result<Vec<String>, WorkdayError>> + Send;
+
+    /// Returns up to `limit` s3_file_path values sorted ascending, starting strictly after `after`.
+    /// Fewer than `limit` results means the stream is exhausted.
+    fn get_document_s3_paths_batch(
+        &self,
+        after: Option<&str>,
+        limit: i64,
+    ) -> impl Future<Output = Result<Vec<String>, WorkdayError>> + Send;
+
+    fn delete_document_by_s3_path(
+        &self,
+        s3_file_path: &str,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 }
 
 pub trait WorkdayCacheRepository: Send + Sync {
@@ -733,6 +750,33 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         result.sort_unstable();
         result.dedup();
         Ok(result)
+    }
+
+    async fn get_all_document_s3_paths(&self) -> Result<Vec<String>, WorkdayError> {
+        let documents = self.workday_documents.lock().unwrap();
+        Ok(documents.iter().map(|d| d.s3_file_path.clone()).collect())
+    }
+
+    async fn get_document_s3_paths_batch(
+        &self,
+        after: Option<&str>,
+        limit: i64,
+    ) -> Result<Vec<String>, WorkdayError> {
+        let documents = self.workday_documents.lock().unwrap();
+        let mut paths: Vec<String> = documents
+            .iter()
+            .map(|d| d.s3_file_path.clone())
+            .filter(|p| after.map(|a| p.as_str() > a).unwrap_or(true))
+            .collect();
+        paths.sort();
+        paths.truncate(limit as usize);
+        Ok(paths)
+    }
+
+    async fn delete_document_by_s3_path(&self, s3_file_path: &str) -> Result<(), WorkdayError> {
+        let mut documents = self.workday_documents.lock().unwrap();
+        documents.retain(|d| d.s3_file_path != s3_file_path);
+        Ok(())
     }
 }
 

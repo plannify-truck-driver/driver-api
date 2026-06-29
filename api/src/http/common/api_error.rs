@@ -345,6 +345,7 @@ impl From<StorageError> for ApiError {
             StorageError::DownloadError => ApiError::InternalServerError,
             StorageError::DeleteError => ApiError::InternalServerError,
             StorageError::PresignedUrlError => ApiError::InternalServerError,
+            StorageError::ListError => ApiError::InternalServerError,
             StorageError::Internal => ApiError::InternalServerError,
         }
     }

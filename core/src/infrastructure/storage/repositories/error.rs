@@ -17,6 +17,9 @@ pub enum StorageError {
     #[error("Failed to generate presigned URL")]
     PresignedUrlError,
 
+    #[error("Failed to list objects")]
+    ListError,
+
     #[error("An internal error occurred")]
     Internal,
 }

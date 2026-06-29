@@ -334,6 +334,13 @@ mod tests {
         ) -> Result<String, StorageError> {
             unreachable!()
         }
+        async fn list_objects_page(
+            &self,
+            _: Option<&str>,
+            _: Option<String>,
+        ) -> Result<(Vec<String>, Option<String>), StorageError> {
+            unreachable!()
+        }
     }
 
     struct StubWorkdayService {

@@ -34,6 +34,9 @@ enum JobCommand {
 
     /// Permanently delete accounts whose deactivation date has passed (DB + S3)
     PurgeDeactivatedAccounts,
+
+    /// Delete DB document records with no S3 file, and S3 objects with no DB record
+    ReconcileDocuments,
 }
 
 #[tokio::main]
@@ -83,6 +86,7 @@ async fn main() {
         }
         JobCommand::SendMonthlyReports => jobs::send_monthly_reports::run(&repos).await,
         JobCommand::PurgeDeactivatedAccounts => jobs::purge_deactivated_accounts::run(&repos).await,
+        JobCommand::ReconcileDocuments => jobs::reconcile_documents::run(&repos).await,
     };
 
     repos.shutdown_pool().await;

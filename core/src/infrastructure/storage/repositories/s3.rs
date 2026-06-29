@@ -160,6 +160,50 @@ impl StorageRepository for S3StorageRepository {
     }
 
     #[tracing::instrument(
+        name = "s3.ListObjectsV2",
+        skip(self),
+        fields(
+            db.system = "aws.s3",
+            db.operation = "ListObjectsV2",
+            aws.s3.bucket = %self.bucket,
+            aws.s3.prefix = ?prefix,
+            aws.s3.continuation = ?continuation_token,
+        )
+    )]
+    async fn list_objects_page(
+        &self,
+        prefix: Option<&str>,
+        continuation_token: Option<String>,
+    ) -> Result<(Vec<String>, Option<String>), StorageError> {
+        let mut req = self.client.list_objects_v2().bucket(&self.bucket);
+        if let Some(p) = prefix {
+            req = req.prefix(p);
+        }
+        if let Some(token) = continuation_token {
+            req = req.continuation_token(token);
+        }
+
+        let response = req.send().await.map_err(|e| {
+            error!(error = %e, "aws.s3.ListObjectsV2 failed");
+            StorageError::ListError
+        })?;
+
+        let keys: Vec<String> = response
+            .contents()
+            .iter()
+            .filter_map(|obj| obj.key().map(str::to_string))
+            .collect();
+
+        let next_token = if response.is_truncated().unwrap_or(false) {
+            response.next_continuation_token().map(str::to_string)
+        } else {
+            None
+        };
+
+        Ok((keys, next_token))
+    }
+
+    #[tracing::instrument(
         name = "s3.PresignGetObject",
         skip(self),
         fields(

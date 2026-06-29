@@ -26,6 +26,14 @@ pub trait StorageRepository: Send + Sync {
         key: &str,
         expires_in: Duration,
     ) -> impl Future<Output = Result<String, StorageError>> + Send;
+
+    /// Returns one page of object keys (sorted) and the continuation token for the next page.
+    /// `None` as the returned token signals the last page.
+    fn list_objects_page(
+        &self,
+        prefix: Option<&str>,
+        continuation_token: Option<String>,
+    ) -> impl Future<Output = Result<(Vec<String>, Option<String>), StorageError>> + Send;
 }
 
 #[derive(Clone, Default)]
@@ -70,5 +78,27 @@ impl StorageRepository for MockStorageRepository {
         _expires_in: Duration,
     ) -> Result<String, StorageError> {
         Ok(format!("http://mock-s3/bucket/{}", key))
+    }
+
+    async fn list_objects_page(
+        &self,
+        prefix: Option<&str>,
+        continuation_token: Option<String>,
+    ) -> Result<(Vec<String>, Option<String>), StorageError> {
+        let store = self.store.lock().unwrap();
+        let mut keys: Vec<String> = store
+            .keys()
+            .filter(|k| prefix.map(|p| k.starts_with(p)).unwrap_or(true))
+            .filter(|k| {
+                continuation_token
+                    .as_deref()
+                    .map(|t| k.as_str() > t)
+                    .unwrap_or(true)
+            })
+            .cloned()
+            .collect();
+        keys.sort();
+        // Mock returns everything in one page — no continuation needed.
+        Ok((keys, None))
     }
 }

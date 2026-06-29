@@ -331,6 +331,19 @@ mod tests {
         ) -> Result<Option<WorkdayDocument>, WorkdayError> {
             unreachable!()
         }
+        async fn get_all_document_s3_paths(&self) -> Result<Vec<String>, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_document_s3_paths_batch(
+            &self,
+            _: Option<&str>,
+            _: i64,
+        ) -> Result<Vec<String>, WorkdayError> {
+            unreachable!()
+        }
+        async fn delete_document_by_s3_path(&self, _: &str) -> Result<(), WorkdayError> {
+            unreachable!()
+        }
     }
 
     struct StubStorage {
@@ -377,6 +390,13 @@ mod tests {
             _: &str,
             _: Duration,
         ) -> Result<String, StorageError> {
+            unreachable!()
+        }
+        async fn list_objects_page(
+            &self,
+            _: Option<&str>,
+            _: Option<String>,
+        ) -> Result<(Vec<String>, Option<String>), StorageError> {
             unreachable!()
         }
     }
