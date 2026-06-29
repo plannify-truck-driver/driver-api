@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM documents WHERE s3_file_path = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4f3d3aaa3d5957b037637a89139c27bd4897aa0920dc56f74affff3bbaf751dd"
+}
