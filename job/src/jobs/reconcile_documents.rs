@@ -18,6 +18,14 @@ pub async fn run(repos: &DriverRepositories) -> i32 {
     .await
 }
 
+/// S3 clients (including Garage) sometimes create empty "directory marker" objects
+/// whose keys end with `/` (e.g. `drivers/`, `drivers/uuid/workdays/`).
+/// These are virtual artifacts of the client — they have no DB counterpart and
+/// must be ignored rather than treated as orphaned files.
+fn filter_directory_markers(keys: Vec<String>) -> Vec<String> {
+    keys.into_iter().filter(|k| !k.ends_with('/')).collect()
+}
+
 /// Streaming sorted-merge reconciliation.
 ///
 /// Both the DB cursor (`ORDER BY s3_file_path ASC`, LIMIT/offset via cursor) and
@@ -48,7 +56,7 @@ where
     let mut db_idx: usize = 0;
 
     let (mut s3_buf, mut s3_token) = match storage.list_objects_page(None, None).await {
-        Ok(p) => p,
+        Ok((keys, token)) => (filter_directory_markers(keys), token),
         Err(e) => {
             error!("Failed to fetch initial S3 page: {}", e);
             return 1;
@@ -88,7 +96,7 @@ where
         if s3_idx >= s3_buf.len() && s3_token.is_some() {
             match storage.list_objects_page(None, s3_token.take()).await {
                 Ok((keys, token)) => {
-                    s3_buf = keys;
+                    s3_buf = filter_directory_markers(keys);
                     s3_token = token;
                     s3_idx = 0;
                 }
