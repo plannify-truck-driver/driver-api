@@ -21,7 +21,7 @@ jobs:
       DATABASE_URL: postgres://plannify_user:plannify_password@localhost:5432/plannify_db
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: true
           ssh-key: ${{ secrets.SUBMODULE_DEPLOY_KEY }}
@@ -89,7 +89,7 @@ jobs:
         run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
 
       - name: Run integration tests
         run: cargo test -p api
@@ -104,13 +104,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Install protoc
         run: which protoc || apt-get install -y -o DPkg::Lock::Timeout=120 protobuf-compiler
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
 
       - name: Run unit tests
         run: cargo test --lib
