@@ -41,6 +41,13 @@ pub struct Config {
     )]
     pub workday_garbage_retention_days: i64,
 
+    #[arg(
+        long = "account-deactivation-days",
+        env = "ACCOUNT_DEACTIVATION_DAYS",
+        default_value = "30"
+    )]
+    pub account_deactivation_days: i64,
+
     #[command(flatten)]
     pub smtp: SmtpConfig,
 
@@ -49,6 +56,13 @@ pub struct Config {
 
     #[command(flatten)]
     pub otel: OtelConfig,
+
+    #[arg(
+        long = "uptime-url",
+        env = "UPTIME_URL",
+        default_value = "http://localhost:8080"
+    )]
+    pub uptime_url: String,
 }
 
 #[derive(Clone, Parser, Debug)]

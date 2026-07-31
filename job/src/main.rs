@@ -67,7 +67,7 @@ async fn main() {
         &config.s3.bucket_name,
         ServiceConfig {
             workday_garbage_retention_days: config.workday_garbage_retention_days,
-            account_deactivation_days: 30,
+            account_deactivation_days: config.account_deactivation_days,
         },
     )
     .await
@@ -88,6 +88,16 @@ async fn main() {
         JobCommand::PurgeDeactivatedAccounts => jobs::purge_deactivated_accounts::run(&repos).await,
         JobCommand::ReconcileDocuments => jobs::reconcile_documents::run(&repos).await,
     };
+
+    if exit_code == 0 {
+        tracing::info!("Job completed successfully");
+
+        if let Err(e) = reqwest::get(&config.uptime_url).await {
+            tracing::warn!("Failed to ping uptime URL: {}", e);
+        }
+    } else {
+        tracing::error!("Job failed with exit code {}", exit_code);
+    }
 
     repos.shutdown_pool().await;
 

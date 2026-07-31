@@ -20,6 +20,7 @@ tracing-subscriber = { workspace = true }
 dotenv = { workspace = true }
 chrono = { workspace = true }
 lettre = { workspace = true }
+reqwest = "0.13"
 
 [dev-dependencies]
 bytes = "1.9"
