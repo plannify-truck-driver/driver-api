@@ -1,0 +1,17 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  release:
+    uses: plannify-truck-driver/github-actions/.github/workflows/build-push-tag.yml@main
+    secrets: inherit
+    with:
+      images: |
+        [
+          {"image": "plannify-truck-driver/driver-api", "target": "api"},
+          {"image": "plannify-truck-driver/driver-job", "target": "job"}
+        ]
