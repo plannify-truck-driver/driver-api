@@ -50,27 +50,27 @@ cargo run -p job -- generate-documents --months-ago 3
 
 All options can be set via environment variables or CLI flags (CLI flags take precedence).
 
-| Environment variable             | CLI flag                           | Default                                                 |
-| -------------------------------- | ----------------------------------- | ------------------------------------------------------ |
+| Environment variable             | CLI flag                           | Default                                                |
+| -------------------------------- | ---------------------------------- | ------------------------------------------------------ |
 | `DATABASE_URL`                   | `--database-url`                   | `postgres://postgres:password@localhost:5432/plannify` |
-| `REDIS_URL`                      | `--redis-url`                      | `redis://localhost:6379/0`                              |
-| `FRONTEND_URL`                   | `--frontend-url`                   | `https://app.plannify.be`                               |
-| `PDF_SERVICE_ENDPOINT`           | `--pdf-service-endpoint`           | `http://localhost:50051`                                |
-| `WORKDAY_GARBAGE_RETENTION_DAYS` | `--workday-garbage-retention-days` | `30`                                                     |
-| `ACCOUNT_DEACTIVATION_DAYS`      | `--account-deactivation-days`      | `30`                                                     |
-| `SMTP_DEFAULT_SENDER`            | `--smtp-default-sender`            | `noreply@plannify.be`                                   |
-| `SMTP_DEFAULT_SENDER_REPLY_TO`   | `--smtp-default-sender-reply-to`   | `noreply@plannify.be`                                   |
-| `SMTP_USERNAME`                  | `--smtp-username`                  | _(empty)_                                               |
-| `SMTP_PASSWORD`                  | `--smtp-password`                  | _(empty)_                                               |
-| `SMTP_DOMAIN`                    | `--smtp-domain`                    | `localhost`                                              |
-| `S3_ACCESS_KEY`                  | `--s3-access-key`                  | _(empty)_                                               |
-| `S3_SECRET_KEY`                  | `--s3-secret-key`                  | _(empty)_                                               |
-| `S3_ENDPOINT`                    | `--s3-endpoint`                    | `http://localhost:3900`                                 |
-| `S3_BUCKET_NAME`                 | `--s3-bucket-name`                 | `plannify`                                               |
-| `S3_REGION`                      | `--s3-region`                      | `garage`                                                 |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`    | `--otel-exporter-otlp-endpoint`    | `http://localhost:4317`                                 |
-| `OTEL_SERVICE_NAME`              | `--otel-service-name`              | `driver-job`                                             |
-| `UPTIME_URL`                     | `--uptime-url`                     | `http://localhost:8080`                                  |
+| `REDIS_URL`                      | `--redis-url`                      | `redis://localhost:6379/0`                             |
+| `FRONTEND_URL`                   | `--frontend-url`                   | `https://app.plannify.be`                              |
+| `PDF_SERVICE_ENDPOINT`           | `--pdf-service-endpoint`           | `http://localhost:50051`                               |
+| `WORKDAY_GARBAGE_RETENTION_DAYS` | `--workday-garbage-retention-days` | `30`                                                   |
+| `ACCOUNT_DEACTIVATION_DAYS`      | `--account-deactivation-days`      | `30`                                                   |
+| `SMTP_DEFAULT_SENDER`            | `--smtp-default-sender`            | `noreply@plannify.be`                                  |
+| `SMTP_DEFAULT_SENDER_REPLY_TO`   | `--smtp-default-sender-reply-to`   | `noreply@plannify.be`                                  |
+| `SMTP_USERNAME`                  | `--smtp-username`                  | _(empty)_                                              |
+| `SMTP_PASSWORD`                  | `--smtp-password`                  | _(empty)_                                              |
+| `SMTP_DOMAIN`                    | `--smtp-domain`                    | `localhost`                                            |
+| `S3_ACCESS_KEY`                  | `--s3-access-key`                  | _(empty)_                                              |
+| `S3_SECRET_KEY`                  | `--s3-secret-key`                  | _(empty)_                                              |
+| `S3_ENDPOINT`                    | `--s3-endpoint`                    | `http://localhost:3900`                                |
+| `S3_BUCKET_NAME`                 | `--s3-bucket-name`                 | `plannify`                                             |
+| `S3_REGION`                      | `--s3-region`                      | `garage`                                               |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`    | `--otel-exporter-otlp-endpoint`    | `http://localhost:4317`                                |
+| `OTEL_SERVICE_NAME`              | `--otel-service-name`              | `driver-job`                                           |
+| `UPTIME_URL`                     | `--uptime-url`                     | `http://localhost:8080`                                |
 
 ### Testing
 

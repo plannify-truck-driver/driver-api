@@ -1,0 +1,26 @@
+name: Build and Push (develop)
+
+on:
+  push:
+    branches:
+      - "develop"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    uses: plannify-truck-driver/github-actions/.github/workflows/build-push-branch.yml@main
+    secrets: inherit
+    with:
+      images: |
+        [
+          {"image": "plannify-truck-driver/driver-api", "target": "api"},
+          {"image": "plannify-truck-driver/driver-job", "target": "job"}
+        ]
+      infra_targets: |
+        [
+          {"repo": "plannify-truck-driver-app/infrastructure", "file": "yaml-applications/dev/driver-api/deployment.yaml", "image": "ghcr.io/plannify-truck-driver/driver-api"},
+          {"repo": "plannify-truck-driver-app/infrastructure", "file": "yaml-applications/dev/driver-api/cronjob.yaml", "image": "ghcr.io/plannify-truck-driver/driver-job"}
+        ]

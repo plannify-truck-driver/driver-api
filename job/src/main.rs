@@ -94,6 +94,8 @@ async fn main() {
 
         if let Err(e) = reqwest::get(&config.uptime_url).await {
             tracing::warn!("Failed to ping uptime URL: {}", e);
+        } else {
+            tracing::info!("Pinged uptime URL successfully");
         }
     } else {
         tracing::error!("Job failed with exit code {}", exit_code);
