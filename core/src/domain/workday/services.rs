@@ -1,4 +1,5 @@
 use chrono::{Datelike, NaiveDate};
+use tracing::error;
 use uuid::Uuid;
 
 use crate::{
@@ -582,7 +583,16 @@ where
                 .storage_repository
                 .download(&record.s3_file_path)
                 .await
-                .map_err(|_| WorkdayError::Internal)?;
+                .map_err(|e| {
+                    error!(
+                        driver_id = %driver_id,
+                        month = %month,
+                        year = %year,
+                        error = ?e,
+                        "Failed to download workday document from storage"
+                    );
+                    WorkdayError::Internal
+                })?;
 
             return Ok(Some(pdf));
         }
@@ -595,8 +605,21 @@ where
             .driver_database_repository
             .get_driver_by_id(driver_id)
             .await
-            .map_err(|_| WorkdayError::Internal)?
-            .ok_or(WorkdayError::Internal)?;
+            .map_err(|e| {
+                error!(
+                    driver_id = %driver_id,
+                    error = ?e,
+                    "Failed to fetch driver for document generation"
+                );
+                WorkdayError::Internal
+            })?
+            .ok_or_else(|| {
+                error!(
+                    driver_id = %driver_id,
+                    "Driver not found for document generation"
+                );
+                WorkdayError::Internal
+            })?;
 
         let pdf_opt = self
             .document_external_repository
@@ -609,7 +632,16 @@ where
                 workdays,
             )
             .await
-            .map_err(|_| WorkdayError::Internal)?;
+            .map_err(|e| {
+                error!(
+                    driver_id = %driver_id,
+                    month = %month,
+                    year = %year,
+                    error = ?e,
+                    "Failed to generate document via external service"
+                );
+                WorkdayError::Internal
+            })?;
 
         Ok(pdf_opt)
     }
