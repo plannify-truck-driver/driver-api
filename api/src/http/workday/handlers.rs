@@ -18,7 +18,8 @@ use chrono::NaiveDate;
 use plannify_driver_api_core::domain::workday::{
     entities::{
         CreateWorkdayRequest, GetWorkdayDocumentsByYearResponse, GetWorkdaysByMonthParams,
-        GetWorkdaysByPeriodParams, UpdateWorkdayRequest, Workday, WorkdayGarbage,
+        GetWorkdaysByPeriodParams, UpdateWorkdayRequest, Workday, WorkdayCreationLimit,
+        WorkdayGarbage,
     },
     port::WorkdayService,
 };
@@ -177,6 +178,7 @@ pub async fn get_all_workdays_period(
         (status = 201, description = "Workday created successfully", body = Workday),
         (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
+        (status = 403, description = "The workday quota for the current window has been exceeded", body = ErrorBody),
         (status = 409, description = "Workday already exists", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
@@ -192,6 +194,37 @@ pub async fn create_workday(
         .await?;
 
     Ok(Response::created(workday.to_workday()))
+}
+
+#[tracing::instrument(
+    name = "get_workday_creation_limit",
+    skip_all,
+    fields(user_id = %user_identity.user_id)
+)]
+#[utoipa::path(
+    get,
+    path = "/workdays/creation-limit",
+    tag = "workdays",
+    description = "Retrieve the driver's workday creation quota and how much of it is left for the current window",
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Workday creation limit retrieved successfully", body = WorkdayCreationLimit),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_workday_creation_limit(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<WorkdayCreationLimit>, ApiError> {
+    let limit = state
+        .service
+        .get_workday_creation_limit(user_identity.user_id)
+        .await?;
+
+    Ok(Response::ok(limit))
 }
 
 #[tracing::instrument(

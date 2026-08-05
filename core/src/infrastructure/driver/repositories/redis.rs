@@ -106,4 +106,43 @@ impl DriverCacheRepository for RedisDriverCacheRepository {
 
         Ok(())
     }
+
+    #[tracing::instrument(
+        name = "cache.drivers.decrement_redis",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "DECR",
+        )
+    )]
+    async fn decrement_redis(
+        &self,
+        key: String,
+        initial_value: i64,
+        ttl_seconds: u64,
+    ) -> Result<i64, DriverError> {
+        let mut conn = self.connection.clone();
+
+        // Only takes effect the first time the key is used within a window,
+        // so subsequent decrements never push back the window's expiry.
+        let _: Option<String> = redis::cmd("SET")
+            .arg(&key)
+            .arg(initial_value)
+            .arg("EX")
+            .arg(ttl_seconds)
+            .arg("NX")
+            .query_async(&mut conn)
+            .await
+            .map_err(|e| {
+                error!("Failed to initialize redis counter {}: {:?}", key, e);
+                DriverError::Internal
+            })?;
+
+        let result: i64 = conn.decr(key.clone(), 1).await.map_err(|e| {
+            error!("Failed to decrement redis counter {}: {:?}", key, e);
+            DriverError::Internal
+        })?;
+
+        Ok(result)
+    }
 }

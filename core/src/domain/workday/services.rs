@@ -6,21 +6,59 @@ use crate::{
     Service,
     domain::{
         document::port::DocumentExternalRepository,
-        driver::port::{DriverCacheRepository, DriverDatabaseRepository},
+        driver::port::{DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository},
         health::port::HealthRepository,
         mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository},
         storage::port::StorageRepository,
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::{
             entities::{
-                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocumentInformation,
-                WorkdayGarbageRow, WorkdayRow,
+                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayCreationLimit,
+                WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
             },
             port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
         },
     },
     infrastructure::workday::repositories::error::WorkdayError,
 };
+
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+    Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+where
+    H: HealthRepository,
+    DD: DriverDatabaseRepository,
+    DC: DriverCacheRepository,
+    WD: WorkdayDatabaseRepository,
+    WC: WorkdayCacheRepository,
+    MS: MailSmtpRepository,
+    MD: MailDatabaseRepository,
+    MC: MailCacheRepository,
+    UD: UpdateDatabaseRepository,
+    UC: UpdateCacheRepository,
+    DE: DocumentExternalRepository,
+    DS: StorageRepository,
+{
+    /// Number of workday creations left for `driver_id` within the current window.
+    /// Defaults to the full quota when the driver has not created any workday yet.
+    async fn get_remaining_workday_creations(&self, driver_id: Uuid) -> Result<i64, WorkdayError> {
+        let (key, _ttl) = self
+            .driver_cache_repository
+            .get_key_by_type(driver_id, DriverCacheKeyType::WorkdayCreationLimitation);
+
+        let remaining = self
+            .driver_cache_repository
+            .get_redis(key)
+            .await
+            .map_err(|e| {
+                error!("Failed to read workday creation counter: {}", e);
+                WorkdayError::Internal
+            })?
+            .and_then(|value| value.parse::<i64>().ok())
+            .unwrap_or(self.config.workday_creation_limit);
+
+        Ok(remaining)
+    }
+}
 
 impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS> WorkdayService
     for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
@@ -178,6 +216,16 @@ where
             return Err(WorkdayError::WorkdayDocumentAlreadyGenerated);
         }
 
+        // Reject the request if the driver has already exhausted their workday
+        // creation quota for the current window, to prevent abuse.
+        let (creation_limit_key, creation_limit_ttl) = self
+            .driver_cache_repository
+            .get_key_by_type(driver_id, DriverCacheKeyType::WorkdayCreationLimitation);
+
+        if self.get_remaining_workday_creations(driver_id).await? <= 0 {
+            return Err(WorkdayError::WorkdayCreationLimitReached);
+        }
+
         let workday = match self
             .workday_database_repository
             .create_workday(driver_id, create_workday_request)
@@ -203,6 +251,18 @@ where
             Err(_) => return Err(WorkdayError::Internal),
         };
 
+        if let Err(e) = self
+            .driver_cache_repository
+            .decrement_redis(
+                creation_limit_key,
+                self.config.workday_creation_limit,
+                creation_limit_ttl,
+            )
+            .await
+        {
+            error!("Failed to decrement workday creation counter: {}", e);
+        }
+
         self.workday_cache_repository
             .delete_workdays_by_month(driver_id, workday.date.month() as i32, workday.date.year())
             .await?;
@@ -217,6 +277,21 @@ where
             .await?;
 
         Ok(workday)
+    }
+
+    #[tracing::instrument(
+        name = "workday_service.get_workday_creation_limit",
+        skip(self),
+        fields(driver_id = %driver_id)
+    )]
+    async fn get_workday_creation_limit(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<WorkdayCreationLimit, WorkdayError> {
+        Ok(WorkdayCreationLimit {
+            limit: self.config.workday_creation_limit,
+            remaining: self.get_remaining_workday_creations(driver_id).await?,
+        })
     }
 
     #[tracing::instrument(

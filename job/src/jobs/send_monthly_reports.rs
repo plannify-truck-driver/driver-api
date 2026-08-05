@@ -273,7 +273,7 @@ mod tests {
             storage::port::StorageRepository,
             workday::{
                 entities::{
-                    CreateWorkdayRequest, UpdateWorkdayRequest, Workday,
+                    CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayCreationLimit,
                     WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
                 },
                 port::WorkdayService,
@@ -411,6 +411,12 @@ mod tests {
             _: Uuid,
             _: CreateWorkdayRequest,
         ) -> Result<WorkdayRow, WorkdayError> {
+            unreachable!()
+        }
+        async fn get_workday_creation_limit(
+            &self,
+            _: Uuid,
+        ) -> Result<WorkdayCreationLimit, WorkdayError> {
             unreachable!()
         }
         async fn update_workday(

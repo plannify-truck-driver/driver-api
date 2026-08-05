@@ -6,6 +6,7 @@ mod tests {
 
     use crate::{
         domain::{
+            driver::port::{DriverCacheKeyType, DriverCacheRepository},
             storage::port::StorageRepository,
             test::create_mock_service,
             workday::{
@@ -318,6 +319,103 @@ mod tests {
             error,
             WorkdayError::WorkdayAlreadyExists,
             "Expected duplicate workday request error"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_create_workday_decrements_creation_counter()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
+
+        service
+            .create_workday(
+                driver_id,
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: Some(
+                        chrono::NaiveTime::parse_from_str("17:00:00", "%H:%M:%S").unwrap(),
+                    ),
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await
+            .expect("create_workday returned an error");
+
+        let (key, _ttl) = service
+            .driver_cache_repository
+            .get_key_by_type(driver_id, DriverCacheKeyType::WorkdayCreationLimitation);
+        let remaining: i64 = service
+            .driver_cache_repository
+            .get_redis(key)
+            .await?
+            .expect("the counter must be initialized after the first creation")
+            .parse()?;
+
+        assert_eq!(
+            remaining,
+            service.config.workday_creation_limit - 1,
+            "the counter must be decremented by exactly one after a successful creation"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_create_workday_fail_creation_limit_reached()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap();
+
+        let (key, ttl) = service
+            .driver_cache_repository
+            .get_key_by_type(driver_id, DriverCacheKeyType::WorkdayCreationLimitation);
+        service
+            .driver_cache_repository
+            .set_redis(key, "0".to_string(), ttl)
+            .await?;
+
+        let error = service
+            .create_workday(
+                driver_id,
+                CreateWorkdayRequest {
+                    date: chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                    start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+                    end_time: Some(
+                        chrono::NaiveTime::parse_from_str("17:00:00", "%H:%M:%S").unwrap(),
+                    ),
+                    rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
+                    overnight_rest: false,
+                },
+            )
+            .await
+            .expect_err("create_workday should have returned an error");
+
+        assert_eq!(
+            error,
+            WorkdayError::WorkdayCreationLimitReached,
+            "Expected workday creation limit reached error"
+        );
+
+        let workdays = service
+            .workday_database_repository
+            .get_workdays_by_period(
+                driver_id,
+                chrono::NaiveDate::parse_from_str("2026-01-01", "%Y-%m-%d").unwrap(),
+                chrono::NaiveDate::parse_from_str("2026-01-31", "%Y-%m-%d").unwrap(),
+                1,
+                10,
+            )
+            .await
+            .expect("get_workdays_by_period returned an error");
+
+        assert_eq!(
+            workdays.1, 0,
+            "the workday must not have been created once the limit is reached"
         );
 
         Ok(())

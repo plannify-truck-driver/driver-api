@@ -1,7 +1,8 @@
 use api::http::common::api_error::ErrorBody;
 use axum::http::StatusCode;
-use plannify_driver_api_core::domain::workday::{
-    entities::Workday, port::WorkdayDatabaseRepository,
+use plannify_driver_api_core::domain::{
+    driver::port::{DriverCacheKeyType, DriverCacheRepository},
+    workday::{entities::Workday, port::WorkdayDatabaseRepository},
 };
 use serde_json::json;
 use serial_test::serial;
@@ -266,4 +267,95 @@ async fn test_create_workday_cache_invalidation(ctx: &mut context::TestContext) 
         )
         .await
         .ok();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_create_workday_decrements_creation_counter(ctx: &mut context::TestContext) {
+    let (key, _ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        ctx.authenticated_user_id,
+        DriverCacheKeyType::WorkdayCreationLimitation,
+    );
+
+    // No creation happened yet in this test run: the counter must not exist.
+    assert_eq!(
+        ctx.repositories
+            .driver_cache_repository
+            .get_redis(key.clone())
+            .await
+            .unwrap(),
+        None
+    );
+
+    ctx.authenticated_router
+        .post("/workdays")
+        .json(&json!({
+            "date": "2026-04-10",
+            "start_time": "08:00:00",
+            "end_time": null,
+            "rest_time": "00:00:00",
+            "overnight_rest": false
+        }))
+        .await
+        .assert_status(StatusCode::CREATED);
+
+    let remaining: i64 = ctx
+        .repositories
+        .driver_cache_repository
+        .get_redis(key)
+        .await
+        .unwrap()
+        .expect("the counter must be initialized after the first creation")
+        .parse()
+        .unwrap();
+
+    assert_eq!(
+        remaining,
+        ctx.repositories.service_config.workday_creation_limit - 1,
+        "the counter must be decremented by exactly one after a successful creation"
+    );
+
+    ctx.repositories
+        .workday_database_repository
+        .delete_workday(
+            ctx.authenticated_user_id,
+            chrono::NaiveDate::from_ymd_opt(2026, 4, 10).unwrap(),
+        )
+        .await
+        .ok();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_create_workday_creation_limit_reached(ctx: &mut context::TestContext) {
+    let (key, ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        ctx.authenticated_user_id,
+        DriverCacheKeyType::WorkdayCreationLimitation,
+    );
+
+    // Simulate an exhausted quota for the current window.
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(key, "0".to_string(), ttl)
+        .await
+        .unwrap();
+
+    let res = ctx
+        .authenticated_router
+        .post("/workdays")
+        .json(&json!({
+            "date": "2026-04-11",
+            "start_time": "08:00:00",
+            "end_time": null,
+            "rest_time": "00:00:00",
+            "overnight_rest": false
+        }))
+        .await;
+
+    res.assert_status(StatusCode::FORBIDDEN);
+
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "WORKDAY_CREATION_LIMIT_REACHED");
 }
