@@ -478,6 +478,7 @@ pub enum DriverCacheKeyType {
     VerifyEmail,
     ResetPassword,
     CurrentLimitation,
+    WorkdayCreationLimitation,
 }
 
 impl DriverCacheKeyType {
@@ -486,6 +487,7 @@ impl DriverCacheKeyType {
             DriverCacheKeyType::VerifyEmail => "verify_email",
             DriverCacheKeyType::ResetPassword => "reset_password",
             DriverCacheKeyType::CurrentLimitation => "current_limitation",
+            DriverCacheKeyType::WorkdayCreationLimitation => "limitation:workday_creation",
         }
     }
 
@@ -494,6 +496,7 @@ impl DriverCacheKeyType {
             DriverCacheKeyType::VerifyEmail => 15 * 60,
             DriverCacheKeyType::ResetPassword => 15 * 60,
             DriverCacheKeyType::CurrentLimitation => 5 * 60,
+            DriverCacheKeyType::WorkdayCreationLimitation => 12 * 60 * 60,
         }
     }
 }
@@ -519,6 +522,16 @@ pub trait DriverCacheRepository: Send + Sync {
     ) -> impl Future<Output = Result<Option<String>, DriverError>> + Send;
 
     fn delete_redis(&self, key: String) -> impl Future<Output = Result<(), DriverError>> + Send;
+
+    /// Atomically decrements the counter stored at `key`, initializing it to
+    /// `initial_value` (with `ttl_seconds`) the first time it is called within a window.
+    /// Returns the value after decrementing.
+    fn decrement_redis(
+        &self,
+        key: String,
+        initial_value: i64,
+        ttl_seconds: u64,
+    ) -> impl Future<Output = Result<i64, DriverError>> + Send;
 
     fn get_key_by_type(&self, driver_id: Uuid, key_type: DriverCacheKeyType) -> (String, u64) {
         (
@@ -602,5 +615,33 @@ impl DriverCacheRepository for MockDriverCacheRepository {
     async fn delete_redis(&self, key: String) -> Result<(), DriverError> {
         self.cache.lock().unwrap().remove(&key);
         Ok(())
+    }
+
+    async fn decrement_redis(
+        &self,
+        key: String,
+        initial_value: i64,
+        ttl_seconds: u64,
+    ) -> Result<i64, DriverError> {
+        let mut cache = self.cache.lock().unwrap();
+        let now = Utc::now();
+        let current = cache
+            .get(&key)
+            .filter(|(_, expiry)| *expiry > now)
+            .and_then(|(value, _)| value.parse::<i64>().ok());
+
+        let (new_value, expiry) = match current {
+            Some(value) => {
+                let expiry = cache.get(&key).map(|(_, e)| *e).unwrap_or(now);
+                (value - 1, expiry)
+            }
+            None => (
+                initial_value - 1,
+                now + chrono::Duration::seconds(ttl_seconds as i64),
+            ),
+        };
+
+        cache.insert(key, (new_value.to_string(), expiry));
+        Ok(new_value)
     }
 }

@@ -22,4 +22,7 @@ pub enum WorkdayError {
 
     #[error("A document has already been generated for this month")]
     WorkdayDocumentAlreadyGenerated,
+
+    #[error("Workday creation limit has been reached")]
+    WorkdayCreationLimitReached,
 }

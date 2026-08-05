@@ -150,6 +150,12 @@ pub struct WorkdayDocumentInformation {
 
 pub type GetWorkdayDocumentsByYearResponse = Vec<WorkdayDocumentInformation>;
 
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, ToSchema)]
+pub struct WorkdayCreationLimit {
+    pub limit: i64,
+    pub remaining: i64,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct WorkdayDocumentRow {
     pub fk_driver_id: Uuid,

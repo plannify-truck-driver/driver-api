@@ -291,6 +291,10 @@ impl From<WorkdayError> for ApiError {
                 error_code: "WORKDAY_DOCUMENT_ALREADY_GENERATED".to_string(),
                 content: None,
             },
+            WorkdayError::WorkdayCreationLimitReached => ApiError::Forbidden {
+                error_code: "WORKDAY_CREATION_LIMIT_REACHED".to_string(),
+                content: None,
+            },
         }
     }
 }

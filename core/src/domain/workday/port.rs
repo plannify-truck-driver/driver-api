@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::entities::{
-        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayDocument,
+        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayCreationLimit, WorkdayDocument,
         WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
     },
     infrastructure::workday::repositories::error::WorkdayError,
@@ -368,6 +368,11 @@ pub trait WorkdayService: Send + Sync {
         driver_id: Uuid,
         create_workday_request: CreateWorkdayRequest,
     ) -> impl Future<Output = Result<WorkdayRow, WorkdayError>> + Send;
+
+    fn get_workday_creation_limit(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<WorkdayCreationLimit, WorkdayError>> + Send;
 
     fn update_workday(
         &self,

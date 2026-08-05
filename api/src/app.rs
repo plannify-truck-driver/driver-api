@@ -75,6 +75,7 @@ impl App {
             ServiceConfig {
                 workday_garbage_retention_days: config.common.workday_garbage_retention_days,
                 account_deactivation_days: config.common.account_deactivation_days,
+                workday_creation_limit: config.common.workday_creation_limit,
             },
         )
         .await
