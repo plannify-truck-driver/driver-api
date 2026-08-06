@@ -88,7 +88,7 @@ impl TokenValidator for AuthValidator {
                 last_name: driver.lastname.clone(),
                 email: driver.email.clone(),
                 verified: driver.verified_at.is_some(),
-                deactivation_planned_at: driver.deactivated_at.clone(),
+                deactivation_planned_at: driver.deactivated_at,
             },
             exp: access_exp,
             iat: now,
