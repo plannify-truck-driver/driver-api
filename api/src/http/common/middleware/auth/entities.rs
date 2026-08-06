@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use plannify_driver_api_core::domain::driver::entities::DriverRow;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -20,6 +20,7 @@ pub struct DriverClaims {
     pub last_name: String,
     pub email: String,
     pub verified: bool,
+    pub deactivation_planned_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -87,6 +88,7 @@ impl TokenValidator for AuthValidator {
                 last_name: driver.lastname.clone(),
                 email: driver.email.clone(),
                 verified: driver.verified_at.is_some(),
+                deactivation_planned_at: driver.deactivated_at,
             },
             exp: access_exp,
             iat: now,
