@@ -18,6 +18,7 @@ pub fn generate_mock_token(user_id: &Uuid) -> String {
             last_name: "User".to_string(),
             email: "test.user@example.com".to_string(),
             verified: true,
+            deactivation_planned_at: None,
         },
         exp: now + 3600, // Token expires in 1 hour
         iat: now,
