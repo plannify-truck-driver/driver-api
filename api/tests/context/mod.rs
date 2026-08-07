@@ -79,6 +79,7 @@ impl AsyncTestContext for TestContext {
             workday_garbage_retention_days: 30,
             support_email: "contact@plannify.be".to_string(),
             account_deactivation_days: 30,
+            workday_creation_limit: 50,
         };
 
         let s3_config = S3Config {
@@ -124,6 +125,7 @@ impl AsyncTestContext for TestContext {
             ServiceConfig {
                 workday_garbage_retention_days: config.common.workday_garbage_retention_days,
                 account_deactivation_days: config.common.account_deactivation_days,
+                workday_creation_limit: config.common.workday_creation_limit,
             },
         )
         .await

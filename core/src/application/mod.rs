@@ -13,6 +13,10 @@ use crate::{
         driver::repositories::{
             postgres::PostgresDriverRepository, redis::RedisDriverCacheRepository,
         },
+        driver_information::repositories::{
+            postgres::PostgresDriverInformationRepository,
+            redis::RedisDriverInformationCacheRepository,
+        },
         employee::repositories::postgres::PostgresEmployeeRepository,
         mail::repositories::{
             postgres::PostgresMailRepository, redis::RedisMailCacheRepository,
@@ -43,6 +47,8 @@ pub type DriverService = Service<
     RedisUpdateCacheRepository,
     GrpcDocumentRepository,
     S3StorageRepository,
+    PostgresDriverInformationRepository,
+    RedisDriverInformationCacheRepository,
 >;
 
 #[derive(Clone)]
@@ -62,6 +68,8 @@ pub struct DriverRepositories {
     pub update_cache_repository: RedisUpdateCacheRepository,
     pub document_external_repository: GrpcDocumentRepository,
     pub storage_repository: S3StorageRepository,
+    pub driver_information_database_repository: PostgresDriverInformationRepository,
+    pub driver_information_cache_repository: RedisDriverInformationCacheRepository,
     pub service_config: ServiceConfig,
 }
 
@@ -143,6 +151,10 @@ pub async fn create_repositories(
     let mail_cache_repository = RedisMailCacheRepository::new(redis_manager.clone());
     let update_database_repository = PostgresUpdateRepository::new(pg_pool.clone());
     let update_cache_repository = RedisUpdateCacheRepository::new(redis_manager.clone());
+    let driver_information_database_repository =
+        PostgresDriverInformationRepository::new(pg_pool.clone());
+    let driver_information_cache_repository =
+        RedisDriverInformationCacheRepository::new(redis_manager.clone());
 
     let document_external_repository = GrpcDocumentRepository::connect(pdf_service_endpoint)
         .await
@@ -169,6 +181,8 @@ pub async fn create_repositories(
         update_cache_repository,
         document_external_repository,
         storage_repository,
+        driver_information_database_repository,
+        driver_information_cache_repository,
         service_config,
     })
 }
@@ -188,6 +202,8 @@ impl From<DriverRepositories> for DriverService {
             val.update_cache_repository,
             val.document_external_repository,
             val.storage_repository,
+            val.driver_information_database_repository,
+            val.driver_information_cache_repository,
             val.service_config,
         )
     }

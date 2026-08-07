@@ -1,5 +1,6 @@
 pub mod document;
 pub mod driver;
+pub mod driver_information;
 pub mod employee;
 pub mod health;
 pub mod mail;

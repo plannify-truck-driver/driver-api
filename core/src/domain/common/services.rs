@@ -2,6 +2,9 @@ use crate::domain::{
     common::config::ServiceConfig,
     document::port::DocumentExternalRepository,
     driver::port::{DriverCacheRepository, DriverDatabaseRepository},
+    driver_information::port::{
+        DriverInformationCacheRepository, DriverInformationDatabaseRepository,
+    },
     health::port::HealthRepository,
     mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository},
     storage::port::StorageRepository,
@@ -10,7 +13,7 @@ use crate::domain::{
 };
 
 #[derive(Clone)]
-pub struct Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+pub struct Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -24,6 +27,8 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
     DS: StorageRepository,
+    DID: DriverInformationDatabaseRepository,
+    DIC: DriverInformationCacheRepository,
 {
     pub(crate) health_repository: H,
     pub(crate) driver_database_repository: DD,
@@ -37,12 +42,14 @@ where
     pub(crate) update_cache_repository: UC,
     pub(crate) document_external_repository: DE,
     pub(crate) storage_repository: DS,
+    pub(crate) driver_information_database_repository: DID,
+    pub(crate) driver_information_cache_repository: DIC,
     pub(crate) config: ServiceConfig,
 }
 
 #[allow(clippy::too_many_arguments)]
-impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
-    Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
+    Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -56,6 +63,8 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
     DS: StorageRepository,
+    DID: DriverInformationDatabaseRepository,
+    DIC: DriverInformationCacheRepository,
 {
     pub fn new(
         health_repository: H,
@@ -70,6 +79,8 @@ where
         update_cache_repository: UC,
         document_external_repository: DE,
         storage_repository: DS,
+        driver_information_database_repository: DID,
+        driver_information_cache_repository: DIC,
         config: ServiceConfig,
     ) -> Self {
         Self {
@@ -85,6 +96,8 @@ where
             update_cache_repository,
             document_external_repository,
             storage_repository,
+            driver_information_database_repository,
+            driver_information_cache_repository,
             config,
         }
     }

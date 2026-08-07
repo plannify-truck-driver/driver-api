@@ -26,8 +26,8 @@ use crate::{
     },
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS> MailService
-    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC> MailService
+    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -41,6 +41,8 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
     DS: StorageRepository,
+    DID: crate::domain::driver_information::port::DriverInformationDatabaseRepository,
+    DIC: crate::domain::driver_information::port::DriverInformationCacheRepository,
 {
     #[tracing::instrument(
         name = "mail_service.send_creation_email",
@@ -688,6 +690,9 @@ mod tests {
                 entities::DriverRow,
                 port::{MockDriverCacheRepository, MockDriverDatabaseRepository},
             },
+            driver_information::port::{
+                MockDriverInformationCacheRepository, MockDriverInformationDatabaseRepository,
+            },
             health::port::MockHealthRepository,
             mail::{
                 entities::{DriverMailAttachmentRow, DriverMailRow, DriverMailTypeRow, MailStatus},
@@ -870,9 +875,7 @@ mod tests {
         }
     }
 
-    fn make_service(
-        mail_db: MailDbSpy,
-    ) -> Service<
+    type MailTestService = Service<
         MockHealthRepository,
         MockDriverDatabaseRepository,
         MockDriverCacheRepository,
@@ -885,7 +888,11 @@ mod tests {
         MockUpdateCacheRepository,
         MockDocumentExternalRepository,
         MockStorageRepository,
-    > {
+        MockDriverInformationDatabaseRepository,
+        MockDriverInformationCacheRepository,
+    >;
+
+    fn make_service(mail_db: MailDbSpy) -> MailTestService {
         Service::new(
             MockHealthRepository,
             MockDriverDatabaseRepository::new(),
@@ -899,9 +906,12 @@ mod tests {
             MockUpdateCacheRepository::new(),
             MockDocumentExternalRepository,
             MockStorageRepository::new(),
+            MockDriverInformationDatabaseRepository::new(),
+            MockDriverInformationCacheRepository::new(),
             ServiceConfig {
                 workday_garbage_retention_days: 30,
                 account_deactivation_days: 30,
+                workday_creation_limit: 100,
             },
         )
     }

@@ -2,6 +2,7 @@ pub mod authentication;
 pub mod common;
 pub mod config;
 pub mod driver;
+pub mod driver_information;
 pub mod formating;
 pub mod health;
 pub mod mail;

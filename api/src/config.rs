@@ -184,6 +184,14 @@ pub struct CommonConfig {
         name = "account_deactivation_days"
     )]
     pub account_deactivation_days: i64,
+
+    #[arg(
+        long = "workday-creation-limit",
+        env = "WORKDAY_CREATION_LIMIT",
+        default_value = "50",
+        name = "workday_creation_limit"
+    )]
+    pub workday_creation_limit: i64,
 }
 
 #[derive(Clone, Parser, Debug, Default)]

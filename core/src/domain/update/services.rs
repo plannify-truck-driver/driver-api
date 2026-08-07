@@ -15,8 +15,8 @@ use crate::{
     infrastructure::update::repositories::error::UpdateError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS> UpdateService
-    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC> UpdateService
+    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -30,6 +30,8 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
     DS: StorageRepository,
+    DID: crate::domain::driver_information::port::DriverInformationDatabaseRepository,
+    DIC: crate::domain::driver_information::port::DriverInformationCacheRepository,
 {
     #[tracing::instrument(
         name = "update_service.get_updates_by_version",

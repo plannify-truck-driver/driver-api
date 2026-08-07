@@ -31,6 +31,7 @@ use crate::{
         common::middleware::{auth::AuthRefreshMiddleware, tracing::tracing_middleware},
         config::routes::config_routes,
         driver::routes::{driver_routes, public_driver_routes},
+        driver_information::routes::driver_information_routes,
         formating::routes::formating_routes,
         mail::routes::mail_routes,
         update::routes::update_routes,
@@ -75,6 +76,7 @@ impl App {
             ServiceConfig {
                 workday_garbage_retention_days: config.common.workday_garbage_retention_days,
                 account_deactivation_days: config.common.account_deactivation_days,
+                workday_creation_limit: config.common.workday_creation_limit,
             },
         )
         .await
@@ -127,6 +129,7 @@ impl App {
             .merge(driver_routes())
             .merge(workday_routes())
             .merge(mail_routes())
+            .merge(driver_information_routes())
             .route_layer(from_extractor_with_state::<AuthMiddleware, AuthValidator>(
                 auth_validator.clone(),
             ));

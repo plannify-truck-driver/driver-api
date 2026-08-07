@@ -41,6 +41,8 @@ impl From<DriverRepositories> for AppState {
             repositories.update_cache_repository,
             repositories.document_external_repository,
             repositories.storage_repository,
+            repositories.driver_information_database_repository,
+            repositories.driver_information_cache_repository,
             repositories.service_config,
         );
         let config = Config::default();
