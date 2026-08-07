@@ -875,9 +875,7 @@ mod tests {
         }
     }
 
-    fn make_service(
-        mail_db: MailDbSpy,
-    ) -> Service<
+    type MailTestService = Service<
         MockHealthRepository,
         MockDriverDatabaseRepository,
         MockDriverCacheRepository,
@@ -892,7 +890,9 @@ mod tests {
         MockStorageRepository,
         MockDriverInformationDatabaseRepository,
         MockDriverInformationCacheRepository,
-    > {
+    >;
+
+    fn make_service(mail_db: MailDbSpy) -> MailTestService {
         Service::new(
             MockHealthRepository,
             MockDriverDatabaseRepository::new(),
