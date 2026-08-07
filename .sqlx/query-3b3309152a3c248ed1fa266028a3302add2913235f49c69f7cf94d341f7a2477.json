@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT pk_information_id, type as \"information_type: _\", message, created_at, show_at, start_at, end_at\n            FROM driver_informations\n            WHERE end_at > NOW()\n            ORDER BY start_at ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pk_information_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "information_type: _",
+        "type_info": {
+          "Custom": {
+            "name": "driver_informations_type",
+            "kind": {
+              "Enum": [
+                "INFO",
+                "WARNING"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "message",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "show_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "start_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "end_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3b3309152a3c248ed1fa266028a3302add2913235f49c69f7cf94d341f7a2477"
+}

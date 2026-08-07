@@ -6,9 +6,11 @@ use axum::{
 use plannify_driver_api_core::{
     domain::common::CoreError,
     infrastructure::{
-        driver::repositories::error::DriverError, health::repositories::error::HealthError,
-        mail::repositories::error::MailError, storage::repositories::error::StorageError,
-        update::repositories::error::UpdateError, workday::repositories::error::WorkdayError,
+        driver::repositories::error::DriverError,
+        driver_information::repositories::error::DriverInformationError,
+        health::repositories::error::HealthError, mail::repositories::error::MailError,
+        storage::repositories::error::StorageError, update::repositories::error::UpdateError,
+        workday::repositories::error::WorkdayError,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -335,6 +337,15 @@ impl From<UpdateError> for ApiError {
             UpdateError::NotFound => ApiError::NotFound {
                 error_code: "UPDATE_NOT_FOUND".to_string(),
             },
+        }
+    }
+}
+
+impl From<DriverInformationError> for ApiError {
+    fn from(error: DriverInformationError) -> Self {
+        match error {
+            DriverInformationError::Internal => ApiError::InternalServerError,
+            DriverInformationError::DatabaseError => ApiError::InternalServerError,
         }
     }
 }
