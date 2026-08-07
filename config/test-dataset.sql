@@ -38,3 +38,9 @@ INSERT INTO "driver_mails" ("pk_driver_mail_id", "fk_driver_id", "fk_employee_id
 
 INSERT INTO "driver_mail_attachments" ("pk_driver_mail_attachment_id", "fk_driver_mail_id", "fk_document_id") VALUES
 ('423e4567-e89b-12d3-a456-426614174000', '223e4567-e89b-12d3-a456-426614174001', '323e4567-e89b-12d3-a456-426614174000');
+
+INSERT INTO "driver_informations" ("type", "message", "show_at", "start_at", "end_at") VALUES
+('INFO', '{"fr": "Maintenance programmée", "en": "Scheduled maintenance"}', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days'),
+('WARNING', '{"fr": "Attention aux conditions météo", "en": "Beware of weather conditions"}', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '2 hours', NOW() + INTERVAL '10 days'),
+('INFO', '{"fr": "Pas encore visible", "en": "Not yet visible"}', NOW() + INTERVAL '10 days', NOW() + INTERVAL '10 days', NOW() + INTERVAL '20 days'),
+('INFO', '{"fr": "Expiré", "en": "Expired"}', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days', NOW() - INTERVAL '1 day');

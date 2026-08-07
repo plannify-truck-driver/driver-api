@@ -22,8 +22,8 @@ use crate::{
     infrastructure::workday::repositories::error::WorkdayError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
-    Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
+    Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -37,6 +37,8 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
     DS: StorageRepository,
+    DID: crate::domain::driver_information::port::DriverInformationDatabaseRepository,
+    DIC: crate::domain::driver_information::port::DriverInformationCacheRepository,
 {
     /// Number of workday creations left for `driver_id` within the current window.
     /// Defaults to the full quota when the driver has not created any workday yet.
@@ -60,8 +62,8 @@ where
     }
 }
 
-impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS> WorkdayService
-    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC> WorkdayService
+    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -75,6 +77,8 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
     DS: StorageRepository,
+    DID: crate::domain::driver_information::port::DriverInformationDatabaseRepository,
+    DIC: crate::domain::driver_information::port::DriverInformationCacheRepository,
 {
     #[tracing::instrument(
         name = "workday_service.get_workday_by_date",

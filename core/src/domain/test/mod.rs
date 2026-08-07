@@ -3,6 +3,9 @@ use crate::{
     domain::{
         document::port::MockDocumentExternalRepository,
         driver::port::{MockDriverCacheRepository, MockDriverDatabaseRepository},
+        driver_information::port::{
+            MockDriverInformationCacheRepository, MockDriverInformationDatabaseRepository,
+        },
         health::port::MockHealthRepository,
         mail::port::{MockMailCacheRepository, MockMailDatabaseRepository, MockMailSmtpRepository},
         storage::port::MockStorageRepository,
@@ -26,6 +29,8 @@ pub type MockService = Service<
     MockUpdateCacheRepository,
     MockDocumentExternalRepository,
     MockStorageRepository,
+    MockDriverInformationDatabaseRepository,
+    MockDriverInformationCacheRepository,
 >;
 
 pub fn create_mock_service() -> MockService {
@@ -41,6 +46,8 @@ pub fn create_mock_service() -> MockService {
     let update_cache_repository = MockUpdateCacheRepository::new();
     let document_external_repository = MockDocumentExternalRepository;
     let storage_repository = MockStorageRepository::new();
+    let driver_information_database_repository = MockDriverInformationDatabaseRepository::new();
+    let driver_information_cache_repository = MockDriverInformationCacheRepository::new();
 
     MockService::new(
         health_repository,
@@ -55,6 +62,8 @@ pub fn create_mock_service() -> MockService {
         update_cache_repository,
         document_external_repository,
         storage_repository,
+        driver_information_database_repository,
+        driver_information_cache_repository,
         ServiceConfig::default(),
     )
 }

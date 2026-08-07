@@ -15,8 +15,8 @@ use crate::{
     infrastructure::health::repositories::error::HealthError,
 };
 
-impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS> HealthService
-    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS>
+impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC> HealthService
+    for Service<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC>
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
@@ -30,6 +30,8 @@ where
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
     DS: StorageRepository,
+    DID: crate::domain::driver_information::port::DriverInformationDatabaseRepository,
+    DIC: crate::domain::driver_information::port::DriverInformationCacheRepository,
 {
     async fn check_health(&self) -> Result<IsHealthy, HealthError> {
         self.health_repository.ping().await.to_result()
