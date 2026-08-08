@@ -4,7 +4,7 @@ use axum::{
 };
 use axum_extra::extract::CookieJar;
 
-use tracing::error;
+use tracing::info;
 
 use crate::http::common::{api_error::ApiError, middleware::auth::entities::TokenValidator};
 pub mod entities;
@@ -24,7 +24,7 @@ where
         let cookie_jar = CookieJar::from_request_parts(parts, state)
             .await
             .map_err(|e| {
-                error!("Failed to extract cookies: {:?}", e);
+                info!("Failed to extract cookies: {:?}", e);
                 ApiError::Unauthorized {
                     error_code: "UNAUTHORIZED".to_string(),
                 }
@@ -71,7 +71,7 @@ where
         let cookie_jar = CookieJar::from_request_parts(parts, state)
             .await
             .map_err(|e| {
-                error!("Failed to extract cookies: {:?}", e);
+                info!("Failed to extract cookies: {:?}", e);
                 ApiError::Unauthorized {
                     error_code: "UNAUTHORIZED".to_string(),
                 }
@@ -81,7 +81,7 @@ where
         let auth_cookie = cookie_jar.get("refresh_token");
         let token = auth_cookie
             .ok_or_else(|| {
-                error!("Refresh token not found in cookies");
+                info!("Refresh token not found in cookies");
                 ApiError::Unauthorized {
                     error_code: "UNAUTHORIZED".to_string(),
                 }
