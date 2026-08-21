@@ -166,7 +166,7 @@ impl App {
         api.info = custom_info.info;
         if config.environment.eq(&Environment::Production) {
             api.servers = Some(vec![utoipa::openapi::Server::new(
-                "https://api.plannify.be/driver/v1",
+                "https://api2.plannify.be/driver/v1",
             )]);
         } else if config.environment.eq(&Environment::Development) {
             api.servers = Some(vec![utoipa::openapi::Server::new(
