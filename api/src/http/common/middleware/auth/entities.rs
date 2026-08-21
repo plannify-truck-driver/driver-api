@@ -3,7 +3,7 @@ use plannify_driver_api_core::domain::driver::entities::DriverRow;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use tracing::{info, error};
+use tracing::{error, info};
 
 use crate::{config::JwtConfig, http::common::api_error::ApiError};
 
