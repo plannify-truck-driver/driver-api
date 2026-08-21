@@ -136,7 +136,7 @@ impl TokenValidator for AuthValidator {
             &Validation::new(Algorithm::HS256),
         )
         .map_err(|e| {
-            error!("Failed to decode token: {:?}", e);
+            info!("Failed to decode token: {:?}", e);
             ApiError::Unauthorized {
                 error_code: "UNAUTHORIZED".to_string(),
             }
@@ -168,7 +168,7 @@ impl TokenValidator for AuthValidator {
             &Validation::new(Algorithm::HS256),
         )
         .map_err(|e| {
-            error!("Failed to decode refresh token: {:?}", e);
+            info!("Failed to decode refresh token: {:?}", e);
             ApiError::Unauthorized {
                 error_code: "UNAUTHORIZED".to_string(),
             }
