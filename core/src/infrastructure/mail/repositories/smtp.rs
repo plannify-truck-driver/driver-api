@@ -439,7 +439,7 @@ impl MailSmtpRepository for SmtpMailRepository {
                     "fr" => "%d/%m/%Y %H:%M %Z",
                     _ => "%m/%d/%Y %H:%M %Z",
                 };
-                
+
                 dt.with_timezone(&self.timezone).format(fmt).to_string()
             }),
         );
