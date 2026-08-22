@@ -595,10 +595,10 @@ async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut contex
 #[tokio::test]
 #[serial]
 async fn test_login_locked_out_rejects_correct_password(ctx: &mut context::TestContext) {
-    let (attempts_key, attempts_ttl) = ctx
-        .repositories
-        .driver_cache_repository
-        .get_key_by_type(ctx.authenticated_user_id, DriverCacheKeyType::LoginAttemptsLimitation);
+    let (attempts_key, attempts_ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        ctx.authenticated_user_id,
+        DriverCacheKeyType::LoginAttemptsLimitation,
+    );
 
     // Simulate an already-exhausted attempts budget.
     ctx.repositories
@@ -629,10 +629,10 @@ async fn test_login_locked_out_rejects_correct_password(ctx: &mut context::TestC
 #[tokio::test]
 #[serial]
 async fn test_login_wrong_password_decrements_and_lockout_persists(ctx: &mut context::TestContext) {
-    let (attempts_key, attempts_ttl) = ctx
-        .repositories
-        .driver_cache_repository
-        .get_key_by_type(ctx.authenticated_user_id, DriverCacheKeyType::LoginAttemptsLimitation);
+    let (attempts_key, attempts_ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        ctx.authenticated_user_id,
+        DriverCacheKeyType::LoginAttemptsLimitation,
+    );
 
     // Only one attempt left before lockout.
     ctx.repositories
@@ -685,10 +685,10 @@ async fn test_login_wrong_password_decrements_and_lockout_persists(ctx: &mut con
 #[tokio::test]
 #[serial]
 async fn test_login_success_resets_attempts_counter(ctx: &mut context::TestContext) {
-    let (attempts_key, attempts_ttl) = ctx
-        .repositories
-        .driver_cache_repository
-        .get_key_by_type(ctx.authenticated_user_id, DriverCacheKeyType::LoginAttemptsLimitation);
+    let (attempts_key, attempts_ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        ctx.authenticated_user_id,
+        DriverCacheKeyType::LoginAttemptsLimitation,
+    );
 
     // Simulate a few prior failed attempts, still within budget.
     ctx.repositories

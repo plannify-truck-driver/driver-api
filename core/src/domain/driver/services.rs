@@ -203,7 +203,11 @@ where
             return Err(DriverError::InvalidCredentials);
         }
 
-        if let Err(e) = self.driver_cache_repository.delete_redis(attempts_key).await {
+        if let Err(e) = self
+            .driver_cache_repository
+            .delete_redis(attempts_key)
+            .await
+        {
             error!("Failed to reset login attempts counter: {}", e);
         }
 

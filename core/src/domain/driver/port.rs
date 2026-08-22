@@ -499,7 +499,7 @@ impl DriverCacheKeyType {
             DriverCacheKeyType::ResetPassword => 15 * 60,
             DriverCacheKeyType::CurrentLimitation => 5 * 60,
             DriverCacheKeyType::WorkdayCreationLimitation => 12 * 60 * 60,
-            DriverCacheKeyType::LoginAttemptsLimitation => 1 * 60 * 60,
+            DriverCacheKeyType::LoginAttemptsLimitation => 60 * 60,
         }
     }
 }
