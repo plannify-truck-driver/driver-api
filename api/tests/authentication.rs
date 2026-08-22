@@ -594,6 +594,135 @@ async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut contex
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
+async fn test_login_locked_out_rejects_correct_password(ctx: &mut context::TestContext) {
+    let (attempts_key, attempts_ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        ctx.authenticated_user_id,
+        DriverCacheKeyType::LoginAttemptsLimitation,
+    );
+
+    // Simulate an already-exhausted attempts budget.
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(attempts_key.clone(), "0".to_string(), attempts_ttl)
+        .await
+        .unwrap();
+
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/login")
+        .json(&json!({
+            "email": "test.user@example.be",
+            "password": "Baptiste01!"
+        }))
+        .await;
+
+    res.assert_status(StatusCode::UNAUTHORIZED);
+    let body: ErrorBody = res.json();
+    assert_eq!(
+        body.error_code, "INVALID_CREDENTIALS",
+        "A locked-out account must be rejected even with the correct password, \
+         and must return the exact same error as a normal wrong password"
+    );
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_login_wrong_password_decrements_and_lockout_persists(ctx: &mut context::TestContext) {
+    let (attempts_key, attempts_ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        ctx.authenticated_user_id,
+        DriverCacheKeyType::LoginAttemptsLimitation,
+    );
+
+    // Only one attempt left before lockout.
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(attempts_key.clone(), "1".to_string(), attempts_ttl)
+        .await
+        .unwrap();
+
+    let res_fail = ctx
+        .unauthenticated_router
+        .post("/authentication/login")
+        .json(&json!({
+            "email": "test.user@example.be",
+            "password": "wrong-password"
+        }))
+        .await;
+
+    res_fail.assert_status(StatusCode::UNAUTHORIZED);
+    let body_fail: ErrorBody = res_fail.json();
+    assert_eq!(body_fail.error_code, "INVALID_CREDENTIALS");
+
+    let counter_after_failure = ctx
+        .repositories
+        .driver_cache_repository
+        .get_redis(attempts_key.clone())
+        .await
+        .unwrap();
+    assert_eq!(
+        counter_after_failure,
+        Some("0".to_string()),
+        "The failed attempt should have decremented the counter to 0"
+    );
+
+    // The account is now locked: even the correct password must be rejected.
+    let res_locked = ctx
+        .unauthenticated_router
+        .post("/authentication/login")
+        .json(&json!({
+            "email": "test.user@example.be",
+            "password": "Baptiste01!"
+        }))
+        .await;
+
+    res_locked.assert_status(StatusCode::UNAUTHORIZED);
+    let body_locked: ErrorBody = res_locked.json();
+    assert_eq!(body_locked.error_code, "INVALID_CREDENTIALS");
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_login_success_resets_attempts_counter(ctx: &mut context::TestContext) {
+    let (attempts_key, attempts_ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        ctx.authenticated_user_id,
+        DriverCacheKeyType::LoginAttemptsLimitation,
+    );
+
+    // Simulate a few prior failed attempts, still within budget.
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(attempts_key.clone(), "5".to_string(), attempts_ttl)
+        .await
+        .unwrap();
+
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/login")
+        .json(&json!({
+            "email": "test.user@example.be",
+            "password": "Baptiste01!"
+        }))
+        .await;
+
+    res.assert_status(StatusCode::OK);
+
+    let counter_after_success = ctx
+        .repositories
+        .driver_cache_repository
+        .get_redis(attempts_key)
+        .await
+        .unwrap();
+    assert_eq!(
+        counter_after_success, None,
+        "A successful login should reset the attempts counter"
+    );
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
 async fn test_request_password_reset_success(ctx: &mut context::TestContext) {
     sqlx::query(
         "UPDATE drivers SET mail_preferences = mail_preferences | 2 WHERE pk_driver_id = $1",
@@ -756,6 +885,79 @@ async fn test_confirm_password_reset_success(ctx: &mut context::TestContext) {
         "Token should be deleted from Redis after use"
     );
 
+    let res_login = ctx
+        .unauthenticated_router
+        .post("/authentication/login")
+        .json(&json!({
+            "email": "test.user@example.be",
+            "password": "newPassword123"
+        }))
+        .await;
+    res_login.assert_status(StatusCode::OK);
+
+    ctx.repositories
+        .driver_database_repository
+        .update_driver(original_driver)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_confirm_password_reset_clears_login_lockout(ctx: &mut context::TestContext) {
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_email("test.user@example.be".to_string())
+        .await
+        .unwrap();
+
+    let original_driver = driver.clone();
+
+    let (attempts_key, attempts_ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        driver.pk_driver_id,
+        DriverCacheKeyType::LoginAttemptsLimitation,
+    );
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(attempts_key.clone(), "0".to_string(), attempts_ttl)
+        .await
+        .unwrap();
+
+    let (reset_key, reset_ttl) = ctx
+        .repositories
+        .driver_cache_repository
+        .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::ResetPassword);
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(reset_key, "valid-token".to_string(), reset_ttl)
+        .await
+        .unwrap();
+
+    ctx.unauthenticated_router
+        .post("/authentication/confirm-reset-password")
+        .json(&json!({
+            "driver_id": driver.pk_driver_id,
+            "token": "valid-token",
+            "password": "newPassword123"
+        }))
+        .await
+        .assert_status(StatusCode::OK);
+
+    let counter_after_reset = ctx
+        .repositories
+        .driver_cache_repository
+        .get_redis(attempts_key)
+        .await
+        .unwrap();
+    assert_eq!(
+        counter_after_reset, None,
+        "resetting the password should clear the login lockout counter"
+    );
+
+    // The account was locked before the reset: login must now succeed
+    // immediately with the new password, proving the lockout was lifted.
     let res_login = ctx
         .unauthenticated_router
         .post("/authentication/login")

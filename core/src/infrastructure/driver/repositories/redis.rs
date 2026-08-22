@@ -145,4 +145,24 @@ impl DriverCacheRepository for RedisDriverCacheRepository {
 
         Ok(result)
     }
+
+    #[tracing::instrument(
+        name = "cache.drivers.get_ttl",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "TTL",
+        )
+    )]
+    async fn get_ttl(&self, key: String) -> Result<Option<i64>, DriverError> {
+        let mut conn = self.connection.clone();
+        let ttl: i64 = conn.ttl(key.clone()).await.map_err(|e| {
+            error!("Failed to read TTL for redis key {}: {:?}", key, e);
+            DriverError::Internal
+        })?;
+
+        // Redis returns -2 when the key doesn't exist and -1 when it exists
+        // without an expiry; both mean "no meaningful TTL" here.
+        Ok(if ttl >= 0 { Some(ttl) } else { None })
+    }
 }

@@ -21,6 +21,7 @@ pub struct SmtpMailRepository {
     tera: Arc<Tera>,
     frontend_url: String,
     is_test_environment: bool,
+    timezone: chrono_tz::Tz,
 }
 
 impl SmtpMailRepository {
@@ -30,6 +31,7 @@ impl SmtpMailRepository {
         tera: Arc<Tera>,
         frontend_url: String,
         is_test_environment: bool,
+        timezone: chrono_tz::Tz,
     ) -> Self {
         Self {
             mail_client,
@@ -37,6 +39,7 @@ impl SmtpMailRepository {
             tera,
             frontend_url,
             is_test_environment,
+            timezone,
         }
     }
 }
@@ -400,6 +403,56 @@ impl MailSmtpRepository for SmtpMailRepository {
         let subject = match driver.language.as_str() {
             "fr" => "Votre mot de passe Plannify a été modifié".to_string(),
             "en" => "Your Plannify password has been changed".to_string(),
+            _ => {
+                error!("Unsupported driver language: {}", driver.language);
+                return Err(MailError::Internal);
+            }
+        };
+
+        self.send_email(driver.email, subject, html_body)
+    }
+
+    #[tracing::instrument(
+        name = "smtp.mails.send_driver_suspicious_login_email",
+        skip(self),
+        fields(driver_id = %driver.pk_driver_id)
+    )]
+    async fn send_driver_suspicious_login_email(
+        &self,
+        driver: DriverRow,
+        unlock_at: Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Result<(), MailError> {
+        if self.is_test_environment {
+            warn!(
+                "Test Environment: Suspicious login email to {} not sent.",
+                driver.email
+            );
+            return Ok(());
+        }
+
+        let mut context = Context::new();
+        context.insert("full_name", driver.firstname.as_str());
+        context.insert(
+            "unlock_time",
+            &unlock_at.map(|dt| {
+                let fmt = match driver.language.as_str() {
+                    "fr" => "%d/%m/%Y %H:%M %Z",
+                    _ => "%m/%d/%Y %H:%M %Z",
+                };
+
+                dt.with_timezone(&self.timezone).format(fmt).to_string()
+            }),
+        );
+
+        let template_path = format!("{}/suspicious_login.html", driver.language.as_str());
+        let html_body = self.tera.render(&template_path, &context).map_err(|e| {
+            error!("Could not render email template: {:?}", e);
+            MailError::CannotCreateMessage
+        })?;
+
+        let subject = match driver.language.as_str() {
+            "fr" => "Activité suspecte détectée sur votre compte Plannify".to_string(),
+            "en" => "Suspicious activity detected on your Plannify account".to_string(),
             _ => {
                 error!("Unsupported driver language: {}", driver.language);
                 return Err(MailError::Internal);

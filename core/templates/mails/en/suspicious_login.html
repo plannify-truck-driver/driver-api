@@ -1,0 +1,45 @@
+{% extends "en/base.html" %} {% block email_title %}Suspicious activity
+detected - Plannify{% endblock email_title %} {% block content %}
+<p>Hello {{ full_name }},</p>
+<p>
+  We detected several unsuccessful login attempts on your Plannify account.
+  As a precaution, access to your account has been temporarily suspended.
+  {% if unlock_time %}You'll be able to log in again from
+  <strong>{{ unlock_time }}</strong>.{% else %}You'll be able to log in again
+  shortly.{% endif %}
+</p>
+<p>
+  If this was you and you simply forgot your password, no worries: you can
+  reset it right now from the app, which will unlock access to your account
+  immediately.
+</p>
+<p>
+  If this wasn't you, someone may have tried to access your account. We
+  strongly recommend that you:
+</p>
+<ul>
+  <li>
+    <strong>Use a strong, unique password</strong>: at least 12 characters,
+    combining uppercase, lowercase, digits and special characters. Avoid
+    dictionary words as well as simple substitutions (like replacing an "a"
+    with "@" or an "o" with "0") — these are the first variations attack
+    tools try.
+  </li>
+  <li>
+    <strong>Use a password manager</strong> to generate and store a unique
+    password for each service, instead of memorizing or reusing one
+    elsewhere.
+  </li>
+  <li>
+    <strong>Avoid changing your password too often</strong> "just in case": a
+    strong, unique password doesn't need to be rotated regularly, and
+    frequent changes usually push people toward weaker, more predictable
+    passwords.
+  </li>
+</ul>
+<p>
+  If you have any doubt about the security of your account, please contact
+  our support.
+</p>
+<p>Best regards,<br />The Plannify team</p>
+{% endblock content %}

@@ -81,6 +81,7 @@ pub async fn create_repositories(
     transport: SmtpTransport,
     frontend_url: String,
     is_test_environment: bool,
+    mail_timezone: &str,
     pdf_service_endpoint: &str,
     s3_access_key: &str,
     s3_secret_key: &str,
@@ -118,6 +119,11 @@ pub async fn create_repositories(
         }
     };
 
+    let mail_timezone: chrono_tz::Tz = mail_timezone.parse().map_err(|e| {
+        error!("Invalid mail timezone '{}': {}", mail_timezone, e);
+        CoreError::ServiceUnavailable(format!("Invalid mail timezone '{}'", mail_timezone))
+    })?;
+
     let s3_credentials =
         aws_sdk_s3::config::Credentials::new(s3_access_key, s3_secret_key, None, None, "Static");
     let s3_config = aws_sdk_s3::config::Builder::new()
@@ -146,6 +152,7 @@ pub async fn create_repositories(
         Arc::new(tera),
         frontend_url,
         is_test_environment,
+        mail_timezone,
     );
     let mail_database_repository = PostgresMailRepository::new(pg_pool.clone());
     let mail_cache_repository = RedisMailCacheRepository::new(redis_manager.clone());

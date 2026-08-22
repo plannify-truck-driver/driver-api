@@ -67,6 +67,7 @@ impl App {
             config.smtp.to_transport(),
             config.common.frontend_url.clone(),
             matches!(config.environment, Environment::Test),
+            &config.common.mail_timezone,
             &config.common.pdf_service_endpoint,
             &config.s3.access_key,
             &config.s3.secret_key,
@@ -77,6 +78,7 @@ impl App {
                 workday_garbage_retention_days: config.common.workday_garbage_retention_days,
                 account_deactivation_days: config.common.account_deactivation_days,
                 workday_creation_limit: config.common.workday_creation_limit,
+                max_login_attempts: config.common.max_login_attempts,
             },
         )
         .await

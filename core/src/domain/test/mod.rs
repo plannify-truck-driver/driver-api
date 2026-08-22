@@ -14,6 +14,7 @@ use crate::{
     },
 };
 
+pub mod driver;
 pub mod workday;
 
 pub type MockService = Service<

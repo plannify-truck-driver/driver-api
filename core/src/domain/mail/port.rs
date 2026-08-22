@@ -64,6 +64,13 @@ pub trait MailSmtpRepository: Send + Sync {
         driver: DriverRow,
     ) -> impl Future<Output = Result<(), MailError>> + Send;
 
+    /// `unlock_at` is the time the temporary lockout expires, when known.
+    fn send_driver_suspicious_login_email(
+        &self,
+        driver: DriverRow,
+        unlock_at: Option<DateTime<Utc>>,
+    ) -> impl Future<Output = Result<(), MailError>> + Send;
+
     fn send_driver_monthly_report_email(
         &self,
         driver: DriverRow,
@@ -228,6 +235,7 @@ pub trait MailService: Send + Sync {
     ) -> impl Future<Output = Result<(bytes::Bytes, String), MailError>> + Send;
 }
 
+#[derive(Clone)]
 pub struct MockMailSmtpRepository;
 
 impl MockMailSmtpRepository {
@@ -287,6 +295,14 @@ impl MailSmtpRepository for MockMailSmtpRepository {
     }
 
     async fn send_driver_password_change_email(&self, _driver: DriverRow) -> Result<(), MailError> {
+        Ok(())
+    }
+
+    async fn send_driver_suspicious_login_email(
+        &self,
+        _driver: DriverRow,
+        _unlock_at: Option<DateTime<Utc>>,
+    ) -> Result<(), MailError> {
         Ok(())
     }
 
