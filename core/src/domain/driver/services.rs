@@ -1,8 +1,6 @@
 use crate::{
-    Service,
-    domain::{
-        document::port::DocumentExternalRepository,
-        driver::{
+    Service, domain::{
+        document::port::DocumentExternalRepository, driver::{
             entities::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverLimitationRow,
                 DriverRestPeriod, DriverRow, LoginDriverRequest, UpdateDriverRequest,
