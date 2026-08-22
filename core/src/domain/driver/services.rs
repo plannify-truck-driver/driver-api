@@ -1,6 +1,8 @@
 use crate::{
-    Service, domain::{
-        document::port::DocumentExternalRepository, driver::{
+    Service,
+    domain::{
+        document::port::DocumentExternalRepository,
+        driver::{
             entities::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverLimitationRow,
                 DriverRestPeriod, DriverRow, LoginDriverRequest, UpdateDriverRequest,
@@ -9,8 +11,17 @@ use crate::{
                 DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository, DriverService,
                 to_email_case, to_title_case,
             },
-        }, driver_information::port::{DriverInformationCacheRepository, DriverInformationDatabaseRepository}, health::port::HealthRepository, mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository}, storage::port::StorageRepository, update::port::{UpdateCacheRepository, UpdateDatabaseRepository}, workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
-    }, infrastructure::driver::repositories::error::DriverError,
+        },
+        driver_information::port::{
+            DriverInformationCacheRepository, DriverInformationDatabaseRepository,
+        },
+        health::port::HealthRepository,
+        mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository},
+        storage::port::StorageRepository,
+        update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
+        workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
+    },
+    infrastructure::driver::repositories::error::DriverError,
 };
 use argon2::{
     Algorithm, Argon2, Params, Version,

@@ -81,6 +81,7 @@ impl AsyncTestContext for TestContext {
             account_deactivation_days: 30,
             workday_creation_limit: 50,
             max_login_attempts: 10,
+            mail_timezone: "Europe/Brussels".to_string(),
         };
 
         let s3_config = S3Config {
@@ -117,6 +118,7 @@ impl AsyncTestContext for TestContext {
             config.smtp.to_transport(),
             config.common.frontend_url.clone(),
             true,
+            &config.common.mail_timezone,
             &config.common.pdf_service_endpoint,
             &config.s3.access_key,
             &config.s3.secret_key,

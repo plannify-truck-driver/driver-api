@@ -59,6 +59,7 @@ async fn main() {
         config.smtp.to_transport(),
         config.frontend_url.clone(),
         false,
+        "Europe/Brussels",
         &config.pdf_service_endpoint,
         &config.s3.access_key,
         &config.s3.secret_key,

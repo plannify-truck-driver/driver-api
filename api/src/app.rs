@@ -67,6 +67,7 @@ impl App {
             config.smtp.to_transport(),
             config.common.frontend_url.clone(),
             matches!(config.environment, Environment::Test),
+            &config.common.mail_timezone,
             &config.common.pdf_service_endpoint,
             &config.s3.access_key,
             &config.s3.secret_key,

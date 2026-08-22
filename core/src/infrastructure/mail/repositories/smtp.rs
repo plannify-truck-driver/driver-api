@@ -21,6 +21,7 @@ pub struct SmtpMailRepository {
     tera: Arc<Tera>,
     frontend_url: String,
     is_test_environment: bool,
+    timezone: chrono_tz::Tz,
 }
 
 impl SmtpMailRepository {
@@ -30,6 +31,7 @@ impl SmtpMailRepository {
         tera: Arc<Tera>,
         frontend_url: String,
         is_test_environment: bool,
+        timezone: chrono_tz::Tz,
     ) -> Self {
         Self {
             mail_client,
@@ -37,6 +39,7 @@ impl SmtpMailRepository {
             tera,
             frontend_url,
             is_test_environment,
+            timezone,
         }
     }
 }
@@ -433,10 +436,11 @@ impl MailSmtpRepository for SmtpMailRepository {
             "unlock_time",
             &unlock_at.map(|dt| {
                 let fmt = match driver.language.as_str() {
-                    "fr" => "%d/%m/%Y %H:%M",
-                    _ => "%m/%d/%Y %H:%M",
+                    "fr" => "%d/%m/%Y %H:%M %Z",
+                    _ => "%m/%d/%Y %H:%M %Z",
                 };
-                dt.format(fmt).to_string()
+                
+                dt.with_timezone(&self.timezone).format(fmt).to_string()
             }),
         );
 

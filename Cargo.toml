@@ -40,6 +40,7 @@ validator = { version = "0.20", features = ["derive"] }
 
 # Database
 chrono = { version = "0.4.44", features = ["serde"] }
+chrono-tz = "0.10"
 uuid = { version = "1.23.1", features = ["serde", "v4"] }
 
 # Documentation

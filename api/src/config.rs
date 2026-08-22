@@ -154,6 +154,14 @@ pub struct CommonConfig {
     pub frontend_url: String,
 
     #[arg(
+        long = "mail-timezone",
+        env = "MAIL_TIMEZONE",
+        default_value = "Europe/Brussels",
+        name = "mail_timezone"
+    )]
+    pub mail_timezone: String,
+
+    #[arg(
         long = "pdf-service-endpoint",
         env = "PDF_SERVICE_ENDPOINT",
         default_value = "http://localhost:50051",
