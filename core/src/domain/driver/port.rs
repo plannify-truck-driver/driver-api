@@ -479,6 +479,7 @@ pub enum DriverCacheKeyType {
     ResetPassword,
     CurrentLimitation,
     WorkdayCreationLimitation,
+    LoginAttemptsLimitation,
 }
 
 impl DriverCacheKeyType {
@@ -488,6 +489,7 @@ impl DriverCacheKeyType {
             DriverCacheKeyType::ResetPassword => "reset_password",
             DriverCacheKeyType::CurrentLimitation => "current_limitation",
             DriverCacheKeyType::WorkdayCreationLimitation => "limitation:workday_creation",
+            DriverCacheKeyType::LoginAttemptsLimitation => "limitation:login_attempts",
         }
     }
 
@@ -497,6 +499,7 @@ impl DriverCacheKeyType {
             DriverCacheKeyType::ResetPassword => 15 * 60,
             DriverCacheKeyType::CurrentLimitation => 5 * 60,
             DriverCacheKeyType::WorkdayCreationLimitation => 12 * 60 * 60,
+            DriverCacheKeyType::LoginAttemptsLimitation => 1 * 60 * 60,
         }
     }
 }

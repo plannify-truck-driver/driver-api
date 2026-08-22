@@ -912,6 +912,7 @@ mod tests {
                 workday_garbage_retention_days: 30,
                 account_deactivation_days: 30,
                 workday_creation_limit: 100,
+                max_login_attempts: 10,
             },
         )
     }

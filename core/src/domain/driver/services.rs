@@ -131,6 +131,7 @@ where
         skip(self),
         fields(
             email = %login_request.email,
+            login_locked = tracing::field::Empty,
         )
     )]
     async fn login_driver(
@@ -143,6 +144,28 @@ where
             .get_driver_by_email(email)
             .await
             .map_err(|_| DriverError::InvalidCredentials)?;
+
+        // Counter of remaining attempts before the account is temporarily locked
+        // out, keyed by driver_id (not email) so the key space stays bounded by
+        // real accounts and can't be inflated by an attacker probing made-up emails.
+        let (attempts_key, attempts_ttl) = self.driver_cache_repository.get_key_by_type(
+            driver.pk_driver_id,
+            DriverCacheKeyType::LoginAttemptsLimitation,
+        );
+
+        let remaining_attempts = self
+            .driver_cache_repository
+            .get_redis(attempts_key.clone())
+            .await
+            .map_err(|e| {
+                error!("Failed to read login attempts counter: {}", e);
+                DriverError::Internal
+            })?
+            .and_then(|value| value.parse::<i64>().ok())
+            .unwrap_or(self.config.max_login_attempts);
+
+        let is_locked = remaining_attempts <= 0;
+        tracing::Span::current().record("login_locked", is_locked);
 
         let params = Params::new(19 * 1024, 2, 1, None).map_err(|e| {
             error!(
@@ -157,12 +180,31 @@ where
             error!("Failed to parse password hash: {}", e);
             DriverError::Internal
         })?;
-        match argon2
+
+        // Always run the verify, even when already locked out, so a locked
+        // account's response takes the same time as a normal wrong-password
+        // response — otherwise the lockout state itself becomes a timing oracle.
+        let password_matches = argon2
             .verify_password(login_request.password.as_bytes(), &parsed_hash)
-            .is_ok()
-        {
-            true => (),
-            false => return Err(DriverError::InvalidCredentials),
+            .is_ok();
+
+        if is_locked {
+            return Err(DriverError::InvalidCredentials);
+        }
+
+        if !password_matches {
+            if let Err(e) = self
+                .driver_cache_repository
+                .decrement_redis(attempts_key, self.config.max_login_attempts, attempts_ttl)
+                .await
+            {
+                error!("Failed to decrement login attempts counter: {}", e);
+            }
+            return Err(DriverError::InvalidCredentials);
+        }
+
+        if let Err(e) = self.driver_cache_repository.delete_redis(attempts_key).await {
+            error!("Failed to reset login attempts counter: {}", e);
         }
 
         let suspension = self

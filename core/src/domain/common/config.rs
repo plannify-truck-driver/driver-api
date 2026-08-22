@@ -3,6 +3,7 @@ pub struct ServiceConfig {
     pub workday_garbage_retention_days: i64,
     pub account_deactivation_days: i64,
     pub workday_creation_limit: i64,
+    pub max_login_attempts: i64,
 }
 
 impl Default for ServiceConfig {
@@ -11,6 +12,7 @@ impl Default for ServiceConfig {
             workday_garbage_retention_days: 30,
             account_deactivation_days: 30,
             workday_creation_limit: 50,
+            max_login_attempts: 10,
         }
     }
 }

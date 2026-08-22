@@ -192,6 +192,14 @@ pub struct CommonConfig {
         name = "workday_creation_limit"
     )]
     pub workday_creation_limit: i64,
+
+    #[arg(
+        long = "max-login-attempts",
+        env = "MAX_LOGIN_ATTEMPTS",
+        default_value = "10",
+        name = "max_login_attempts"
+    )]
+    pub max_login_attempts: i64,
 }
 
 #[derive(Clone, Parser, Debug, Default)]

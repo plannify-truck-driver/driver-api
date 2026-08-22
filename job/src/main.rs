@@ -69,6 +69,7 @@ async fn main() {
             workday_garbage_retention_days: config.workday_garbage_retention_days,
             account_deactivation_days: config.account_deactivation_days,
             workday_creation_limit: 50,
+            max_login_attempts: 10,
         },
     )
     .await

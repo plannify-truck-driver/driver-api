@@ -77,6 +77,7 @@ impl App {
                 workday_garbage_retention_days: config.common.workday_garbage_retention_days,
                 account_deactivation_days: config.common.account_deactivation_days,
                 workday_creation_limit: config.common.workday_creation_limit,
+                max_login_attempts: config.common.max_login_attempts,
             },
         )
         .await
