@@ -1,8 +1,6 @@
 use crate::{
-    Service,
-    domain::{
-        document::port::DocumentExternalRepository,
-        driver::{
+    Service, domain::{
+        document::port::DocumentExternalRepository, driver::{
             entities::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverLimitationRow,
                 DriverRestPeriod, DriverRow, LoginDriverRequest, UpdateDriverRequest,
@@ -11,14 +9,8 @@ use crate::{
                 DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository, DriverService,
                 to_email_case, to_title_case,
             },
-        },
-        health::port::HealthRepository,
-        mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository},
-        storage::port::StorageRepository,
-        update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
-        workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
-    },
-    infrastructure::driver::repositories::error::DriverError,
+        }, driver_information::port::{DriverInformationCacheRepository, DriverInformationDatabaseRepository}, health::port::HealthRepository, mail::port::{MailCacheRepository, MailDatabaseRepository, MailSmtpRepository}, storage::port::StorageRepository, update::port::{UpdateCacheRepository, UpdateDatabaseRepository}, workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository},
+    }, infrastructure::driver::repositories::error::DriverError,
 };
 use argon2::{
     Algorithm, Argon2, Params, Version,
@@ -34,18 +26,18 @@ impl<H, DD, DC, WD, WC, MS, MD, MC, UD, UC, DE, DS, DID, DIC> DriverService
 where
     H: HealthRepository,
     DD: DriverDatabaseRepository,
-    DC: DriverCacheRepository,
+    DC: DriverCacheRepository + Clone + 'static,
     WD: WorkdayDatabaseRepository,
     WC: WorkdayCacheRepository,
-    MS: MailSmtpRepository,
+    MS: MailSmtpRepository + Clone + 'static,
     MD: MailDatabaseRepository,
     MC: MailCacheRepository,
     UD: UpdateDatabaseRepository,
     UC: UpdateCacheRepository,
     DE: DocumentExternalRepository,
     DS: StorageRepository,
-    DID: crate::domain::driver_information::port::DriverInformationDatabaseRepository,
-    DIC: crate::domain::driver_information::port::DriverInformationCacheRepository,
+    DID: DriverInformationDatabaseRepository,
+    DIC: DriverInformationCacheRepository,
 {
     #[tracing::instrument(
         name = "driver_service.create_driver",
@@ -193,12 +185,43 @@ where
         }
 
         if !password_matches {
-            if let Err(e) = self
+            let ttl_lookup_key = attempts_key.clone();
+            match self
                 .driver_cache_repository
                 .decrement_redis(attempts_key, self.config.max_login_attempts, attempts_ttl)
                 .await
             {
-                error!("Failed to decrement login attempts counter: {}", e);
+                Ok(0) => {
+                    // This failed attempt just exhausted the budget: warn the
+                    // driver off the response path (spawned, not awaited) so
+                    // sending the email (and the extra TTL lookup for the
+                    // unlock time) can never delay or fail this response, or
+                    // become a timing signal for this specific attempt.
+                    let mail_smtp_repository = self.mail_smtp_repository.clone();
+                    let driver_cache_repository = self.driver_cache_repository.clone();
+                    tokio::spawn(async move {
+                        let unlock_at = match driver_cache_repository.get_ttl(ttl_lookup_key).await
+                        {
+                            Ok(Some(ttl)) => {
+                                Some(chrono::Utc::now() + chrono::Duration::seconds(ttl))
+                            }
+                            Ok(None) => None,
+                            Err(e) => {
+                                error!("Failed to read login lockout TTL: {}", e);
+                                None
+                            }
+                        };
+
+                        if let Err(e) = mail_smtp_repository
+                            .send_driver_suspicious_login_email(driver, unlock_at)
+                            .await
+                        {
+                            error!("Failed to send suspicious login alert email: {}", e);
+                        }
+                    });
+                }
+                Ok(_) => {}
+                Err(e) => error!("Failed to decrement login attempts counter: {}", e),
             }
             return Err(DriverError::InvalidCredentials);
         }
@@ -702,6 +725,23 @@ where
             .await?;
 
         self.driver_cache_repository.delete_redis(redis_key).await?;
+
+        // Resetting the password is strong proof of ownership: clear any
+        // login lockout so the driver isn't left locked out of the account
+        // they just proved they control.
+        let (attempts_key, _) = self
+            .driver_cache_repository
+            .get_key_by_type(driver_id, DriverCacheKeyType::LoginAttemptsLimitation);
+        if let Err(e) = self
+            .driver_cache_repository
+            .delete_redis(attempts_key)
+            .await
+        {
+            error!(
+                "Failed to reset login attempts counter after password reset: {}",
+                e
+            );
+        }
 
         Ok(updated_driver)
     }

@@ -1,0 +1,47 @@
+{% extends "fr/base.html" %} {% block email_title %}Activité suspecte détectée
+- Plannify{% endblock email_title %} {% block content %}
+<p>Bonjour {{ full_name }},</p>
+<p>
+  Nous avons détecté plusieurs tentatives de connexion infructueuses sur votre
+  compte Plannify. Par mesure de précaution, l'accès à votre compte a été
+  temporairement suspendu.
+  {% if unlock_time %}Vous pourrez réessayer de vous connecter à partir du
+  <strong>{{ unlock_time }}</strong>.{% else %}Vous pourrez réessayer de vous
+  connecter dans quelques instants.{% endif %}
+</p>
+<p>
+  Si c'est vous qui avez tenté de vous connecter et avez simplement oublié
+  votre mot de passe, pas d'inquiétude : vous pouvez le réinitialiser dès
+  maintenant depuis l'application, ce qui débloquera immédiatement l'accès à
+  votre compte.
+</p>
+<p>
+  Si vous n'êtes pas à l'origine de ces tentatives, quelqu'un a peut-être
+  essayé d'accéder à votre compte. Nous vous recommandons vivement de :
+</p>
+<ul>
+  <li>
+    <strong>Utiliser un mot de passe fort et unique</strong> : au moins 12
+    caractères, combinant majuscules, minuscules, chiffres et caractères
+    spéciaux. Évitez les mots du dictionnaire ainsi que les substitutions
+    simples (comme remplacer un « a » par un « @ » ou un « o » par un « 0 »)
+    — ce sont les premières variantes testées par les outils d'attaque.
+  </li>
+  <li>
+    <strong>Utiliser un gestionnaire de mots de passe</strong> pour générer et
+    stocker un mot de passe unique par service, plutôt que de le retenir ou de
+    le réutiliser ailleurs.
+  </li>
+  <li>
+    <strong>Ne pas changer votre mot de passe trop fréquemment</strong> « par
+    précaution » : un mot de passe fort et unique n'a pas besoin d'être
+    renouvelé régulièrement, et un changement trop fréquent pousse en général
+    à choisir des mots de passe plus faibles ou plus prévisibles.
+  </li>
+</ul>
+<p>
+  Si vous avez le moindre doute concernant la sécurité de votre compte,
+  contactez notre support.
+</p>
+<p>Bien cordialement,<br />L'équipe de Plannify</p>
+{% endblock content %}

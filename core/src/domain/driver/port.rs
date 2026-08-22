@@ -536,6 +536,10 @@ pub trait DriverCacheRepository: Send + Sync {
         ttl_seconds: u64,
     ) -> impl Future<Output = Result<i64, DriverError>> + Send;
 
+    /// Remaining TTL in seconds for `key`, or `None` if it doesn't exist or has no expiry.
+    fn get_ttl(&self, key: String)
+    -> impl Future<Output = Result<Option<i64>, DriverError>> + Send;
+
     fn get_key_by_type(&self, driver_id: Uuid, key_type: DriverCacheKeyType) -> (String, u64) {
         (
             self.generate_redis_key(driver_id, key_type.as_str()),
@@ -646,5 +650,14 @@ impl DriverCacheRepository for MockDriverCacheRepository {
 
         cache.insert(key, (new_value.to_string(), expiry));
         Ok(new_value)
+    }
+
+    async fn get_ttl(&self, key: String) -> Result<Option<i64>, DriverError> {
+        let cache = self.cache.lock().unwrap();
+        let now = Utc::now();
+        Ok(cache
+            .get(&key)
+            .filter(|(_, expiry)| *expiry > now)
+            .map(|(_, expiry)| (*expiry - now).num_seconds()))
     }
 }

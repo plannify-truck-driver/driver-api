@@ -492,6 +492,13 @@ mod tests {
         async fn send_driver_password_change_email(&self, _: DriverRow) -> Result<(), MailError> {
             Ok(())
         }
+        async fn send_driver_suspicious_login_email(
+            &self,
+            _: DriverRow,
+            _: Option<chrono::DateTime<chrono::Utc>>,
+        ) -> Result<(), MailError> {
+            Ok(())
+        }
         async fn send_driver_deactivation_email(&self, _: DriverRow) -> Result<(), MailError> {
             Ok(())
         }

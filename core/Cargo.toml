@@ -14,6 +14,7 @@ chrono = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 validator = { workspace = true }
+tokio = { workspace = true }
 sqlx = { version = "0.8.6", features = [
     "postgres",
     "runtime-tokio",
@@ -55,6 +56,3 @@ aws-sdk-s3 = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = "0.14"
-
-[dev-dependencies]
-tokio = { version = "1", features = ["full"] }

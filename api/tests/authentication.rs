@@ -905,6 +905,79 @@ async fn test_confirm_password_reset_success(ctx: &mut context::TestContext) {
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
+async fn test_confirm_password_reset_clears_login_lockout(ctx: &mut context::TestContext) {
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_email("test.user@example.be".to_string())
+        .await
+        .unwrap();
+
+    let original_driver = driver.clone();
+
+    let (attempts_key, attempts_ttl) = ctx.repositories.driver_cache_repository.get_key_by_type(
+        driver.pk_driver_id,
+        DriverCacheKeyType::LoginAttemptsLimitation,
+    );
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(attempts_key.clone(), "0".to_string(), attempts_ttl)
+        .await
+        .unwrap();
+
+    let (reset_key, reset_ttl) = ctx
+        .repositories
+        .driver_cache_repository
+        .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::ResetPassword);
+    ctx.repositories
+        .driver_cache_repository
+        .set_redis(reset_key, "valid-token".to_string(), reset_ttl)
+        .await
+        .unwrap();
+
+    ctx.unauthenticated_router
+        .post("/authentication/confirm-reset-password")
+        .json(&json!({
+            "driver_id": driver.pk_driver_id,
+            "token": "valid-token",
+            "password": "newPassword123"
+        }))
+        .await
+        .assert_status(StatusCode::OK);
+
+    let counter_after_reset = ctx
+        .repositories
+        .driver_cache_repository
+        .get_redis(attempts_key)
+        .await
+        .unwrap();
+    assert_eq!(
+        counter_after_reset, None,
+        "resetting the password should clear the login lockout counter"
+    );
+
+    // The account was locked before the reset: login must now succeed
+    // immediately with the new password, proving the lockout was lifted.
+    let res_login = ctx
+        .unauthenticated_router
+        .post("/authentication/login")
+        .json(&json!({
+            "email": "test.user@example.be",
+            "password": "newPassword123"
+        }))
+        .await;
+    res_login.assert_status(StatusCode::OK);
+
+    ctx.repositories
+        .driver_database_repository
+        .update_driver(original_driver)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
 async fn test_confirm_password_reset_invalid_token(ctx: &mut context::TestContext) {
     let driver = ctx
         .repositories
