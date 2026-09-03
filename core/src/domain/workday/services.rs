@@ -267,18 +267,34 @@ where
             error!("Failed to decrement workday creation counter: {}", e);
         }
 
-        self.workday_cache_repository
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_workdays_by_month(driver_id, workday.date.month() as i32, workday.date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday month cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_key(driver_id, "workdays:period")
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday period cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_documents_by_year(driver_id, workday.date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate documents-by-year cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_document_years(driver_id)
-            .await?;
+            .await
+        {
+            error!("Failed to invalidate document years cache: {}", e);
+        }
 
         Ok(workday)
     }
@@ -327,12 +343,20 @@ where
             .update_workday(driver_id, update_workday_request)
             .await?;
 
-        self.workday_cache_repository
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_workdays_by_month(driver_id, workday.date.month() as i32, workday.date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday month cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_key(driver_id, "workdays:period")
-            .await?;
+            .await
+        {
+            error!("Failed to invalidate workday period cache: {}", e);
+        }
 
         Ok(workday)
     }
@@ -360,18 +384,34 @@ where
             .delete_workday(driver_id, date)
             .await?;
 
-        self.workday_cache_repository
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday month cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_key(driver_id, "workdays:period")
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday period cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_documents_by_year(driver_id, date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate documents-by-year cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_document_years(driver_id)
-            .await?;
+            .await
+        {
+            error!("Failed to invalidate document years cache: {}", e);
+        }
 
         Ok(())
     }
@@ -422,18 +462,34 @@ where
             .create_workday_garbage(driver_id, date, scheduled_deletion_date, None)
             .await?;
 
-        self.workday_cache_repository
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday month cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_key(driver_id, "workdays:period")
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday period cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_documents_by_year(driver_id, date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate documents-by-year cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_document_years(driver_id)
-            .await?;
+            .await
+        {
+            error!("Failed to invalidate document years cache: {}", e);
+        }
 
         Ok(workday_garbage)
     }
@@ -465,18 +521,34 @@ where
             .delete_workday_garbage(driver_id, date)
             .await?;
 
-        self.workday_cache_repository
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_workdays_by_month(driver_id, date.month() as i32, date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday month cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_key(driver_id, "workdays:period")
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate workday period cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_documents_by_year(driver_id, date.year())
-            .await?;
-        self.workday_cache_repository
+            .await
+        {
+            error!("Failed to invalidate documents-by-year cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
             .delete_document_years(driver_id)
-            .await?;
+            .await
+        {
+            error!("Failed to invalidate document years cache: {}", e);
+        }
 
         Ok(())
     }
