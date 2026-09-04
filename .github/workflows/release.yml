@@ -19,3 +19,8 @@ jobs:
           {"image": "plannify-truck-driver/driver-api", "target": "api"},
           {"image": "plannify-truck-driver/driver-job", "target": "job"}
         ]
+      infra_targets: |
+        [
+          {"repo": "plannify-truck-driver-app/infrastructure", "file": "yaml-applications/prod/driver-api/deployment.yaml", "image": "ghcr.io/plannify-truck-driver/driver-api"},
+          {"repo": "plannify-truck-driver-app/infrastructure", "file": "yaml-applications/prod/driver-api/cronjob.yaml", "image": "ghcr.io/plannify-truck-driver/driver-job"}
+        ]
