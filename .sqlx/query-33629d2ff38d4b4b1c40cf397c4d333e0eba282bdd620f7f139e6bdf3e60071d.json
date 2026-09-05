@@ -45,21 +45,16 @@
       },
       {
         "ordinal": 8,
-        "name": "professional_email_password",
-        "type_info": "Varchar"
-      },
-      {
-        "ordinal": 9,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 10,
+        "ordinal": 9,
         "name": "last_login_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 11,
+        "ordinal": 10,
         "name": "deactivated_at",
         "type_info": "Timestamptz"
       }
@@ -75,7 +70,6 @@
       false,
       false,
       true,
-      false,
       false,
       false,
       true,
