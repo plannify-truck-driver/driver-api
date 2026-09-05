@@ -19,6 +19,38 @@ impl RedisMailCacheRepository {
     pub fn new(connection: ConnectionManager) -> Self {
         Self { connection }
     }
+
+    async fn scan_and_delete(&self, pattern: &str) -> Result<(), MailError> {
+        let mut conn = self.connection.clone();
+
+        let mut keys: Vec<String> = Vec::new();
+        {
+            let mut iter: redis::AsyncIter<String> =
+                conn.scan_match(pattern).await.map_err(|e| {
+                    error!("Failed to scan keys for pattern {}: {:?}", pattern, e);
+                    MailError::Internal
+                })?;
+            while let Some(key) = iter.next_item().await {
+                let key = key.map_err(|e| {
+                    error!(
+                        "Failed to read scanned key for pattern {}: {:?}",
+                        pattern, e
+                    );
+                    MailError::Internal
+                })?;
+                keys.push(key);
+            }
+        }
+
+        if !keys.is_empty() {
+            let _: () = conn.del(keys).await.map_err(|e| {
+                error!("Failed to delete mail keys: {:?}", e);
+                MailError::Internal
+            })?;
+        }
+
+        Ok(())
+    }
 }
 
 impl MailCacheRepository for RedisMailCacheRepository {
@@ -97,21 +129,28 @@ impl MailCacheRepository for RedisMailCacheRepository {
         fields(db.system = "redis", db.operation = "DEL", driver_id = %driver_id)
     )]
     async fn delete_mails(&self, driver_id: Uuid) -> Result<(), MailError> {
-        let mut conn = self.connection.clone();
         let pattern = format!("driver:{}:mails:list:*", driver_id);
-        let keys: Vec<String> = conn.keys(pattern.clone()).await.map_err(|e| {
-            error!("Failed to get keys for pattern {}: {:?}", pattern, e);
-            MailError::Internal
-        })?;
 
-        if !keys.is_empty() {
-            let _: () = conn.del(keys).await.map_err(|e| {
-                error!("Failed to delete mail keys: {:?}", e);
-                MailError::Internal
-            })?;
+        const MAX_ATTEMPTS: u32 = 3;
+        let mut last_err = MailError::Internal;
+        for attempt in 1..=MAX_ATTEMPTS {
+            match self.scan_and_delete(&pattern).await {
+                Ok(()) => return Ok(()),
+                Err(e) => {
+                    error!(
+                        "Attempt {}/{} to invalidate cache for pattern {} failed: {:?}",
+                        attempt, MAX_ATTEMPTS, pattern, e
+                    );
+                    last_err = e;
+                    if attempt < MAX_ATTEMPTS {
+                        tokio::time::sleep(std::time::Duration::from_millis(25 * attempt as u64))
+                            .await;
+                    }
+                }
+            }
         }
 
-        Ok(())
+        Err(last_err)
     }
 
     #[tracing::instrument(

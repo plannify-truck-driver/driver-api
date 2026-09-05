@@ -21,6 +21,38 @@ impl RedisWorkdayRepository {
     pub fn new(connection: ConnectionManager) -> Self {
         Self { connection }
     }
+
+    async fn scan_and_delete(&self, key_pattern: &str) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+
+        let mut keys: Vec<String> = Vec::new();
+        {
+            let mut iter: redis::AsyncIter<String> =
+                conn.scan_match(key_pattern).await.map_err(|e| {
+                    error!("Failed to scan keys for pattern {}: {:?}", key_pattern, e);
+                    WorkdayError::Internal
+                })?;
+            while let Some(key) = iter.next_item().await {
+                let key = key.map_err(|e| {
+                    error!(
+                        "Failed to read scanned key for pattern {}: {:?}",
+                        key_pattern, e
+                    );
+                    WorkdayError::Internal
+                })?;
+                keys.push(key);
+            }
+        }
+
+        if !keys.is_empty() {
+            let _: () = conn.del(keys).await.map_err(|e| {
+                error!("Failed to delete keys for pattern {}: {:?}", key_pattern, e);
+                WorkdayError::Internal
+            })?;
+        }
+
+        Ok(())
+    }
 }
 
 impl WorkdayCacheRepository for RedisWorkdayRepository {
@@ -37,21 +69,28 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
         )
     )]
     async fn delete_key(&self, driver_id: Uuid, prefix: &str) -> Result<(), WorkdayError> {
-        let mut conn = self.connection.clone();
         let key_pattern = format!("driver:{}:{}*", driver_id, prefix);
-        let keys: Vec<String> = conn.keys(key_pattern.clone()).await.map_err(|e| {
-            error!("Failed to get keys for pattern {}: {:?}", key_pattern, e);
-            WorkdayError::Internal
-        })?;
 
-        if !keys.is_empty() {
-            let _: () = conn.del(keys).await.map_err(|e| {
-                error!("Failed to delete keys for pattern {}: {:?}", key_pattern, e);
-                WorkdayError::Internal
-            })?;
+        const MAX_ATTEMPTS: u32 = 3;
+        let mut last_err = WorkdayError::Internal;
+        for attempt in 1..=MAX_ATTEMPTS {
+            match self.scan_and_delete(&key_pattern).await {
+                Ok(()) => return Ok(()),
+                Err(e) => {
+                    error!(
+                        "Attempt {}/{} to invalidate cache for pattern {} failed: {:?}",
+                        attempt, MAX_ATTEMPTS, key_pattern, e
+                    );
+                    last_err = e;
+                    if attempt < MAX_ATTEMPTS {
+                        tokio::time::sleep(std::time::Duration::from_millis(25 * attempt as u64))
+                            .await;
+                    }
+                }
+            }
         }
 
-        Ok(())
+        Err(last_err)
     }
 
     #[tracing::instrument(
