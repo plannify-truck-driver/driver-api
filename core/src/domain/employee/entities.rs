@@ -13,7 +13,6 @@ pub struct EmployeeRow {
     pub login_password_hash: String,
     pub phone_number: Option<String>,
     pub professional_email: String,
-    pub professional_email_password: String,
     pub created_at: DateTime<Utc>,
     pub last_login_at: Option<DateTime<Utc>>,
     pub deactivated_at: Option<DateTime<Utc>>,
