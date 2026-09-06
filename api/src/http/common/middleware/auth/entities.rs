@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use plannify_driver_api_core::domain::driver::entities::DriverRow;
+use plannify_driver_api_core::domain::driver::entities::{DriverRow, DriverSuspensionRow};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -14,6 +14,23 @@ pub struct UserIdentity {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct SuspensionClaims {
+    pub message: Option<String>,
+    pub start_at: DateTime<Utc>,
+    pub end_at: Option<DateTime<Utc>>,
+}
+
+impl From<&DriverSuspensionRow> for SuspensionClaims {
+    fn from(suspension: &DriverSuspensionRow) -> Self {
+        Self {
+            message: suspension.driver_message.clone(),
+            start_at: suspension.start_at,
+            end_at: suspension.end_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DriverClaims {
     pub id: Uuid,
     pub first_name: String,
@@ -21,6 +38,7 @@ pub struct DriverClaims {
     pub email: String,
     pub verified: bool,
     pub deactivation_planned_at: Option<DateTime<Utc>>,
+    pub suspension: Option<SuspensionClaims>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -68,13 +86,21 @@ impl AuthValidator {
 }
 
 pub trait TokenValidator: Send + Sync {
-    fn create_tokens(&self, driver: &DriverRow) -> Result<(String, String), ApiError>;
+    fn create_tokens(
+        &self,
+        driver: &DriverRow,
+        suspension: Option<&DriverSuspensionRow>,
+    ) -> Result<(String, String), ApiError>;
     fn validate_token(&self, token: &str) -> Result<UserIdentity, ApiError>;
     fn validate_refresh_token(&self, token: &str) -> Result<UserIdentity, ApiError>;
 }
 
 impl TokenValidator for AuthValidator {
-    fn create_tokens(&self, driver: &DriverRow) -> Result<(String, String), ApiError> {
+    fn create_tokens(
+        &self,
+        driver: &DriverRow,
+        suspension: Option<&DriverSuspensionRow>,
+    ) -> Result<(String, String), ApiError> {
         let now = Utc::now().timestamp();
 
         let access_exp = now + self.access_ttl as i64;
@@ -89,6 +115,7 @@ impl TokenValidator for AuthValidator {
                 email: driver.email.clone(),
                 verified: driver.verified_at.is_some(),
                 deactivation_planned_at: driver.deactivated_at,
+                suspension: suspension.map(SuspensionClaims::from),
             },
             exp: access_exp,
             iat: now,

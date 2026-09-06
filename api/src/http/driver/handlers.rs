@@ -3,7 +3,8 @@ use plannify_driver_api_core::domain::{
     driver::{
         entities::{
             CreateDriverResponse, CreateDriverRestPeriodsRequest, DriverRestPeriod, DriverRow,
-            GetDriverLimitationResponse, GetDriverResponse, UpdateDriverRequest,
+            DriverSuspensionRow, GetDriverLimitationResponse, GetDriverResponse,
+            UpdateDriverRequest,
         },
         port::DriverService,
     },
@@ -246,14 +247,18 @@ pub async fn update_driver_info(
     }
 
     let auth_validator = &state.auth_validator;
-    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
-        auth_validator.create_tokens(driver).map_err(|e| {
-            error!(
-                "Failed to create tokens for driver {}: {:?}",
-                driver.pk_driver_id, e
-            );
-            DriverError::Internal
-        })
+    let create_tokens_fn = |driver: &DriverRow,
+                            suspension: Option<&DriverSuspensionRow>|
+     -> Result<(String, String), DriverError> {
+        auth_validator
+            .create_tokens(driver, suspension)
+            .map_err(|e| {
+                error!(
+                    "Failed to create tokens for driver {}: {:?}",
+                    driver.pk_driver_id, e
+                );
+                DriverError::Internal
+            })
     };
 
     let (access_token, access_token_cookie, refresh_token_cookie) = state

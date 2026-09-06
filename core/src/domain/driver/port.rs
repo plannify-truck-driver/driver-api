@@ -165,7 +165,9 @@ pub trait DriverService: Send + Sync {
         domain_name: &str,
     ) -> impl Future<Output = Result<(String, String, String), DriverError>> + Send
     where
-        F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync;
+        F: Fn(&DriverRow, Option<&DriverSuspensionRow>) -> Result<(String, String), DriverError>
+            + Send
+            + Sync;
 
     fn delete_refresh_token(
         &self,
