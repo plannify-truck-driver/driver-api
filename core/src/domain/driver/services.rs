@@ -5,7 +5,8 @@ use crate::{
         driver::{
             entities::{
                 CreateDriverRequest, CreateDriverRestPeriodRequest, DriverLimitationRow,
-                DriverRestPeriod, DriverRow, LoginDriverRequest, UpdateDriverRequest,
+                DriverRestPeriod, DriverRow, DriverSuspensionRow, LoginDriverRequest,
+                UpdateDriverRequest,
             },
             port::{
                 DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository, DriverService,
@@ -340,9 +341,16 @@ where
         domain_name: &str,
     ) -> Result<(String, String, String), DriverError>
     where
-        F: Fn(&DriverRow) -> Result<(String, String), DriverError> + Send + Sync,
+        F: Fn(&DriverRow, Option<&DriverSuspensionRow>) -> Result<(String, String), DriverError>
+            + Send
+            + Sync,
     {
-        let (access_token, refresh_token) = create_tokens(&driver)?;
+        let suspension = self
+            .driver_database_repository
+            .get_current_driver_suspension(driver.pk_driver_id)
+            .await?;
+
+        let (access_token, refresh_token) = create_tokens(&driver, suspension.as_ref())?;
 
         let domain_host = domain_name
             .trim_start_matches("http://")

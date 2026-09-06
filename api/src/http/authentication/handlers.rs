@@ -20,7 +20,8 @@ use plannify_driver_api_core::domain::{
     driver::{
         entities::{
             ConfirmPasswordResetRequest, CreateDriverRequest, CreateDriverResponse, DriverRow,
-            LoginDriverRequest, RequestPasswordResetRequest, VerifyDriverAccountRequest,
+            DriverSuspensionRow, LoginDriverRequest, RequestPasswordResetRequest,
+            VerifyDriverAccountRequest,
         },
         port::DriverService,
     },
@@ -74,14 +75,18 @@ pub async fn signup(
     state.service.send_creation_email(driver.clone()).await?;
 
     let auth_validator = &state.auth_validator;
-    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
-        auth_validator.create_tokens(driver).map_err(|e| {
-            error!(
-                "Failed to create tokens for driver {}: {:?}",
-                driver.pk_driver_id, e
-            );
-            DriverError::Internal
-        })
+    let create_tokens_fn = |driver: &DriverRow,
+                            suspension: Option<&DriverSuspensionRow>|
+     -> Result<(String, String), DriverError> {
+        auth_validator
+            .create_tokens(driver, suspension)
+            .map_err(|e| {
+                error!(
+                    "Failed to create tokens for driver {}: {:?}",
+                    driver.pk_driver_id, e
+                );
+                DriverError::Internal
+            })
     };
 
     let (access_token, access_token_cookie, refresh_token_cookie) = state
@@ -132,14 +137,18 @@ pub async fn login(
     let driver = state.service.login_driver(request).await?;
 
     let auth_validator = &state.auth_validator;
-    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
-        auth_validator.create_tokens(driver).map_err(|e| {
-            error!(
-                "Failed to create tokens for driver {}: {:?}",
-                driver.pk_driver_id, e
-            );
-            DriverError::Internal
-        })
+    let create_tokens_fn = |driver: &DriverRow,
+                            suspension: Option<&DriverSuspensionRow>|
+     -> Result<(String, String), DriverError> {
+        auth_validator
+            .create_tokens(driver, suspension)
+            .map_err(|e| {
+                error!(
+                    "Failed to create tokens for driver {}: {:?}",
+                    driver.pk_driver_id, e
+                );
+                DriverError::Internal
+            })
     };
 
     let (access_token, access_token_cookie, refresh_token_cookie) = state
@@ -193,14 +202,18 @@ pub async fn verify_driver_account(
         .await?;
 
     let auth_validator = &state.auth_validator;
-    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
-        auth_validator.create_tokens(driver).map_err(|e| {
-            error!(
-                "Failed to create tokens for driver {}: {:?}",
-                driver.pk_driver_id, e
-            );
-            DriverError::Internal
-        })
+    let create_tokens_fn = |driver: &DriverRow,
+                            suspension: Option<&DriverSuspensionRow>|
+     -> Result<(String, String), DriverError> {
+        auth_validator
+            .create_tokens(driver, suspension)
+            .map_err(|e| {
+                error!(
+                    "Failed to create tokens for driver {}: {:?}",
+                    driver.pk_driver_id, e
+                );
+                DriverError::Internal
+            })
     };
 
     let (access_token, access_token_cookie, refresh_token_cookie) = state
@@ -253,14 +266,18 @@ pub async fn refresh_token(
         .await?;
 
     let auth_validator = &state.auth_validator;
-    let create_tokens_fn = |driver: &DriverRow| -> Result<(String, String), DriverError> {
-        auth_validator.create_tokens(driver).map_err(|e| {
-            error!(
-                "Failed to create tokens for driver {}: {:?}",
-                driver.pk_driver_id, e
-            );
-            DriverError::Internal
-        })
+    let create_tokens_fn = |driver: &DriverRow,
+                            suspension: Option<&DriverSuspensionRow>|
+     -> Result<(String, String), DriverError> {
+        auth_validator
+            .create_tokens(driver, suspension)
+            .map_err(|e| {
+                error!(
+                    "Failed to create tokens for driver {}: {:?}",
+                    driver.pk_driver_id, e
+                );
+                DriverError::Internal
+            })
     };
 
     let (access_token, access_token_cookie, refresh_token_cookie) = state
