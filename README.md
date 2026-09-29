@@ -1,4 +1,4 @@
-# Driver API 1
+# Driver API
 
 This repository provides the Driver API, which allows truck drivers to manage their workdays, breaks, etc.
 
