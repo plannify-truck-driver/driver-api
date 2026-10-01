@@ -1,9 +1,13 @@
-{% extends "fr/base.html" %} {% block email_title %}Rapport mensuel - Plannify{% endblock email_title %} {% block content %}
+{% extends "fr/base.html" %} {% block email_title %}Rapport mensuel - Plannify{%
+endblock email_title %} {% block content %}
 <p>Bonjour {{ full_name }},</p>
 <p>
-  Veuillez trouver ci-joint votre rapport mensuel Plannify pour
+  Veuillez trouver ci-joint votre rapport mensuel Plannify pour le
   <span style="font-weight: bold">{{ month }}/{{ year }}</span>.
 </p>
-<p>Ce rapport récapitule toutes vos journées de travail enregistrées pour ce mois.</p>
+<p>
+  Ce rapport récapitule toutes vos journées de travail enregistrées pour ce
+  mois.
+</p>
 <p>Bien cordialement,<br />Baptiste, le modérateur de Plannify</p>
 {% endblock content %}

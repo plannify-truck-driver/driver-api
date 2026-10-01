@@ -185,7 +185,7 @@ where
             }
         };
 
-        let description = format!("Monthly report {:02}/{}", month, year);
+        let description = format!("Monthly report for {:02}/{}", month, year);
         let mail = match mail_db
             .create_mail(
                 driver.clone(),

@@ -67,6 +67,7 @@ impl MailSmtpRepository for SmtpMailRepository {
             .clone()
             .to(to.parse().unwrap())
             .subject(subject)
+            .header(ContentType::TEXT_HTML)
             .body(body)
             .map_err(|e| {
                 error!("Could not create email content: {:?}", e);
