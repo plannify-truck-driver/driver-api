@@ -1,7 +1,6 @@
 use clap::Parser;
 use lettre::SmtpTransport;
 use lettre::message::MessageBuilder;
-use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 
 #[derive(Clone, Parser, Debug)]
@@ -96,7 +95,6 @@ impl SmtpConfig {
         MessageBuilder::new()
             .from(self.default_sender.parse().unwrap())
             .reply_to(self.default_sender_reply_to.parse().unwrap())
-            .header(ContentType::TEXT_HTML)
     }
 
     pub fn to_transport(&self) -> SmtpTransport {
