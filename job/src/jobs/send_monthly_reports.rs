@@ -77,7 +77,7 @@ where
         let driver_id = driver.pk_driver_id;
 
         match mail_db
-            .has_monthly_report_this_month(driver_id, today.month() as u32, year)
+            .has_monthly_report_this_month(driver_id, today.month(), year)
             .await
         {
             Ok(true) => {
