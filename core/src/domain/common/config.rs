@@ -4,6 +4,7 @@ pub struct ServiceConfig {
     pub account_deactivation_days: i64,
     pub workday_creation_limit: i64,
     pub max_login_attempts: i64,
+    pub document_generation_months_ago: u32,
 }
 
 impl Default for ServiceConfig {
@@ -13,6 +14,7 @@ impl Default for ServiceConfig {
             account_deactivation_days: 30,
             workday_creation_limit: 50,
             max_login_attempts: 10,
+            document_generation_months_ago: 3,
         }
     }
 }

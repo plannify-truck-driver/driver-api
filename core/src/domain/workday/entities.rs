@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
+use chrono::{DateTime, Datelike, Months, NaiveDate, NaiveTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use utoipa::{IntoParams, ToSchema};
@@ -149,6 +149,40 @@ pub struct WorkdayDocumentInformation {
 }
 
 pub type GetWorkdayDocumentsByYearResponse = Vec<WorkdayDocumentInformation>;
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, ToSchema)]
+pub struct UpcomingWorkdayDocument {
+    pub month: i32,
+    pub year: i32,
+}
+
+/// First day of the month `months_ago` months before `run_date`: the `generate-documents`
+/// job generates documents for every month strictly before this date.
+pub fn document_generation_cutoff(run_date: NaiveDate, months_ago: u32) -> NaiveDate {
+    let cutoff = run_date - Months::new(months_ago);
+    NaiveDate::from_ymd_opt(cutoff.year(), cutoff.month(), 1).expect("cutoff date is always valid")
+}
+
+#[cfg(test)]
+mod document_generation_cutoff_tests {
+    use super::document_generation_cutoff;
+    use chrono::NaiveDate;
+
+    fn d(y: i32, m: u32, day: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(y, m, day).unwrap()
+    }
+
+    #[test]
+    fn test_cutoff() {
+        assert_eq!(document_generation_cutoff(d(2026, 11, 1), 3), d(2026, 8, 1));
+        assert_eq!(document_generation_cutoff(d(2026, 2, 1), 3), d(2025, 11, 1));
+        assert_eq!(document_generation_cutoff(d(2026, 5, 31), 3), d(2026, 2, 1));
+        assert_eq!(
+            document_generation_cutoff(d(2026, 11, 1), 0),
+            d(2026, 11, 1)
+        );
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, ToSchema)]
 pub struct WorkdayCreationLimit {

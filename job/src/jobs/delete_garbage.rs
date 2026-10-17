@@ -165,6 +165,7 @@ mod tests {
         async fn get_pending_document_months(
             &self,
             _: NaiveDate,
+            _: Option<Uuid>,
         ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
             unreachable!()
         }

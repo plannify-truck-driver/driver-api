@@ -81,6 +81,7 @@ impl AsyncTestContext for TestContext {
             account_deactivation_days: 30,
             workday_creation_limit: 50,
             max_login_attempts: 10,
+            document_generation_months_ago: 3,
             mail_timezone: "Europe/Brussels".to_string(),
         };
 
@@ -130,6 +131,7 @@ impl AsyncTestContext for TestContext {
                 account_deactivation_days: config.common.account_deactivation_days,
                 workday_creation_limit: config.common.workday_creation_limit,
                 max_login_attempts: config.common.max_login_attempts,
+                document_generation_months_ago: config.common.document_generation_months_ago,
             },
         )
         .await

@@ -1,10 +1,11 @@
+use chrono::NaiveDate;
 use redis::{AsyncCommands, aio::ConnectionManager};
 use serde_json;
 use uuid::Uuid;
 
 use crate::{
     domain::workday::{
-        entities::{Workday, WorkdayDocument, WorkdayDocumentInformation},
+        entities::{UpcomingWorkdayDocument, Workday, WorkdayDocument, WorkdayDocumentInformation},
         port::{WorkdayCacheKeyType, WorkdayCacheRepository},
     },
     infrastructure::workday::repositories::error::WorkdayError,
@@ -498,6 +499,82 @@ impl WorkdayCacheRepository for RedisWorkdayRepository {
             error!("Failed to delete redis key {}: {:?}", key, e);
             WorkdayError::Internal
         })?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.get_upcoming_documents",
+        skip(self),
+        fields(
+            db.system = "redis",
+            db.operation = "GET",
+            driver_id = %driver_id,
+            before = %before,
+        )
+    )]
+    async fn get_upcoming_documents(
+        &self,
+        driver_id: Uuid,
+        before: NaiveDate,
+    ) -> Result<Option<Vec<UpcomingWorkdayDocument>>, WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, _) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::UpcomingDocuments { before });
+
+        let json_string: Option<String> = conn.get(key.clone()).await.map_err(|e| {
+            error!("Failed to get redis key {}: {:?}", key, e);
+            WorkdayError::Internal
+        })?;
+
+        let Some(json) = json_string else {
+            return Ok(None);
+        };
+
+        match serde_json::from_str(&json) {
+            Ok(documents) => Ok(Some(documents)),
+            Err(e) => {
+                error!(
+                    "Failed to deserialize upcoming documents from key {}, treating as cache miss: {:?}",
+                    key, e
+                );
+                Ok(None)
+            }
+        }
+    }
+
+    #[tracing::instrument(
+        name = "cache.workdays.set_upcoming_documents",
+        skip(self, documents),
+        fields(
+            db.system = "redis",
+            db.operation = "SET",
+            driver_id = %driver_id,
+            before = %before,
+        )
+    )]
+    async fn set_upcoming_documents(
+        &self,
+        driver_id: Uuid,
+        before: NaiveDate,
+        documents: Vec<UpcomingWorkdayDocument>,
+    ) -> Result<(), WorkdayError> {
+        let mut conn = self.connection.clone();
+        let (key, ttl) =
+            self.get_key_by_type(driver_id, WorkdayCacheKeyType::UpcomingDocuments { before });
+
+        let json_string = serde_json::to_string(&documents).map_err(|e| {
+            error!("Failed to serialize upcoming documents: {:?}", e);
+            WorkdayError::Internal
+        })?;
+
+        let _: () = conn
+            .set_ex(key.clone(), json_string, ttl)
+            .await
+            .map_err(|e| {
+                error!("Failed to set redis key {}: {:?}", key, e);
+                WorkdayError::Internal
+            })?;
 
         Ok(())
     }

@@ -25,7 +25,11 @@ enum JobCommand {
 
     /// Generate workday documents for months older than N months that have no document yet
     GenerateDocuments {
-        #[arg(long, help = "Number of months in the past to use as cutoff")]
+        #[arg(
+            long,
+            env = "DOCUMENT_GENERATION_MONTHS_AGO",
+            help = "Number of months in the past to use as cutoff"
+        )]
         months_ago: u32,
     },
 
@@ -71,6 +75,7 @@ async fn main() {
             account_deactivation_days: config.account_deactivation_days,
             workday_creation_limit: 50,
             max_login_attempts: 10,
+            ..ServiceConfig::default()
         },
     )
     .await
