@@ -1,9 +1,12 @@
-use chrono::{Datelike, Months, NaiveDate, Utc};
+use chrono::Utc;
 use plannify_driver_api_core::{
     application::{DriverRepositories, DriverService},
     domain::{
         storage::port::StorageRepository,
-        workday::port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
+        workday::{
+            entities::document_generation_cutoff,
+            port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
+        },
     },
 };
 use tracing::{error, info, warn};
@@ -35,14 +38,11 @@ where
 {
     info!("Starting generate_documents job");
 
-    let today = Utc::now().date_naive();
-    let cutoff = today - Months::new(months_ago);
-    let before = NaiveDate::from_ymd_opt(cutoff.year(), cutoff.month(), 1)
-        .expect("cutoff date is always valid");
+    let before = document_generation_cutoff(Utc::now().date_naive(), months_ago);
 
     info!("Looking for months with workdays before {}", before);
 
-    let pending = match workday_db.get_pending_document_months(before).await {
+    let pending = match workday_db.get_pending_document_months(before, None).await {
         Ok(p) => p,
         Err(e) => {
             error!("Failed to fetch pending document months: {}", e);
@@ -129,6 +129,7 @@ where
             .set_workday_document_record(*driver_id, *month, *year, Some(doc))
             .await;
         let _ = cache.delete_document_years(*driver_id).await;
+        let _ = cache.delete_upcoming_documents(*driver_id).await;
         let _ = cache
             .delete_generated_documents_by_year(*driver_id, *year)
             .await;
@@ -158,8 +159,9 @@ mod tests {
             storage::port::StorageRepository,
             workday::{
                 entities::{
-                    CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayCreationLimit,
-                    WorkdayDocument, WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
+                    CreateWorkdayRequest, UpcomingWorkdayDocument, UpdateWorkdayRequest, Workday,
+                    WorkdayCreationLimit, WorkdayDocument, WorkdayDocumentInformation,
+                    WorkdayGarbageRow, WorkdayRow,
                 },
                 port::{MockWorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
             },
@@ -213,6 +215,7 @@ mod tests {
         async fn get_pending_document_months(
             &self,
             _: NaiveDate,
+            _: Option<Uuid>,
         ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
             Ok(self.pending.clone())
         }
@@ -422,6 +425,12 @@ mod tests {
     }
 
     impl WorkdayService for StubWorkdayService {
+        async fn get_upcoming_workday_documents(
+            &self,
+            _: Uuid,
+        ) -> Result<Vec<UpcomingWorkdayDocument>, WorkdayError> {
+            unreachable!()
+        }
         async fn get_workday_document_by_month(
             &self,
             _: Uuid,

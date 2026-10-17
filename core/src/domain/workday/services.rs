@@ -1,4 +1,4 @@
-use chrono::{Datelike, NaiveDate};
+use chrono::{Datelike, Months, NaiveDate, Utc};
 use tracing::error;
 use uuid::Uuid;
 
@@ -13,8 +13,9 @@ use crate::{
         update::port::{UpdateCacheRepository, UpdateDatabaseRepository},
         workday::{
             entities::{
-                CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayCreationLimit,
-                WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
+                CreateWorkdayRequest, UpcomingWorkdayDocument, UpdateWorkdayRequest, Workday,
+                WorkdayCreationLimit, WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
+                document_generation_cutoff,
             },
             port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
         },
@@ -295,6 +296,13 @@ where
         {
             error!("Failed to invalidate document years cache: {}", e);
         }
+        if let Err(e) = self
+            .workday_cache_repository
+            .delete_upcoming_documents(driver_id)
+            .await
+        {
+            error!("Failed to invalidate upcoming documents cache: {}", e);
+        }
 
         Ok(workday)
     }
@@ -412,6 +420,13 @@ where
         {
             error!("Failed to invalidate document years cache: {}", e);
         }
+        if let Err(e) = self
+            .workday_cache_repository
+            .delete_upcoming_documents(driver_id)
+            .await
+        {
+            error!("Failed to invalidate upcoming documents cache: {}", e);
+        }
 
         Ok(())
     }
@@ -490,6 +505,13 @@ where
         {
             error!("Failed to invalidate document years cache: {}", e);
         }
+        if let Err(e) = self
+            .workday_cache_repository
+            .delete_upcoming_documents(driver_id)
+            .await
+        {
+            error!("Failed to invalidate upcoming documents cache: {}", e);
+        }
 
         Ok(workday_garbage)
     }
@@ -548,6 +570,13 @@ where
             .await
         {
             error!("Failed to invalidate document years cache: {}", e);
+        }
+        if let Err(e) = self
+            .workday_cache_repository
+            .delete_upcoming_documents(driver_id)
+            .await
+        {
+            error!("Failed to invalidate upcoming documents cache: {}", e);
         }
 
         Ok(())
@@ -795,5 +824,51 @@ where
             })?;
 
         Ok(pdf_opt)
+    }
+
+    #[tracing::instrument(
+        name = "workday_service.get_upcoming_workday_documents",
+        skip(self),
+        fields(
+            driver_id = %driver_id,
+            cache.hit = tracing::field::Empty,
+        )
+    )]
+    async fn get_upcoming_workday_documents(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<Vec<UpcomingWorkdayDocument>, WorkdayError> {
+        // The generate-documents job runs on the 1st of each month.
+        let today = Utc::now().date_naive();
+        let next_run = NaiveDate::from_ymd_opt(today.year(), today.month(), 1)
+            .expect("first day of month is always valid")
+            + Months::new(1);
+        let before =
+            document_generation_cutoff(next_run, self.config.document_generation_months_ago);
+
+        if let Some(cached) = self
+            .workday_cache_repository
+            .get_upcoming_documents(driver_id, before)
+            .await?
+        {
+            tracing::Span::current().record("cache.hit", true);
+            return Ok(cached);
+        }
+
+        tracing::Span::current().record("cache.hit", false);
+
+        let documents: Vec<UpcomingWorkdayDocument> = self
+            .workday_database_repository
+            .get_pending_document_months(before, Some(driver_id))
+            .await?
+            .into_iter()
+            .map(|(_, month, year)| UpcomingWorkdayDocument { month, year })
+            .collect();
+
+        self.workday_cache_repository
+            .set_upcoming_documents(driver_id, before, documents.clone())
+            .await?;
+
+        Ok(documents)
     }
 }

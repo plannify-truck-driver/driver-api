@@ -206,6 +206,14 @@ pub struct CommonConfig {
         name = "max_login_attempts"
     )]
     pub max_login_attempts: i64,
+
+    #[arg(
+        long = "document-generation-months-ago",
+        env = "DOCUMENT_GENERATION_MONTHS_AGO",
+        default_value = "3",
+        name = "document_generation_months_ago"
+    )]
+    pub document_generation_months_ago: u32,
 }
 
 #[derive(Clone, Parser, Debug, Default)]

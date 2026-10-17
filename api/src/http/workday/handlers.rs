@@ -18,8 +18,8 @@ use chrono::NaiveDate;
 use plannify_driver_api_core::domain::workday::{
     entities::{
         CreateWorkdayRequest, GetWorkdayDocumentsByYearResponse, GetWorkdaysByMonthParams,
-        GetWorkdaysByPeriodParams, UpdateWorkdayRequest, Workday, WorkdayCreationLimit,
-        WorkdayGarbage,
+        GetWorkdaysByPeriodParams, UpcomingWorkdayDocument, UpdateWorkdayRequest, Workday,
+        WorkdayCreationLimit, WorkdayGarbage,
     },
     port::WorkdayService,
 };
@@ -450,6 +450,41 @@ pub async fn get_workday_documents_by_year(
     let documents = state
         .service
         .get_workday_documents_by_year(user_identity.user_id, year)
+        .await?;
+
+    tracing::Span::current().record("count", documents.len());
+
+    Ok(Response::ok(documents))
+}
+
+#[tracing::instrument(
+    name = "get_upcoming_workday_documents",
+    skip_all,
+    fields(
+        user_id = %user_identity.user_id,
+    )
+)]
+#[utoipa::path(
+    get,
+    path = "/workdays/documents/upcoming",
+    tag = "workdays/documents",
+    description = "Retrieve the months whose workday document will be generated on the 1st of next month",
+    security(
+        ("bearer_auth" = [])
+    ),
+    responses(
+        (status = 200, description = "Upcoming workday documents retrieved successfully", body = Vec<UpcomingWorkdayDocument>),
+        (status = 401, description = "Unauthorized", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn get_upcoming_workday_documents(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<Vec<UpcomingWorkdayDocument>>, ApiError> {
+    let documents = state
+        .service
+        .get_upcoming_workday_documents(user_identity.user_id)
         .await?;
 
     tracing::Span::current().record("count", documents.len());

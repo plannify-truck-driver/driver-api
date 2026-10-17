@@ -273,8 +273,9 @@ mod tests {
             storage::port::StorageRepository,
             workday::{
                 entities::{
-                    CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayCreationLimit,
-                    WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
+                    CreateWorkdayRequest, UpcomingWorkdayDocument, UpdateWorkdayRequest, Workday,
+                    WorkdayCreationLimit, WorkdayDocumentInformation, WorkdayGarbageRow,
+                    WorkdayRow,
                 },
                 port::WorkdayService,
             },
@@ -370,6 +371,12 @@ mod tests {
     }
 
     impl WorkdayService for StubWorkdayService {
+        async fn get_upcoming_workday_documents(
+            &self,
+            _: Uuid,
+        ) -> Result<Vec<UpcomingWorkdayDocument>, WorkdayError> {
+            unreachable!()
+        }
         async fn get_workday_document_by_month(
             &self,
             _: Uuid,
