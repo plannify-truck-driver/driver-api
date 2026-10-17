@@ -12,6 +12,7 @@ pub struct ConfigResponse {
     pub workday_garbage_retention_days: i64,
     pub support_email: String,
     pub account_deactivation_days: i64,
+    pub document_generation_months_ago: u32,
 }
 
 #[utoipa::path(
@@ -32,5 +33,6 @@ pub async fn get_config(
         workday_garbage_retention_days: state.config.common.workday_garbage_retention_days,
         support_email: state.config.common.support_email.clone(),
         account_deactivation_days: state.config.common.account_deactivation_days,
+        document_generation_months_ago: state.config.common.document_generation_months_ago,
     }))
 }
