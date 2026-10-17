@@ -621,11 +621,12 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
     #[tracing::instrument(
         name = "db.workdays.get_pending_document_months",
         skip(self),
-        fields(before = %before)
+        fields(before = %before, driver_id = ?driver_id)
     )]
     async fn get_pending_document_months(
         &self,
         before: NaiveDate,
+        driver_id: Option<Uuid>,
     ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
         let records = sqlx::query_as::<_, (Uuid, i32, i32)>(
             r#"
@@ -635,6 +636,7 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
                 EXTRACT(YEAR FROM w.date)::INTEGER AS year
             FROM workdays w
             WHERE w.date < $1
+            AND ($2::UUID IS NULL OR w.fk_driver_id = $2)
             AND w.date NOT IN (
                 SELECT wg.workday_date FROM workday_garbage wg
                 WHERE wg.fk_driver_id = w.fk_driver_id
@@ -649,6 +651,7 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
             "#,
         )
         .bind(before)
+        .bind(driver_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| {

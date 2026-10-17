@@ -79,6 +79,7 @@ impl App {
                 account_deactivation_days: config.common.account_deactivation_days,
                 workday_creation_limit: config.common.workday_creation_limit,
                 max_login_attempts: config.common.max_login_attempts,
+                document_generation_months_ago: config.common.document_generation_months_ago,
             },
         )
         .await

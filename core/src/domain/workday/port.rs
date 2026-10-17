@@ -11,8 +11,9 @@ use uuid::Uuid;
 
 use crate::{
     domain::workday::entities::{
-        CreateWorkdayRequest, UpdateWorkdayRequest, Workday, WorkdayCreationLimit, WorkdayDocument,
-        WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
+        CreateWorkdayRequest, UpcomingWorkdayDocument, UpdateWorkdayRequest, Workday,
+        WorkdayCreationLimit, WorkdayDocument, WorkdayDocumentInformation, WorkdayGarbageRow,
+        WorkdayRow,
     },
     infrastructure::workday::repositories::error::WorkdayError,
 };
@@ -39,6 +40,9 @@ pub enum WorkdayCacheKeyType {
     DocumentsByYear {
         year: i32,
     },
+    UpcomingDocuments {
+        before: NaiveDate,
+    },
 }
 
 impl WorkdayCacheKeyType {
@@ -63,6 +67,9 @@ impl WorkdayCacheKeyType {
                 format!("documents-by-year:{}", year)
             }
             WorkdayCacheKeyType::DocumentYears => "document-years".to_string(),
+            WorkdayCacheKeyType::UpcomingDocuments { before } => {
+                format!("upcoming-documents:{}", before)
+            }
         }
     }
 
@@ -74,6 +81,7 @@ impl WorkdayCacheKeyType {
             WorkdayCacheKeyType::GeneratedDocumentsByYear { .. } => 3600 * 24 * 7,
             WorkdayCacheKeyType::DocumentsByYear { .. } => 3600 * 24 * 7,
             WorkdayCacheKeyType::DocumentYears => 3600 * 24 * 7,
+            WorkdayCacheKeyType::UpcomingDocuments { .. } => 3600 * 24,
         }
     }
 }
@@ -171,9 +179,11 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
         year: i32,
     ) -> impl Future<Output = Result<Option<WorkdayDocument>, WorkdayError>> + Send;
 
+    /// `driver_id = None` returns pending months for every driver.
     fn get_pending_document_months(
         &self,
         before: NaiveDate,
+        driver_id: Option<Uuid>,
     ) -> impl Future<Output = Result<Vec<(Uuid, i32, i32)>, WorkdayError>> + Send;
 
     fn create_workday_document(
@@ -302,6 +312,27 @@ pub trait WorkdayCacheRepository: Send + Sync {
         driver_id: Uuid,
     ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
 
+    fn get_upcoming_documents(
+        &self,
+        driver_id: Uuid,
+        before: NaiveDate,
+    ) -> impl Future<Output = Result<Option<Vec<UpcomingWorkdayDocument>>, WorkdayError>> + Send;
+
+    fn set_upcoming_documents(
+        &self,
+        driver_id: Uuid,
+        before: NaiveDate,
+        documents: Vec<UpcomingWorkdayDocument>,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send;
+
+    /// Deletes the entries for every cutoff.
+    fn delete_upcoming_documents(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<(), WorkdayError>> + Send {
+        self.delete_key(driver_id, "workdays:upcoming-documents")
+    }
+
     fn get_generated_documents_by_year(
         &self,
         driver_id: Uuid,
@@ -426,6 +457,11 @@ pub trait WorkdayService: Send + Sync {
         month: i32,
         year: i32,
     ) -> impl Future<Output = Result<Option<Bytes>, WorkdayError>> + Send;
+
+    fn get_upcoming_workday_documents(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<Vec<UpcomingWorkdayDocument>, WorkdayError>> + Send;
 }
 
 #[derive(Clone)]
@@ -737,13 +773,14 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
     async fn get_pending_document_months(
         &self,
         before: NaiveDate,
+        driver_id: Option<Uuid>,
     ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
         let documents = self.workday_documents.lock().unwrap();
 
         let mut result: Vec<(Uuid, i32, i32)> = workdays
             .iter()
-            .filter(|w| w.date < before)
+            .filter(|w| w.date < before && driver_id.is_none_or(|id| w.fk_driver_id == id))
             .map(|w| (w.fk_driver_id, w.date.month() as i32, w.date.year()))
             .filter(|(driver_id, month, year)| {
                 !documents
@@ -789,6 +826,7 @@ type MockWorkdayCacheType = HashMap<String, Vec<Workday>>;
 type MockDocumentRecordCache = HashMap<(Uuid, i32, i32), Option<WorkdayDocument>>;
 type MockDocumentsByYearCache = HashMap<(Uuid, i32), Vec<WorkdayDocumentInformation>>;
 type MockDocumentYearsCache = HashMap<Uuid, Vec<i32>>;
+type MockUpcomingDocumentsCache = HashMap<(Uuid, NaiveDate), Vec<UpcomingWorkdayDocument>>;
 
 #[derive(Clone)]
 pub struct MockWorkdayCacheRepository {
@@ -797,6 +835,7 @@ pub struct MockWorkdayCacheRepository {
     generated_documents_by_year: Arc<Mutex<MockDocumentsByYearCache>>,
     documents_by_year: Arc<Mutex<MockDocumentsByYearCache>>,
     document_years: Arc<Mutex<MockDocumentYearsCache>>,
+    upcoming_documents: Arc<Mutex<MockUpcomingDocumentsCache>>,
 }
 
 impl MockWorkdayCacheRepository {
@@ -807,6 +846,7 @@ impl MockWorkdayCacheRepository {
             generated_documents_by_year: Arc::new(Mutex::new(HashMap::new())),
             documents_by_year: Arc::new(Mutex::new(HashMap::new())),
             document_years: Arc::new(Mutex::new(HashMap::new())),
+            upcoming_documents: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -1016,6 +1056,32 @@ impl WorkdayCacheRepository for MockWorkdayCacheRepository {
     async fn delete_document_years(&self, driver_id: Uuid) -> Result<(), WorkdayError> {
         let mut cache = self.document_years.lock().unwrap();
         cache.remove(&driver_id);
+        Ok(())
+    }
+
+    async fn get_upcoming_documents(
+        &self,
+        driver_id: Uuid,
+        before: NaiveDate,
+    ) -> Result<Option<Vec<UpcomingWorkdayDocument>>, WorkdayError> {
+        let cache = self.upcoming_documents.lock().unwrap();
+        Ok(cache.get(&(driver_id, before)).cloned())
+    }
+
+    async fn set_upcoming_documents(
+        &self,
+        driver_id: Uuid,
+        before: NaiveDate,
+        documents: Vec<UpcomingWorkdayDocument>,
+    ) -> Result<(), WorkdayError> {
+        let mut cache = self.upcoming_documents.lock().unwrap();
+        cache.insert((driver_id, before), documents);
+        Ok(())
+    }
+
+    async fn delete_upcoming_documents(&self, driver_id: Uuid) -> Result<(), WorkdayError> {
+        let mut cache = self.upcoming_documents.lock().unwrap();
+        cache.retain(|(id, _), _| *id != driver_id);
         Ok(())
     }
 

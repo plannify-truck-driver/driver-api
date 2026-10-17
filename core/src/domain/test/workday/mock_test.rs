@@ -11,14 +11,73 @@ mod tests {
             test::create_mock_service,
             workday::{
                 entities::{
-                    CreateWorkdayRequest, UpdateWorkdayRequest, WorkdayDocument,
-                    WorkdayDocumentInformation,
+                    CreateWorkdayRequest, UpcomingWorkdayDocument, UpdateWorkdayRequest,
+                    WorkdayDocument, WorkdayDocumentInformation,
                 },
                 port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
             },
         },
         infrastructure::workday::repositories::error::WorkdayError,
     };
+
+    fn old_workday(date: &str) -> CreateWorkdayRequest {
+        CreateWorkdayRequest {
+            date: chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap(),
+            start_time: chrono::NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").unwrap(),
+            end_time: None,
+            rest_time: chrono::NaiveTime::parse_from_str("00:00:00", "%H:%M:%S").unwrap(),
+            overnight_rest: false,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_upcoming_workday_documents_cached_then_invalidated()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::new_v4();
+        let jan = UpcomingWorkdayDocument {
+            month: 1,
+            year: 2020,
+        };
+        let feb = UpcomingWorkdayDocument {
+            month: 2,
+            year: 2020,
+        };
+        let mar = UpcomingWorkdayDocument {
+            month: 3,
+            year: 2020,
+        };
+
+        service
+            .workday_database_repository
+            .create_workday(driver_id, old_workday("2020-01-10"))
+            .await?;
+        assert_eq!(
+            service.get_upcoming_workday_documents(driver_id).await?,
+            vec![jan]
+        );
+
+        // Written behind the service's back: the cached list is served.
+        service
+            .workday_database_repository
+            .create_workday(driver_id, old_workday("2020-02-10"))
+            .await?;
+        assert_eq!(
+            service.get_upcoming_workday_documents(driver_id).await?,
+            vec![jan]
+        );
+
+        // Written through the service: the cache is invalidated.
+        service
+            .create_workday(driver_id, old_workday("2020-03-10"))
+            .await?;
+        assert_eq!(
+            service.get_upcoming_workday_documents(driver_id).await?,
+            vec![jan, feb, mar]
+        );
+
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_get_workdays_by_month_success() -> Result<(), Box<dyn std::error::Error>> {
