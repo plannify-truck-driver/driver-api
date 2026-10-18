@@ -2278,6 +2278,7 @@ dependencies = [
  "chrono",
  "clap",
  "dotenv",
+ "futures",
  "lettre",
  "plannify_driver_api_core",
  "reqwest 0.13.1",

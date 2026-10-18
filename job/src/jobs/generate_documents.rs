@@ -1,4 +1,5 @@
 use chrono::Utc;
+use futures::{StreamExt, stream};
 use plannify_driver_api_core::{
     application::{DriverRepositories, DriverService},
     domain::{
@@ -10,6 +11,7 @@ use plannify_driver_api_core::{
     },
 };
 use tracing::{error, info, warn};
+use uuid::Uuid;
 
 pub async fn run(repos: &DriverRepositories, months_ago: u32) -> i32 {
     let service: DriverService = repos.clone().into();
@@ -58,95 +60,129 @@ where
 
     info!("Found {} month(s) pending document generation", total);
 
-    let mut generated = 0u32;
-    let mut failed = 0u32;
+    let outcomes: Vec<Outcome> = stream::iter(&pending)
+        .map(|(driver_id, month, year)| {
+            generate_one(
+                workday_db, cache, storage, service, *driver_id, *month, *year,
+            )
+        })
+        .buffer_unordered(CONCURRENCY)
+        .collect()
+        .await;
 
-    for (driver_id, month, year) in &pending {
-        let pdf = match service
-            .get_workday_document_by_month(*driver_id, *month, *year)
-            .await
-        {
-            Ok(Some(bytes)) => bytes,
-            Ok(None) => {
-                warn!(
-                    driver_id = %driver_id,
-                    month = %month,
-                    year = %year,
-                    "No workdays found for this month"
-                );
-                continue;
-            }
-            Err(e) => {
-                failed += 1;
-                error!(
-                    driver_id = %driver_id,
-                    month = %month,
-                    year = %year,
-                    error = ?e,
-                    "Failed to generate document"
-                );
-                continue;
-            }
-        };
+    let generated = outcomes
+        .iter()
+        .filter(|o| **o == Outcome::Generated)
+        .count();
+    let failed = outcomes.iter().filter(|o| **o == Outcome::Failed).count();
 
-        let s3_key = format!(
-            "drivers/{}/workdays/monthly-reports/workdays-{}-{:02}.pdf",
-            driver_id, year, month
-        );
-        let file_name = format!("workdays-{}-{:02}.pdf", year, month);
+    info!(total, generated, failed, "generate_documents job completed");
 
-        if let Err(e) = storage.upload(&s3_key, pdf, "application/pdf").await {
-            failed += 1;
+    if failed > 0 { 1 } else { 0 }
+}
+
+/// Number of documents generated in parallel, spread over the pdf-service replicas.
+const CONCURRENCY: usize = 4;
+
+#[derive(PartialEq)]
+enum Outcome {
+    Generated,
+    Skipped,
+    Failed,
+}
+
+async fn generate_one<WDB, WC, SR, WS>(
+    workday_db: &WDB,
+    cache: &WC,
+    storage: &SR,
+    service: &WS,
+    driver_id: Uuid,
+    month: i32,
+    year: i32,
+) -> Outcome
+where
+    WDB: WorkdayDatabaseRepository,
+    WC: WorkdayCacheRepository,
+    SR: StorageRepository,
+    WS: WorkdayService,
+{
+    let pdf = match service
+        .get_workday_document_by_month(driver_id, month, year)
+        .await
+    {
+        Ok(Some(bytes)) => bytes,
+        Ok(None) => {
+            warn!(
+                driver_id = %driver_id,
+                month = %month,
+                year = %year,
+                "No workdays found for this month"
+            );
+            return Outcome::Skipped;
+        }
+        Err(e) => {
             error!(
                 driver_id = %driver_id,
                 month = %month,
                 year = %year,
                 error = ?e,
-                "Failed to upload document to S3"
+                "Failed to generate document"
             );
-            continue;
+            return Outcome::Failed;
         }
+    };
 
-        let doc = match workday_db
-            .create_workday_document(*driver_id, *month, *year, s3_key, file_name)
-            .await
-        {
-            Ok(doc) => doc,
-            Err(e) => {
-                failed += 1;
-                error!(
-                    driver_id = %driver_id,
-                    month = %month,
-                    year = %year,
-                    error = ?e,
-                    "Failed to persist document record"
-                );
-                continue;
-            }
-        };
+    let s3_key = format!(
+        "drivers/{}/workdays/monthly-reports/workdays-{}-{:02}.pdf",
+        driver_id, year, month
+    );
+    let file_name = format!("workdays-{}-{:02}.pdf", year, month);
 
-        let _ = cache
-            .set_workday_document_record(*driver_id, *month, *year, Some(doc))
-            .await;
-        let _ = cache.delete_document_years(*driver_id).await;
-        let _ = cache.delete_upcoming_documents(*driver_id).await;
-        let _ = cache
-            .delete_generated_documents_by_year(*driver_id, *year)
-            .await;
-        let _ = cache.delete_documents_by_year(*driver_id, *year).await;
-
-        generated += 1;
-        info!(
+    if let Err(e) = storage.upload(&s3_key, pdf, "application/pdf").await {
+        error!(
             driver_id = %driver_id,
             month = %month,
             year = %year,
-            "Document generated and stored"
+            error = ?e,
+            "Failed to upload document to S3"
         );
+        return Outcome::Failed;
     }
 
-    info!(total, generated, failed, "generate_documents job completed");
+    let doc = match workday_db
+        .create_workday_document(driver_id, month, year, s3_key, file_name)
+        .await
+    {
+        Ok(doc) => doc,
+        Err(e) => {
+            error!(
+                driver_id = %driver_id,
+                month = %month,
+                year = %year,
+                error = ?e,
+                "Failed to persist document record"
+            );
+            return Outcome::Failed;
+        }
+    };
 
-    if failed > 0 { 1 } else { 0 }
+    let _ = cache
+        .set_workday_document_record(driver_id, month, year, Some(doc))
+        .await;
+    let _ = cache.delete_document_years(driver_id).await;
+    let _ = cache.delete_upcoming_documents(driver_id).await;
+    let _ = cache
+        .delete_generated_documents_by_year(driver_id, year)
+        .await;
+    let _ = cache.delete_documents_by_year(driver_id, year).await;
+
+    info!(
+        driver_id = %driver_id,
+        month = %month,
+        year = %year,
+        "Document generated and stored"
+    );
+    Outcome::Generated
 }
 
 #[cfg(test)]
