@@ -212,6 +212,11 @@ pub trait DriverService: Send + Sync {
         email: String,
     ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
 
+    fn request_account_verification(
+        &self,
+        driver_id: Uuid,
+    ) -> impl Future<Output = Result<DriverRow, DriverError>> + Send;
+
     fn confirm_password_reset(
         &self,
         driver_id: Uuid,

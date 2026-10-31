@@ -243,6 +243,9 @@ impl From<DriverError> for ApiError {
                 error_code: "ACCOUNT_ALREADY_VERIFIED".to_string(),
                 content: None,
             },
+            DriverError::VerificationTokenAlreadyExists => ApiError::Conflict {
+                error_code: "VERIFICATION_TOKEN_ALREADY_EXISTS".to_string(),
+            },
             DriverError::InvalidRestPeriod { details } => {
                 let mut content = Mapping::new();
                 content.insert(Value::String("details".to_string()), Value::String(details));

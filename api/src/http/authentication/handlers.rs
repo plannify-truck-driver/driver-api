@@ -303,6 +303,40 @@ pub async fn refresh_token(
 }
 
 #[tracing::instrument(
+    name = "resend_account_verification",
+    skip_all,
+    fields(
+        driver_id = %user_identity.user_id,
+    )
+)]
+#[utoipa::path(
+    post,
+    path = "/authentication/token/verify-account/resend",
+    tag = "authentication",
+    security(),
+    description = "Send a new account verification link. Authenticated by the refresh token cookie, since access tokens of unverified drivers are rejected.",
+    responses(
+        (status = 200, description = "Verification email sent successfully"),
+        (status = 400, description = "Account already verified", body = ErrorBody),
+        (status = 401, description = "Invalid token", body = ErrorBody),
+        (status = 403, description = "Account verification mail preference is disabled", body = ErrorBody),
+        (status = 409, description = "A valid verification link already exists", body = ErrorBody),
+        (status = 500, description = "Internal server error", body = ErrorBody)
+    )
+)]
+pub async fn resend_account_verification(
+    State(state): State<AppState>,
+    Extension(user_identity): Extension<UserIdentity>,
+) -> Result<Response<()>, ApiError> {
+    let driver = state
+        .service
+        .request_account_verification(user_identity.user_id)
+        .await?;
+    state.service.send_creation_email(driver).await?;
+    Ok(Response::ok(()))
+}
+
+#[tracing::instrument(
     name = "request_password_reset",
     skip_all,
     fields(

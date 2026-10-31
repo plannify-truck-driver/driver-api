@@ -3,9 +3,10 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use crate::http::{
     authentication::handlers::{
         __path_confirm_password_reset, __path_delete_refresh_token, __path_login,
-        __path_refresh_token, __path_request_password_reset, __path_signup,
-        __path_verify_driver_account, confirm_password_reset, delete_refresh_token, login,
-        refresh_token, request_password_reset, signup, verify_driver_account,
+        __path_refresh_token, __path_request_password_reset, __path_resend_account_verification,
+        __path_signup, __path_verify_driver_account, confirm_password_reset, delete_refresh_token,
+        login, refresh_token, request_password_reset, resend_account_verification, signup,
+        verify_driver_account,
     },
     common::app_state::AppState,
 };
@@ -20,7 +21,9 @@ pub fn authentication_routes() -> OpenApiRouter<AppState> {
 }
 
 pub fn refresh_cookie_routes() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(refresh_token))
+    OpenApiRouter::new()
+        .routes(routes!(refresh_token))
+        .routes(routes!(resend_account_verification))
 }
 
 pub fn unauthenticated_routes() -> OpenApiRouter<AppState> {
