@@ -15,7 +15,7 @@ use crate::{
             entities::{
                 CreateWorkdayRequest, UpcomingWorkdayDocument, UpdateWorkdayRequest, Workday,
                 WorkdayCreationLimit, WorkdayDocumentInformation, WorkdayGarbageRow, WorkdayRow,
-                document_generation_cutoff,
+                document_generation_account_cutoff, document_generation_cutoff,
             },
             port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
         },
@@ -859,7 +859,11 @@ where
 
         let documents: Vec<UpcomingWorkdayDocument> = self
             .workday_database_repository
-            .get_pending_document_months(before, Some(driver_id))
+            .get_pending_document_months(
+                before,
+                document_generation_account_cutoff(next_run),
+                Some(driver_id),
+            )
             .await?
             .into_iter()
             .map(|(_, month, year)| UpcomingWorkdayDocument { month, year })

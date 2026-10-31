@@ -163,9 +163,18 @@ pub fn document_generation_cutoff(run_date: NaiveDate, months_ago: u32) -> Naive
     NaiveDate::from_ymd_opt(cutoff.year(), cutoff.month(), 1).expect("cutoff date is always valid")
 }
 
+/// Accounts younger than this get no document generated.
+pub const DOCUMENT_GENERATION_MIN_ACCOUNT_AGE_MONTHS: u32 = 6;
+
+/// Only drivers whose account was created strictly before this date are
+/// eligible for document generation on `run_date`.
+pub fn document_generation_account_cutoff(run_date: NaiveDate) -> NaiveDate {
+    run_date - Months::new(DOCUMENT_GENERATION_MIN_ACCOUNT_AGE_MONTHS)
+}
+
 #[cfg(test)]
 mod document_generation_cutoff_tests {
-    use super::document_generation_cutoff;
+    use super::{document_generation_account_cutoff, document_generation_cutoff};
     use chrono::NaiveDate;
 
     fn d(y: i32, m: u32, day: u32) -> NaiveDate {
@@ -180,6 +189,23 @@ mod document_generation_cutoff_tests {
         assert_eq!(
             document_generation_cutoff(d(2026, 11, 1), 0),
             d(2026, 11, 1)
+        );
+    }
+
+    #[test]
+    fn test_account_cutoff() {
+        assert_eq!(
+            document_generation_account_cutoff(d(2026, 11, 1)),
+            d(2026, 5, 1)
+        );
+        assert_eq!(
+            document_generation_account_cutoff(d(2026, 2, 1)),
+            d(2025, 8, 1)
+        );
+        // Clamped to the last day of a shorter month
+        assert_eq!(
+            document_generation_account_cutoff(d(2026, 8, 31)),
+            d(2026, 2, 28)
         );
     }
 }

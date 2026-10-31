@@ -5,7 +5,7 @@ use plannify_driver_api_core::{
     domain::{
         storage::port::StorageRepository,
         workday::{
-            entities::document_generation_cutoff,
+            entities::{document_generation_account_cutoff, document_generation_cutoff},
             port::{WorkdayCacheRepository, WorkdayDatabaseRepository, WorkdayService},
         },
     },
@@ -40,11 +40,19 @@ where
 {
     info!("Starting generate_documents job");
 
-    let before = document_generation_cutoff(Utc::now().date_naive(), months_ago);
+    let today = Utc::now().date_naive();
+    let before = document_generation_cutoff(today, months_ago);
+    let drivers_created_before = document_generation_account_cutoff(today);
 
-    info!("Looking for months with workdays before {}", before);
+    info!(
+        "Looking for months with workdays before {} for drivers created before {}",
+        before, drivers_created_before
+    );
 
-    let pending = match workday_db.get_pending_document_months(before, None).await {
+    let pending = match workday_db
+        .get_pending_document_months(before, drivers_created_before, None)
+        .await
+    {
         Ok(p) => p,
         Err(e) => {
             error!("Failed to fetch pending document months: {}", e);
@@ -250,6 +258,7 @@ mod tests {
     impl WorkdayDatabaseRepository for StubWorkdayDb {
         async fn get_pending_document_months(
             &self,
+            _: NaiveDate,
             _: NaiveDate,
             _: Option<Uuid>,
         ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
