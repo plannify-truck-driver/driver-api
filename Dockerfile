@@ -1,4 +1,4 @@
-FROM rust:1.92.0-slim-bookworm AS rust-build
+FROM rust:1.99.1-slim-trixie AS rust-build
 
 WORKDIR /usr/local/src/user
 
@@ -34,7 +34,7 @@ RUN \
     touch job/src/main.rs && \
     cargo build --release
 
-FROM debian:bookworm-slim AS runtime
+FROM debian:trixie-slim AS runtime
 
 RUN \
     apt-get update && \

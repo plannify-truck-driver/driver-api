@@ -4,6 +4,13 @@ This repository provides the Driver API, which allows truck drivers to manage th
 
 ## Prerequisites
 
+Install the pinned Rust toolchain and tools with [mise](https://mise.jdx.dev) (see `mise.toml`):
+
+```bash
+mise install
+```
+
+Set the required environment variables in the `.env` file.
 ```bash
 cp .env.template .env
 ```
@@ -32,52 +39,12 @@ The `job` crate is a CLI runner for background tasks. It reads configuration fro
 cargo run -p job -- <command> [options]
 ```
 
-#### Available commands
-
-**`delete-garbage`** — Deletes expired workday garbage entries. Intended to run periodically (e.g. daily).
-
-```bash
-cargo run -p job -- delete-garbage
-```
-
-**`generate-documents`** — Generates workday documents for all (driver, month) pairs older than N months that have at least one workday and no document yet.
-
-```bash
-cargo run -p job -- generate-documents --months-ago 3
-```
-
-#### Configuration
-
-All options can be set via environment variables or CLI flags (CLI flags take precedence).
-
-| Environment variable             | CLI flag                           | Default                                                |
-| -------------------------------- | ---------------------------------- | ------------------------------------------------------ |
-| `DATABASE_URL`                   | `--database-url`                   | `postgres://postgres:password@localhost:5432/plannify` |
-| `REDIS_URL`                      | `--redis-url`                      | `redis://localhost:6379/0`                             |
-| `FRONTEND_URL`                   | `--frontend-url`                   | `https://app.plannify.be`                              |
-| `PDF_SERVICE_ENDPOINT`           | `--pdf-service-endpoint`           | `http://localhost:50051`                               |
-| `WORKDAY_GARBAGE_RETENTION_DAYS` | `--workday-garbage-retention-days` | `30`                                                   |
-| `ACCOUNT_DEACTIVATION_DAYS`      | `--account-deactivation-days`      | `30`                                                   |
-| `SMTP_DEFAULT_SENDER`            | `--smtp-default-sender`            | `noreply@plannify.be`                                  |
-| `SMTP_DEFAULT_SENDER_REPLY_TO`   | `--smtp-default-sender-reply-to`   | `noreply@plannify.be`                                  |
-| `SMTP_USERNAME`                  | `--smtp-username`                  | _(empty)_                                              |
-| `SMTP_PASSWORD`                  | `--smtp-password`                  | _(empty)_                                              |
-| `SMTP_DOMAIN`                    | `--smtp-domain`                    | `localhost`                                            |
-| `S3_ACCESS_KEY`                  | `--s3-access-key`                  | _(empty)_                                              |
-| `S3_SECRET_KEY`                  | `--s3-secret-key`                  | _(empty)_                                              |
-| `S3_ENDPOINT`                    | `--s3-endpoint`                    | `http://localhost:3900`                                |
-| `S3_BUCKET_NAME`                 | `--s3-bucket-name`                 | `plannify`                                             |
-| `S3_REGION`                      | `--s3-region`                      | `garage`                                               |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`    | `--otel-exporter-otlp-endpoint`    | `http://localhost:4317`                                |
-| `OTEL_SERVICE_NAME`              | `--otel-service-name`              | `driver-job`                                           |
-| `UPTIME_URL`                     | `--uptime-url`                     | `http://localhost:8080`                                |
-
 ### Testing
 
 There are unit and integration tests available. The integration tests require the common services to be running and a dataset to be seeded.
 
 ```bash
-PGPASSWORD=plannify_password psql -h localhost -U plannify_user -d plannify_db -f config/test-dataset.sql
+sh test.sh
 cargo test
 ```
 

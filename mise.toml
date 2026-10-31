@@ -1,0 +1,4 @@
+# Keep in sync with the rust image in Dockerfile
+[tools]
+rust = { version = "1.99.1", components = "clippy,rustfmt" }
+"cargo:sqlx-cli" = "0.8.6"
