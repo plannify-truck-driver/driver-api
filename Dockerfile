@@ -48,14 +48,14 @@ RUN \
     libsystemd0 \
     libudev1 && \
     rm -rf /var/lib/apt/lists/* && \
-    addgroup \
+    groupadd \
     --system \
     --gid 1000 \
     plannify-user && \
-    adduser \
+    useradd \
     --system \
     --no-create-home \
-    --disabled-login \
+    --shell /usr/sbin/nologin \
     --uid 1000 \
     --gid 1000 \
     plannify-user
