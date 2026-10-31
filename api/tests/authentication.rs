@@ -1048,3 +1048,166 @@ async fn test_confirm_password_reset_invalid_body(ctx: &mut context::TestContext
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "BODY_VALIDATION");
 }
+
+/// Signs up a fresh (unverified) driver and returns its id with the refresh
+/// token cookie, which is what authenticates the resend endpoint.
+async fn signup_unverified_driver(
+    ctx: &context::TestContext,
+    email: &str,
+) -> (Uuid, axum_extra::extract::cookie::Cookie<'static>) {
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/signup")
+        .json(&json!({
+            "firstname": "john",
+            "lastname": "doe",
+            "gender": null,
+            "email": email,
+            "password": "securePassword123",
+            "language": "fr"
+        }))
+        .await;
+    res.assert_status(StatusCode::CREATED);
+
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_email(email.to_string())
+        .await
+        .unwrap();
+
+    (driver.pk_driver_id, res.cookie("refresh_token"))
+}
+
+async fn get_verify_token(ctx: &context::TestContext, driver_id: Uuid) -> Option<String> {
+    let (redis_key, _) = ctx
+        .repositories
+        .driver_cache_repository
+        .get_key_by_type(driver_id, DriverCacheKeyType::VerifyEmail);
+    ctx.repositories
+        .driver_cache_repository
+        .get_redis(redis_key)
+        .await
+        .unwrap()
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_resend_account_verification_unauthorized(ctx: &mut context::TestContext) {
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/token/verify-account/resend")
+        .await;
+
+    res.assert_status(StatusCode::UNAUTHORIZED);
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_resend_account_verification_token_still_valid(ctx: &mut context::TestContext) {
+    let (driver_id, refresh_cookie) =
+        signup_unverified_driver(ctx, "resend.valid@example.be").await;
+    let token_before = get_verify_token(ctx, driver_id).await;
+    assert!(token_before.is_some(), "Signup should store a verify token");
+
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/token/verify-account/resend")
+        .add_cookie(refresh_cookie)
+        .await;
+
+    res.assert_status(StatusCode::CONFLICT);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "VERIFICATION_TOKEN_ALREADY_EXISTS");
+    assert_eq!(
+        get_verify_token(ctx, driver_id).await,
+        token_before,
+        "Existing link must not be replaced"
+    );
+
+    ctx.repositories
+        .driver_database_repository
+        .delete_driver(driver_id)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_resend_account_verification_after_expiry(ctx: &mut context::TestContext) {
+    let (driver_id, refresh_cookie) =
+        signup_unverified_driver(ctx, "resend.expired@example.be").await;
+    let old_token = get_verify_token(ctx, driver_id).await.unwrap();
+
+    // Simulate the link expiring
+    let (redis_key, _) = ctx
+        .repositories
+        .driver_cache_repository
+        .get_key_by_type(driver_id, DriverCacheKeyType::VerifyEmail);
+    ctx.repositories
+        .driver_cache_repository
+        .delete_redis(redis_key)
+        .await
+        .unwrap();
+
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/token/verify-account/resend")
+        .add_cookie(refresh_cookie)
+        .await;
+    res.assert_status(StatusCode::OK);
+
+    let new_token = get_verify_token(ctx, driver_id).await.unwrap();
+    assert_ne!(new_token, old_token, "A fresh token must be generated");
+
+    // The new link must actually verify the account
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/token/verify-account")
+        .json(&json!({ "driver_id": driver_id, "token": new_token }))
+        .await;
+    res.assert_status(StatusCode::OK);
+
+    let driver = ctx
+        .repositories
+        .driver_database_repository
+        .get_driver_by_id(driver_id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(driver.verified_at.is_some());
+
+    ctx.repositories
+        .driver_database_repository
+        .delete_driver(driver_id)
+        .await
+        .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_resend_account_verification_already_verified(ctx: &mut context::TestContext) {
+    let login = ctx
+        .unauthenticated_router
+        .post("/authentication/login")
+        .json(&json!({
+            "email": "test.user@example.be",
+            "password": "Baptiste01!"
+        }))
+        .await;
+    login.assert_status(StatusCode::OK);
+
+    let res = ctx
+        .unauthenticated_router
+        .post("/authentication/token/verify-account/resend")
+        .add_cookie(login.cookie("refresh_token"))
+        .await;
+
+    res.assert_status(StatusCode::BAD_REQUEST);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "ACCOUNT_ALREADY_VERIFIED");
+}

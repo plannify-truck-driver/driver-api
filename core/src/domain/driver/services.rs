@@ -672,6 +672,39 @@ where
     }
 
     #[tracing::instrument(
+        name = "driver_service.request_account_verification",
+        skip(self),
+        fields(driver_id = %driver_id)
+    )]
+    async fn request_account_verification(
+        &self,
+        driver_id: Uuid,
+    ) -> Result<DriverRow, DriverError> {
+        let driver = self
+            .driver_database_repository
+            .get_driver_by_id(driver_id)
+            .await?
+            .ok_or(DriverError::DriverNotFound)?;
+
+        if driver.verified_at.is_some() {
+            return Err(DriverError::AccountAlreadyVerified);
+        }
+
+        // A still-valid link means a mail was sent recently: refuse instead of
+        // re-sending, so the endpoint can't be used to spam the driver's inbox.
+        let (redis_key, _) = self
+            .driver_cache_repository
+            .get_key_by_type(driver.pk_driver_id, DriverCacheKeyType::VerifyEmail);
+        let existing_token = self.driver_cache_repository.get_redis(redis_key).await?;
+
+        if existing_token.is_some() {
+            return Err(DriverError::VerificationTokenAlreadyExists);
+        }
+
+        Ok(driver)
+    }
+
+    #[tracing::instrument(
         name = "driver_service.request_password_reset",
         skip(self),
         fields(email = %email)

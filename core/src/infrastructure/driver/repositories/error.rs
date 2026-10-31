@@ -45,6 +45,9 @@ pub enum DriverError {
     #[error("Account already verified")]
     AccountAlreadyVerified,
 
+    #[error("A verification token already exists")]
+    VerificationTokenAlreadyExists,
+
     #[error("Invalid rest period")]
     InvalidRestPeriod { details: String },
 

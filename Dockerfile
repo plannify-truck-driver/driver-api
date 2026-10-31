@@ -1,4 +1,4 @@
-FROM rust:1.92.0-slim-bookworm AS rust-build
+FROM rust:1.99.1-slim-trixie AS rust-build
 
 WORKDIR /usr/local/src/user
 
@@ -34,7 +34,7 @@ RUN \
     touch job/src/main.rs && \
     cargo build --release
 
-FROM debian:bookworm-slim AS runtime
+FROM debian:trixie-slim AS runtime
 
 RUN \
     apt-get update && \
@@ -48,14 +48,14 @@ RUN \
     libsystemd0 \
     libudev1 && \
     rm -rf /var/lib/apt/lists/* && \
-    addgroup \
+    groupadd \
     --system \
     --gid 1000 \
     plannify-user && \
-    adduser \
+    useradd \
     --system \
     --no-create-home \
-    --disabled-login \
+    --shell /usr/sbin/nologin \
     --uid 1000 \
     --gid 1000 \
     plannify-user
