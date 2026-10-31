@@ -180,9 +180,11 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
     ) -> impl Future<Output = Result<Option<WorkdayDocument>, WorkdayError>> + Send;
 
     /// `driver_id = None` returns pending months for every driver.
+    /// Drivers whose account was created on or after `drivers_created_before` are skipped.
     fn get_pending_document_months(
         &self,
         before: NaiveDate,
+        drivers_created_before: NaiveDate,
         driver_id: Option<Uuid>,
     ) -> impl Future<Output = Result<Vec<(Uuid, i32, i32)>, WorkdayError>> + Send;
 
@@ -770,9 +772,11 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
         Ok(doc)
     }
 
+    // ponytail: the mock has no drivers, so the account-age filter is not applied
     async fn get_pending_document_months(
         &self,
         before: NaiveDate,
+        _drivers_created_before: NaiveDate,
         driver_id: Option<Uuid>,
     ) -> Result<Vec<(Uuid, i32, i32)>, WorkdayError> {
         let workdays = self.workdays.lock().unwrap();
