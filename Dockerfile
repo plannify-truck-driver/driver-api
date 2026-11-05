@@ -10,6 +10,8 @@ RUN \
     libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
+RUN cargo install cargo-auditable --version 0.7.7 --locked
+
 COPY Cargo.toml Cargo.lock ./
 COPY api/Cargo.toml ./api/
 COPY core/Cargo.toml ./core/
@@ -21,7 +23,7 @@ RUN \
     echo "fn main() {}" > api/src/main.rs && \
     echo "fn main() {}" > job/src/main.rs && \
     touch core/src/lib.rs && \
-    cargo build --release
+    cargo auditable build --release
 
 COPY api api
 COPY core core
@@ -32,7 +34,7 @@ RUN \
     touch api/src/main.rs && \
     touch core/src/lib.rs && \
     touch job/src/main.rs && \
-    cargo build --release
+    cargo auditable build --release
 
 FROM debian:trixie-slim AS runtime
 
