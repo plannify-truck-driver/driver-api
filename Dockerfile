@@ -10,6 +10,8 @@ RUN \
     libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
+RUN cargo install cargo-auditable --version 0.7.7 --locked
+
 COPY Cargo.toml Cargo.lock ./
 COPY api/Cargo.toml ./api/
 COPY core/Cargo.toml ./core/
@@ -21,7 +23,7 @@ RUN \
     echo "fn main() {}" > api/src/main.rs && \
     echo "fn main() {}" > job/src/main.rs && \
     touch core/src/lib.rs && \
-    cargo build --release
+    cargo auditable build --release
 
 COPY api api
 COPY core core
@@ -32,40 +34,17 @@ RUN \
     touch api/src/main.rs && \
     touch core/src/lib.rs && \
     touch job/src/main.rs && \
-    cargo build --release
+    cargo auditable build --release
 
-FROM debian:trixie-slim AS runtime
+# Distroless: glibc, libssl and CA certificates only, no shell or package manager
+FROM gcr.io/distroless/cc-debian13 AS runtime
 
-RUN \
-    apt-get update && \
-    apt-get upgrade -y --no-install-recommends && \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
-    libssl3 \
-    libc-bin \
-    libc6 \
-    libcap2 \
-    libsystemd0 \
-    libudev1 && \
-    rm -rf /var/lib/apt/lists/* && \
-    groupadd \
-    --system \
-    --gid 1000 \
-    plannify-user && \
-    useradd \
-    --system \
-    --no-create-home \
-    --shell /usr/sbin/nologin \
-    --uid 1000 \
-    --gid 1000 \
-    plannify-user
-
-USER plannify-user
+USER 1000:1000
 
 FROM runtime AS api
 
 COPY --from=rust-build /usr/local/src/user/target/release/api /usr/local/bin/
-COPY --from=rust-build --chown=plannify-user:plannify-user /usr/local/src/user/core/templates /usr/local/src/user/core/templates
+COPY --from=rust-build --chown=1000:1000 /usr/local/src/user/core/templates /usr/local/src/user/core/templates
 
 WORKDIR /usr/local/src/user
 
@@ -76,7 +55,7 @@ ENTRYPOINT ["api"]
 FROM runtime AS job
 
 COPY --from=rust-build /usr/local/src/user/target/release/job /usr/local/bin/
-COPY --from=rust-build --chown=plannify-user:plannify-user /usr/local/src/user/core/templates /usr/local/src/user/core/templates
+COPY --from=rust-build --chown=1000:1000 /usr/local/src/user/core/templates /usr/local/src/user/core/templates
 
 WORKDIR /usr/local/src/user
 
