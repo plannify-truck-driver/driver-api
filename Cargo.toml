@@ -47,4 +47,5 @@ uuid = { version = "1.23.1", features = ["serde", "v4"] }
 utoipa = { version = "5.4.0", features = ["uuid", "chrono"] }
 
 # Storage
-aws-sdk-s3 = "1.129.0"
+# Default features without "rustls", which pulls the legacy rustls 0.21 / hyper 0.14 stack
+aws-sdk-s3 = { version = "1.129.0", default-features = false, features = ["sigv4a", "http-1x", "default-https-client", "rt-tokio"] }

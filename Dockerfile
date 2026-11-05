@@ -36,38 +36,15 @@ RUN \
     touch job/src/main.rs && \
     cargo auditable build --release
 
-FROM debian:trixie-slim AS runtime
+# Distroless: glibc, libssl and CA certificates only, no shell or package manager
+FROM gcr.io/distroless/cc-debian13 AS runtime
 
-RUN \
-    apt-get update && \
-    apt-get upgrade -y --no-install-recommends && \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
-    libssl3 \
-    libc-bin \
-    libc6 \
-    libcap2 \
-    libsystemd0 \
-    libudev1 && \
-    rm -rf /var/lib/apt/lists/* && \
-    groupadd \
-    --system \
-    --gid 1000 \
-    plannify-user && \
-    useradd \
-    --system \
-    --no-create-home \
-    --shell /usr/sbin/nologin \
-    --uid 1000 \
-    --gid 1000 \
-    plannify-user
-
-USER plannify-user
+USER 1000:1000
 
 FROM runtime AS api
 
 COPY --from=rust-build /usr/local/src/user/target/release/api /usr/local/bin/
-COPY --from=rust-build --chown=plannify-user:plannify-user /usr/local/src/user/core/templates /usr/local/src/user/core/templates
+COPY --from=rust-build --chown=1000:1000 /usr/local/src/user/core/templates /usr/local/src/user/core/templates
 
 WORKDIR /usr/local/src/user
 
@@ -78,7 +55,7 @@ ENTRYPOINT ["api"]
 FROM runtime AS job
 
 COPY --from=rust-build /usr/local/src/user/target/release/job /usr/local/bin/
-COPY --from=rust-build --chown=plannify-user:plannify-user /usr/local/src/user/core/templates /usr/local/src/user/core/templates
+COPY --from=rust-build --chown=1000:1000 /usr/local/src/user/core/templates /usr/local/src/user/core/templates
 
 WORKDIR /usr/local/src/user
 
