@@ -5,5 +5,23 @@
   <span style="font-weight: bold">{{ month }}/{{ year }}</span>.
 </p>
 <p>This report summarizes all your recorded workdays for this month.</p>
+<p>
+  You are receiving this email because monthly reports are enabled in your
+  preferences. You can turn them off at any time from your settings:
+</p>
+<div style="text-align: center; margin: 40px 0">
+  <a
+    href="{{ preferences_url }}"
+    style="
+      background-color: #4a7ab4;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 0 auto;
+      color: white;
+      text-decoration: none;
+    "
+    >Manage my preferences</a
+  >
+</div>
 <p>Best regards,<br />Baptiste, the moderator of Plannify</p>
 {% endblock content %}

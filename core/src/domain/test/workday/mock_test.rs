@@ -1235,7 +1235,10 @@ mod tests {
             .get_workday_document_by_month(driver_id, 6, 2026)
             .await?;
 
-        assert!(result.is_some(), "a document must be produced even for an empty month");
+        assert!(
+            result.is_some(),
+            "a document must be produced even for an empty month"
+        );
         Ok(())
     }
 
@@ -1253,7 +1256,10 @@ mod tests {
             .get_workday_document_by_month(driver_id, 6, 2026)
             .await?;
 
-        assert!(result.is_some(), "a document must be generated when workdays exist");
+        assert!(
+            result.is_some(),
+            "a document must be generated when workdays exist"
+        );
         Ok(())
     }
 }
