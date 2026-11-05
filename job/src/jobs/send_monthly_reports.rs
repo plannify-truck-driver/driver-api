@@ -77,13 +77,13 @@ where
         let driver_id = driver.pk_driver_id;
 
         match mail_db
-            .has_monthly_report_this_month(driver_id, today.month(), year)
+            .has_monthly_report_this_month(driver_id, today.month(), today.year())
             .await
         {
             Ok(true) => {
                 warn!(
                     driver_id = %driver_id,
-                    "Monthly report already sent for {}/{}, skipping",
+                    "Monthly report already sent for {:02}/{}, skipping",
                     month,
                     year
                 );
@@ -129,6 +129,36 @@ where
             }
         }
 
+        // The document service renders a blank PDF for an empty month,
+        // so emptiness must be checked on the workdays themselves.
+        match workday_service
+            .get_workdays_by_month(driver_id, month, year)
+            .await
+        {
+            Ok(w) if w.is_empty() => {
+                info!(
+                    driver_id = %driver_id,
+                    "No workdays found for {:02}/{}, skipping",
+                    month,
+                    year
+                );
+                skipped += 1;
+                continue;
+            }
+            Ok(_) => {}
+            Err(e) => {
+                failed += 1;
+                error!(
+                    driver_id = %driver_id,
+                    error = ?e,
+                    "Failed to get workdays for {:02}/{}",
+                    month,
+                    year
+                );
+                continue;
+            }
+        }
+
         let pdf = match workday_service
             .get_workday_document_by_month(driver_id, month, year)
             .await
@@ -137,7 +167,7 @@ where
             Ok(None) => {
                 info!(
                     driver_id = %driver_id,
-                    "No workdays found for {}/{}, skipping",
+                    "No workdays found for {:02}/{}, skipping",
                     month,
                     year
                 );
@@ -149,7 +179,7 @@ where
                 error!(
                     driver_id = %driver_id,
                     error = ?e,
-                    "Failed to get workday document for {}/{}",
+                    "Failed to get workday document for {:02}/{}",
                     month,
                     year
                 );
@@ -234,7 +264,7 @@ where
                     )
                     .await;
                 sent += 1;
-                info!(driver_id = %driver_id, "Monthly report sent for {}/{}", month, year);
+                info!(driver_id = %driver_id, "Monthly report sent for {:02}/{}", month, year);
             }
             Err(e) => {
                 let _ = mail_db
@@ -262,14 +292,14 @@ where
 mod tests {
     use super::run_inner;
     use bytes::Bytes;
-    use chrono::NaiveDate;
+    use chrono::{Datelike, NaiveDate, NaiveTime, Utc};
     use plannify_driver_api_core::{
         domain::{
             driver::{
                 entities::{CreateDriverRequest, DriverLanguage, DriverRow},
                 port::{DriverDatabaseRepository, MockDriverDatabaseRepository},
             },
-            mail::port::{MailSmtpRepository, MockMailDatabaseRepository},
+            mail::port::{MailDatabaseRepository, MailSmtpRepository, MockMailDatabaseRepository},
             storage::port::StorageRepository,
             workday::{
                 entities::{
@@ -346,25 +376,47 @@ mod tests {
 
     struct StubWorkdayService {
         pdf: Option<Bytes>,
+        workdays: Vec<Workday>,
         fail: bool,
+    }
+
+    fn a_workday() -> Workday {
+        Workday {
+            date: NaiveDate::from_ymd_opt(2026, 1, 10).unwrap(),
+            start_time: NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
+            end_time: None,
+            rest_time: NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+            overnight_rest: false,
+        }
     }
 
     impl StubWorkdayService {
         fn returns_pdf(bytes: Bytes) -> Self {
             Self {
                 pdf: Some(bytes),
+                workdays: vec![a_workday()],
                 fail: false,
             }
         }
         fn returns_none() -> Self {
             Self {
                 pdf: None,
+                workdays: vec![],
+                fail: false,
+            }
+        }
+        /// Mirrors production: a blank PDF is generated even for an empty month.
+        fn blank_pdf_without_workdays() -> Self {
+            Self {
+                pdf: Some(Bytes::from("blank-pdf")),
+                workdays: vec![],
                 fail: false,
             }
         }
         fn failing() -> Self {
             Self {
                 pdf: None,
+                workdays: vec![],
                 fail: true,
             }
         }
@@ -401,7 +453,10 @@ mod tests {
             _: i32,
             _: i32,
         ) -> Result<Vec<Workday>, WorkdayError> {
-            unreachable!()
+            if self.fail {
+                return Err(WorkdayError::Internal);
+            }
+            Ok(self.workdays.clone())
         }
         async fn get_workdays_by_period(
             &self,
@@ -585,20 +640,49 @@ mod tests {
         assert_eq!(result, 0);
     }
 
+    async fn report_created(mail_db: &MockMailDatabaseRepository, driver: &DriverRow) -> bool {
+        let now = Utc::now();
+        mail_db
+            .has_monthly_report_this_month(driver.pk_driver_id, now.month(), now.year())
+            .await
+            .unwrap()
+    }
+
+    // Regression: a blank PDF was mailed to drivers with no workdays for the month.
     #[tokio::test]
-    async fn test_happy_path_sends_report() {
+    async fn test_blank_pdf_without_workdays_not_sent() {
         let driver_db = MockDriverDatabaseRepository::new();
-        driver_with_monthly_pref(&driver_db, "bob@example.com").await;
+        let driver = driver_with_monthly_pref(&driver_db, "erin@example.com").await;
+        let mail_db = MockMailDatabaseRepository::new();
 
         let result = run_inner(
             &driver_db,
-            &MockMailDatabaseRepository::new(),
+            &mail_db,
+            &MockMailSmtpRepository,
+            &StubStorage::ok(),
+            &StubWorkdayService::blank_pdf_without_workdays(),
+        )
+        .await;
+        assert_eq!(result, 0);
+        assert!(!report_created(&mail_db, &driver).await);
+    }
+
+    #[tokio::test]
+    async fn test_happy_path_sends_report() {
+        let driver_db = MockDriverDatabaseRepository::new();
+        let driver = driver_with_monthly_pref(&driver_db, "bob@example.com").await;
+        let mail_db = MockMailDatabaseRepository::new();
+
+        let result = run_inner(
+            &driver_db,
+            &mail_db,
             &MockMailSmtpRepository,
             &StubStorage::ok(),
             &StubWorkdayService::returns_pdf(Bytes::from("fake-pdf")),
         )
         .await;
         assert_eq!(result, 0);
+        assert!(report_created(&mail_db, &driver).await);
     }
 
     #[tokio::test]

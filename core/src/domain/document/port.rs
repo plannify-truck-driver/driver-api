@@ -32,6 +32,7 @@ impl DocumentExternalRepository for MockDocumentExternalRepository {
         _year: i32,
         _workdays: Vec<Workday>,
     ) -> Result<Option<bytes::Bytes>, DocumentError> {
-        Ok(None)
+        // Mirrors the real gRPC service: a PDF is rendered even when `workdays` is empty.
+        Ok(Some(Bytes::from_static(b"%PDF-mock")))
     }
 }
