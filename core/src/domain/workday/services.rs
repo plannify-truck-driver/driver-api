@@ -779,6 +779,8 @@ where
 
         tracing::Span::current().record("source", "grpc");
 
+        // An empty month still yields a (blank) document: callers that must skip
+        // empty months (e.g. send_monthly_reports) check workdays themselves.
         let workdays = self.get_workdays_by_month(driver_id, month, year).await?;
 
         let driver = self

@@ -295,6 +295,13 @@ impl MailSmtpRepository for SmtpMailRepository {
         let month_padded = format!("{:02}", month);
         context.insert("month", &month_padded);
         context.insert("year", &year);
+        context.insert(
+            "preferences_url",
+            &format!(
+                "{}/account/mails/preferences?label=MONTHLY_REPORTS",
+                self.frontend_url
+            ),
+        );
 
         let template_path = format!("{}/monthly_report.html", driver.language.as_str());
         let html_body = self.tera.render(&template_path, &context).map_err(|e| {
@@ -507,5 +514,34 @@ impl MailSmtpRepository for SmtpMailRepository {
         };
 
         self.send_email(to, subject, html_body)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tera::{Context, Tera};
+
+    #[test]
+    fn test_monthly_report_template_contains_preferences_link() {
+        let tera = Tera::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/templates/mails/**/*.html"
+        ))
+        .expect("templates should compile");
+        let url = "https://app.test/account/mails/preferences?label=MONTHLY_REPORTS";
+        let mut context = Context::new();
+        context.insert("full_name", "Test");
+        context.insert("month", "01");
+        context.insert("year", &2026);
+        context.insert("preferences_url", url);
+
+        // Tera autoescapes `/` as `&#x2F;` in .html templates; browsers decode it in href.
+        let expected = format!("href=\"{}\"", url.replace('/', "&#x2F;"));
+        for lang in ["fr", "en"] {
+            let html = tera
+                .render(&format!("{lang}/monthly_report.html"), &context)
+                .unwrap();
+            assert!(html.contains(&expected), "{lang}: preferences link missing");
+        }
     }
 }

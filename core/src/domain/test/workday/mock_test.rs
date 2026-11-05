@@ -1197,4 +1197,69 @@ mod tests {
 
         Ok(())
     }
+
+    async fn create_test_driver(service: &crate::domain::test::MockService) -> Uuid {
+        use crate::domain::driver::{
+            entities::{CreateDriverRequest, DriverLanguage},
+            port::DriverDatabaseRepository,
+        };
+        service
+            .driver_database_repository
+            .create_driver(CreateDriverRequest {
+                firstname: "Test".into(),
+                lastname: "Driver".into(),
+                gender: None,
+                email: "report@example.com".into(),
+                password: "hashed".into(),
+                language: DriverLanguage::FR,
+            })
+            .await
+            .unwrap()
+            .pk_driver_id
+    }
+
+    // GET /workdays/documents/{year}/{month} must always return a document,
+    // even for a month without workdays.
+    #[tokio::test]
+    async fn test_get_workday_document_by_month_generates_without_workdays()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = create_test_driver(&service).await;
+        // Workday in another month must not count.
+        service
+            .workday_database_repository
+            .create_workday(driver_id, old_workday("2026-05-10"))
+            .await?;
+
+        let result = service
+            .get_workday_document_by_month(driver_id, 6, 2026)
+            .await?;
+
+        assert!(
+            result.is_some(),
+            "a document must be produced even for an empty month"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_workday_document_by_month_generates_with_workdays()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = create_test_driver(&service).await;
+        service
+            .workday_database_repository
+            .create_workday(driver_id, old_workday("2026-06-10"))
+            .await?;
+
+        let result = service
+            .get_workday_document_by_month(driver_id, 6, 2026)
+            .await?;
+
+        assert!(
+            result.is_some(),
+            "a document must be generated when workdays exist"
+        );
+        Ok(())
+    }
 }
