@@ -12,20 +12,7 @@ endblock email_title %} {% block content %}
 <p>
   Vous recevez ce mail car l'envoi de rapports mensuels est activé dans vos
   préférences. Vous pouvez le désactiver à tout moment depuis vos paramètres :
+  <a href="{{ preferences_url }}" style="color: #4a7ab4">Gérer ma préférence</a>
 </p>
-<div style="text-align: center; margin: 40px 0">
-  <a
-    href="{{ preferences_url }}"
-    style="
-      background-color: #4a7ab4;
-      padding: 10px;
-      border-radius: 10px;
-      margin: 0 auto;
-      color: white;
-      text-decoration: none;
-    "
-    >Gérer mes préférences</a
-  >
-</div>
 <p>Bien cordialement,<br />Baptiste, le modérateur de Plannify</p>
 {% endblock content %}
