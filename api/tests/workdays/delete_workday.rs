@@ -1,4 +1,4 @@
-use api::http::common::api_error::ErrorBody;
+use api::http::common::{api_error::ErrorBody, response::PaginatedResponse};
 use axum::http::StatusCode;
 use plannify_driver_api_core::domain::workday::{
     entities::WorkdayGarbage, port::WorkdayDatabaseRepository,
@@ -151,11 +151,15 @@ async fn test_delete_workday_appears_in_garbage(ctx: &mut context::TestContext) 
         .assert_status(StatusCode::OK);
 
     // It must now appear in the garbage list
-    let res = ctx.authenticated_router.get("/workdays/garbage").await;
+    let res = ctx
+        .authenticated_router
+        .get("/workdays/garbage?page=1&limit=100")
+        .await;
     res.assert_status(StatusCode::OK);
-    let body: Vec<WorkdayGarbage> = res.json();
+    let body: PaginatedResponse<WorkdayGarbage> = res.json();
     assert!(
-        body.iter()
+        body.data
+            .iter()
             .any(|g| g.workday_date == chrono::NaiveDate::from_ymd_opt(2026, 1, 31).unwrap()),
         "2026-01-31 must be present in the garbage list after soft-deletion"
     );

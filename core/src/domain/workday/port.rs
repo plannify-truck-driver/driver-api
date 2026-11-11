@@ -141,7 +141,9 @@ pub trait WorkdayDatabaseRepository: Send + Sync {
     fn get_workdays_garbage(
         &self,
         driver_id: Uuid,
-    ) -> impl Future<Output = Result<Vec<WorkdayGarbageRow>, WorkdayError>> + Send;
+        page: u32,
+        limit: u32,
+    ) -> impl Future<Output = Result<(Vec<WorkdayGarbageRow>, u32), WorkdayError>> + Send;
 
     fn create_workday_garbage(
         &self,
@@ -422,7 +424,9 @@ pub trait WorkdayService: Send + Sync {
     fn get_workdays_garbage(
         &self,
         driver_id: Uuid,
-    ) -> impl Future<Output = Result<Vec<WorkdayGarbageRow>, WorkdayError>> + Send;
+        page: u32,
+        limit: u32,
+    ) -> impl Future<Output = Result<(Vec<WorkdayGarbageRow>, u32), WorkdayError>> + Send;
 
     fn create_workday_garbage(
         &self,
@@ -629,14 +633,23 @@ impl WorkdayDatabaseRepository for MockWorkdayDatabaseRepository {
     async fn get_workdays_garbage(
         &self,
         driver_id: Uuid,
-    ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+        page: u32,
+        limit: u32,
+    ) -> Result<(Vec<WorkdayGarbageRow>, u32), WorkdayError> {
         let workdays_garbage = self.workdays_garbage.lock().unwrap();
-        let result: Vec<WorkdayGarbageRow> = workdays_garbage
+        let mut all: Vec<WorkdayGarbageRow> = workdays_garbage
             .iter()
             .filter(|w| w.fk_driver_id == driver_id)
             .cloned()
             .collect();
-        Ok(result)
+        all.sort_by_key(|w| w.workday_date);
+        let total = all.len() as u32;
+        let result = all
+            .into_iter()
+            .skip(((page - 1) * limit) as usize)
+            .take(limit as usize)
+            .collect();
+        Ok((result, total))
     }
 
     async fn create_workday_garbage(

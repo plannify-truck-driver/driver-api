@@ -1,4 +1,4 @@
-use api::http::common::api_error::ErrorBody;
+use api::http::common::{api_error::ErrorBody, response::PaginatedResponse};
 use axum::http::StatusCode;
 use plannify_driver_api_core::domain::workday::entities::WorkdayGarbage;
 use serial_test::serial;
@@ -10,7 +10,10 @@ use crate::context;
 #[tokio::test]
 #[serial]
 async fn test_get_all_workday_garbage_unauthorized(ctx: &mut context::TestContext) {
-    let res = ctx.unauthenticated_router.get("/workdays/garbage").await;
+    let res = ctx
+        .unauthenticated_router
+        .get("/workdays/garbage?page=1&limit=10")
+        .await;
 
     res.assert_status(StatusCode::UNAUTHORIZED);
 
@@ -22,11 +25,17 @@ async fn test_get_all_workday_garbage_unauthorized(ctx: &mut context::TestContex
 #[tokio::test]
 #[serial]
 async fn test_get_all_workday_garbage_success(ctx: &mut context::TestContext) {
-    let res = ctx.authenticated_router.get("/workdays/garbage").await;
+    let res = ctx
+        .authenticated_router
+        .get("/workdays/garbage?page=1&limit=10")
+        .await;
 
     res.assert_status(StatusCode::OK);
 
-    let body: Vec<WorkdayGarbage> = res.json();
+    let page: PaginatedResponse<WorkdayGarbage> = res.json();
+    assert_eq!(page.total, 3, "total should be 3");
+    assert_eq!(page.page, 1, "page number should be 1");
+    let body = page.data;
     assert_eq!(
         body.len(),
         3,
@@ -92,10 +101,10 @@ async fn test_get_all_workday_garbage_cross_user_isolation(ctx: &mut context::Te
     // User A's entries (2024-01-01 and 2026-01-15) must NOT appear.
     let other_router = ctx.create_authenticated_router_with_different_user().await;
 
-    let res = other_router.get("/workdays/garbage").await;
+    let res = other_router.get("/workdays/garbage?page=1&limit=10").await;
 
     res.assert_status(StatusCode::OK);
-    let body: Vec<WorkdayGarbage> = res.json();
+    let body = res.json::<PaginatedResponse<WorkdayGarbage>>().data;
 
     assert_eq!(body.len(), 1, "User B should see exactly one garbage entry");
     assert_eq!(
@@ -103,4 +112,53 @@ async fn test_get_all_workday_garbage_cross_user_isolation(ctx: &mut context::Te
         chrono::NaiveDate::from_ymd_opt(2026, 1, 2).unwrap(),
         "User B's only garbage entry should be 2026-01-02"
     );
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_all_workday_garbage_pagination(ctx: &mut context::TestContext) {
+    // 3 entries for User A, ordered by date: 2024-01-01, 2026-01-15, 2027-01-01
+    let res = ctx
+        .authenticated_router
+        .get("/workdays/garbage?page=2&limit=2")
+        .await;
+
+    res.assert_status(StatusCode::OK);
+    let page: PaginatedResponse<WorkdayGarbage> = res.json();
+    assert_eq!(
+        page.total, 3,
+        "total must count all entries, not just the page"
+    );
+    assert_eq!(page.page, 2);
+    assert_eq!(
+        page.data.len(),
+        1,
+        "page 2 with limit 2 must hold the last entry"
+    );
+    assert_eq!(
+        page.data[0].workday_date,
+        chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap()
+    );
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_get_all_workday_garbage_wrong_parameters(ctx: &mut context::TestContext) {
+    let res = ctx.authenticated_router.get("/workdays/garbage").await;
+    res.assert_status(StatusCode::BAD_REQUEST);
+    let body: ErrorBody = res.json();
+    assert_eq!(body.error_code, "MISSING_ATTRIBUTE");
+
+    for query in ["?page=0&limit=10", "?page=1&limit=0", "?page=1&limit=101"] {
+        let res = ctx
+            .authenticated_router
+            .get(&format!("/workdays/garbage{query}"))
+            .await;
+
+        res.assert_status(StatusCode::BAD_REQUEST);
+        let body: ErrorBody = res.json();
+        assert_eq!(body.error_code, "QUERY_VALIDATION", "query: {query}");
+    }
 }

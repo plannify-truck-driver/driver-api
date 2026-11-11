@@ -18,8 +18,8 @@ use chrono::NaiveDate;
 use plannify_driver_api_core::domain::workday::{
     entities::{
         CreateWorkdayRequest, GetWorkdayDocumentsByYearResponse, GetWorkdaysByMonthParams,
-        GetWorkdaysByPeriodParams, UpcomingWorkdayDocument, UpdateWorkdayRequest, Workday,
-        WorkdayCreationLimit, WorkdayGarbage,
+        GetWorkdaysByPeriodParams, GetWorkdaysGarbageParams, UpcomingWorkdayDocument,
+        UpdateWorkdayRequest, Workday, WorkdayCreationLimit, WorkdayGarbage,
     },
     port::WorkdayService,
 };
@@ -310,36 +310,43 @@ pub async fn delete_workday(
     skip_all,
     fields(
         user_id = %user_identity.user_id,
+        page = %query.page,
+        limit = %query.limit,
+        count = tracing::field::Empty,
     )
 )]
 #[utoipa::path(
     get,
     path = "/workdays/garbage",
     tag = "workdays/garbage",
-    description = "Retrieve all workdays garbage",
+    description = "Retrieve workdays garbage with pagination",
+    params(GetWorkdaysGarbageParams),
     security(
         ("bearer_auth" = [])
     ),
     responses(
-        (status = 200, description = "Workdays garbage retrieved successfully", body = Vec<WorkdayGarbage>),
+        (status = 200, description = "Workdays garbage retrieved successfully", body = PaginatedResponse<WorkdayGarbage>),
         (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
 pub async fn get_all_workday_garbage(
+    ValidatedQuery(query): ValidatedQuery<GetWorkdaysGarbageParams>,
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
-) -> Result<Response<Vec<WorkdayGarbage>>, ApiError> {
-    let workdays = state
+) -> Result<Response<PaginatedResponse<WorkdayGarbage>>, ApiError> {
+    let (workdays, total_count) = state
         .service
-        .get_workdays_garbage(user_identity.user_id)
+        .get_workdays_garbage(user_identity.user_id, query.page, query.limit)
         .await?;
-    let response_workdays: Vec<WorkdayGarbage> =
-        workdays.iter().map(|w| w.to_workday_garbage()).collect();
 
-    tracing::Span::current().record("count", response_workdays.len());
+    tracing::Span::current().record("count", workdays.len());
 
-    Ok(Response::ok(response_workdays))
+    Ok(Response::ok(PaginatedResponse {
+        data: workdays.iter().map(|w| w.to_workday_garbage()).collect(),
+        total: total_count,
+        page: query.page,
+    }))
 }
 
 #[tracing::instrument(

@@ -70,6 +70,16 @@ pub struct GetWorkdaysByPeriodParams {
     pub limit: u32,
 }
 
+#[derive(Deserialize, Validate, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct GetWorkdaysGarbageParams {
+    #[validate(range(min = 1, message = "page must be at least 1"))]
+    pub page: u32,
+
+    #[validate(range(min = 1, max = 100, message = "limit must be between 1 and 100"))]
+    pub limit: u32,
+}
+
 #[derive(Debug, Deserialize, Clone, Copy, Validate, ToSchema)]
 pub struct CreateWorkdayRequest {
     #[validate(custom(

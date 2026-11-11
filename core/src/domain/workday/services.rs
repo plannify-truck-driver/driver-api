@@ -238,16 +238,15 @@ where
         {
             Ok(w) => w,
             Err(WorkdayError::WorkdayAlreadyExists) => {
-                let has_garbage =
-                    self.get_workdays_garbage(driver_id)
-                        .await
-                        .ok()
-                        .and_then(|garbages| {
-                            garbages
-                                .into_iter()
-                                .find(|g| g.workday_date == create_workday_request.date)
-                        });
-                return Err(if has_garbage.is_some() {
+                // The row exists but get_workday_by_date filters out garbage:
+                // if it's not visible, the existing workday is in the garbage.
+                let in_garbage = matches!(
+                    self.workday_database_repository
+                        .get_workday_by_date(driver_id, create_workday_request.date)
+                        .await,
+                    Ok(None)
+                );
+                return Err(if in_garbage {
                     WorkdayError::WorkdayGarbageAlreadyExists
                 } else {
                     WorkdayError::WorkdayAlreadyExists
@@ -436,14 +435,18 @@ where
         skip(self),
         fields(
             driver_id = %driver_id,
+            page = %page,
+            limit = %limit,
         )
     )]
     async fn get_workdays_garbage(
         &self,
         driver_id: Uuid,
-    ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+        page: u32,
+        limit: u32,
+    ) -> Result<(Vec<WorkdayGarbageRow>, u32), WorkdayError> {
         self.workday_database_repository
-            .get_workdays_garbage(driver_id)
+            .get_workdays_garbage(driver_id, page, limit)
             .await
     }
 

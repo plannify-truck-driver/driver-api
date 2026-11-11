@@ -1,4 +1,4 @@
-use api::http::common::api_error::ErrorBody;
+use api::http::common::{api_error::ErrorBody, response::PaginatedResponse};
 use axum::http::StatusCode;
 use plannify_driver_api_core::domain::workday::{
     entities::WorkdayGarbage, port::WorkdayDatabaseRepository,
@@ -119,11 +119,15 @@ async fn test_restore_workday_reappears_in_get(ctx: &mut context::TestContext) {
         .assert_status(StatusCode::OK);
 
     // And it must no longer appear in the garbage list
-    let garbage_res = ctx.authenticated_router.get("/workdays/garbage").await;
+    let garbage_res = ctx
+        .authenticated_router
+        .get("/workdays/garbage?page=1&limit=100")
+        .await;
     garbage_res.assert_status(StatusCode::OK);
-    let garbage: Vec<WorkdayGarbage> = garbage_res.json();
+    let garbage: PaginatedResponse<WorkdayGarbage> = garbage_res.json();
     assert!(
         !garbage
+            .data
             .iter()
             .any(|g| g.workday_date == chrono::NaiveDate::from_ymd_opt(2026, 1, 15).unwrap()),
         "2026-01-15 must no longer appear in the garbage list after restoration"
