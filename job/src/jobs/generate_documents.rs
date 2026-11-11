@@ -343,7 +343,9 @@ mod tests {
         async fn get_workdays_garbage(
             &self,
             _: Uuid,
-        ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+            _: u32,
+            _: u32,
+        ) -> Result<(Vec<WorkdayGarbageRow>, u32), WorkdayError> {
             unreachable!()
         }
         async fn create_workday_garbage(
@@ -539,7 +541,9 @@ mod tests {
         async fn get_workdays_garbage(
             &self,
             _: Uuid,
-        ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
+            _: u32,
+            _: u32,
+        ) -> Result<(Vec<WorkdayGarbageRow>, u32), WorkdayError> {
             unreachable!()
         }
         async fn create_workday_garbage(

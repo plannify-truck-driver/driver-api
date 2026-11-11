@@ -365,28 +365,52 @@ impl WorkdayDatabaseRepository for PostgresWorkdayRepository {
         skip(self),
         fields(
             driver_id = %driver_id,
+            page = %page,
+            limit = %limit,
         )
     )]
     async fn get_workdays_garbage(
         &self,
         driver_id: Uuid,
-    ) -> Result<Vec<WorkdayGarbageRow>, WorkdayError> {
-        sqlx::query_as!(
+        page: u32,
+        limit: u32,
+    ) -> Result<(Vec<WorkdayGarbageRow>, u32), WorkdayError> {
+        let total_count_record = sqlx::query!(
+            r#"
+            SELECT COUNT(*) as count
+            FROM workday_garbage
+            WHERE fk_driver_id = $1
+            "#,
+            driver_id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to count workdays garbage: {:?}", e);
+            WorkdayError::DatabaseError
+        })?;
+
+        let rows = sqlx::query_as!(
             WorkdayGarbageRow,
             r#"
             SELECT *
             FROM workday_garbage
             WHERE fk_driver_id = $1
             ORDER BY workday_date ASC
+            LIMIT $2 OFFSET $3
             "#,
-            driver_id
+            driver_id,
+            limit as i64,
+            ((page - 1) * limit) as i64,
         )
         .fetch_all(&self.pool)
         .await
         .map_err(|e| {
             error!("Failed to get workdays garbage: {:?}", e);
             WorkdayError::DatabaseError
-        })
+        })?;
+
+        Ok((rows, total_count_record.count.unwrap_or(0) as u32))
     }
 
     #[tracing::instrument(

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT *\n            FROM workday_garbage\n            WHERE fk_driver_id = $1\n            ORDER BY workday_date ASC\n            ",
+  "query": "\n            SELECT *\n            FROM workday_garbage\n            WHERE fk_driver_id = $1\n            ORDER BY workday_date ASC\n            LIMIT $2 OFFSET $3\n            ",
   "describe": {
     "columns": [
       {
@@ -26,7 +26,9 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Int8",
+        "Int8"
       ]
     },
     "nullable": [
@@ -36,5 +38,5 @@
       false
     ]
   },
-  "hash": "d2d55e2b20dbe193a65adaefaa46fc14990419a28189646a6c2f39f8d1ae21f8"
+  "hash": "bc230a3e7bb1c487fa79353384ca1db045298ab2441025a2a811566f9ff8d670"
 }

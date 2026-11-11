@@ -759,12 +759,17 @@ mod tests {
             .await?;
 
         // Test the get_workdays_garbage method
-        let workdays = service
-            .get_workdays_garbage(Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap())
+        let (workdays, total) = service
+            .get_workdays_garbage(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+                1,
+                10,
+            )
             .await
             .expect("get_workdays_garbage returned an error");
 
         assert_eq!(workdays.len(), 1, "Expected one workday in the list");
+        assert_eq!(total, 1, "Expected total count to be 1");
 
         assert_eq!(
             workdays[0].workday_date.day(),
@@ -795,12 +800,17 @@ mod tests {
         let service = create_mock_service();
 
         // Test the get_workdays_garbage method
-        let workdays = service
-            .get_workdays_garbage(Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap())
+        let (workdays, total) = service
+            .get_workdays_garbage(
+                Uuid::parse_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
+                1,
+                10,
+            )
             .await
             .expect("get_workdays_garbage returned an error");
 
         assert_eq!(workdays.len(), 0, "Expected zero workdays in the list");
+        assert_eq!(total, 0, "Expected total count to be 0");
 
         Ok(())
     }
