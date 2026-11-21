@@ -181,7 +181,7 @@ pub async fn get_all_workdays_period(
         (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 403, description = "The workday quota for the current window has been exceeded", body = ErrorBody),
-        (status = 409, description = "Workday already exists, or exists in the garbage (retry with force=true to restore and overwrite it)", body = ErrorBody),
+        (status = 409, description = "Workday already exists, active or in the garbage (retry with force=true to overwrite it)", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]

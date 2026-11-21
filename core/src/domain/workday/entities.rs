@@ -83,7 +83,7 @@ pub struct GetWorkdaysGarbageParams {
 #[derive(Deserialize, Validate, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct CreateWorkdayParams {
-    /// Restore and overwrite a workday of the same date sitting in the garbage.
+    /// Overwrite an existing workday of the same date, restoring it from the garbage if needed.
     #[serde(default)]
     pub force: bool,
 }

@@ -247,18 +247,22 @@ where
                         .await,
                     Ok(None)
                 );
-                if !in_garbage {
-                    return Err(WorkdayError::WorkdayAlreadyExists);
-                }
                 if !force {
-                    return Err(WorkdayError::WorkdayGarbageAlreadyExists);
+                    return Err(if in_garbage {
+                        WorkdayError::WorkdayGarbageAlreadyExists
+                    } else {
+                        WorkdayError::WorkdayAlreadyExists
+                    });
                 }
 
+                // Forced: restore it from the garbage if needed, then overwrite it.
                 // ponytail: two queries, not one transaction. If the update fails,
                 // the workday is restored with its old values (no data loss).
-                self.workday_database_repository
-                    .delete_workday_garbage(driver_id, date)
-                    .await?;
+                if in_garbage {
+                    self.workday_database_repository
+                        .delete_workday_garbage(driver_id, date)
+                        .await?;
+                }
                 self.workday_database_repository
                     .update_workday(
                         driver_id,

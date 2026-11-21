@@ -424,3 +424,49 @@ async fn test_create_workday_creation_limit_reached(ctx: &mut context::TestConte
     let body: ErrorBody = res.json();
     assert_eq!(body.error_code, "WORKDAY_CREATION_LIMIT_REACHED");
 }
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
+async fn test_create_workday_force_existing(ctx: &mut context::TestContext) {
+    let date = chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
+    let res = ctx
+        .authenticated_router
+        .post("/workdays?force=true")
+        .json(&json!({
+            "date": "2026-01-01",
+            "start_time": "06:00:00",
+            "end_time": null,
+            "rest_time": "00:30:00",
+            "overnight_rest": false
+        }))
+        .await;
+
+    res.assert_status(StatusCode::CREATED);
+    verify_workday_content(
+        res.json(),
+        Workday {
+            date,
+            start_time: chrono::NaiveTime::from_hms_opt(6, 0, 0).unwrap(),
+            end_time: None,
+            rest_time: chrono::NaiveTime::from_hms_opt(0, 30, 0).unwrap(),
+            overnight_rest: false,
+        },
+    );
+
+    // Restore the dataset (config/test-dataset.sql).
+    ctx.repositories
+        .workday_database_repository
+        .update_workday(
+            ctx.authenticated_user_id,
+            plannify_driver_api_core::domain::workday::entities::UpdateWorkdayRequest {
+                date,
+                start_time: chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
+                end_time: chrono::NaiveTime::from_hms_opt(17, 45, 0),
+                rest_time: chrono::NaiveTime::from_hms_opt(1, 0, 0).unwrap(),
+                overnight_rest: true,
+            },
+        )
+        .await
+        .unwrap();
+}

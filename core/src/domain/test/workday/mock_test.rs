@@ -386,6 +386,33 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_create_workday_force_overwrites_existing()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::new_v4();
+        service
+            .workday_database_repository
+            .create_workday(driver_id, old_workday("2020-01-10"))
+            .await?;
+
+        let mut request = old_workday("2020-01-10");
+        request.start_time = chrono::NaiveTime::from_hms_opt(6, 0, 0).unwrap();
+        request.overnight_rest = true;
+        let workday = service.create_workday(driver_id, request, true).await?;
+
+        assert_eq!(workday.start_time, request.start_time);
+        assert!(workday.overnight_rest);
+        let stored = service
+            .workday_database_repository
+            .get_workday_by_date(driver_id, request.date)
+            .await?
+            .expect("workday must still exist");
+        assert_eq!(stored.start_time, request.start_time);
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_create_workday_decrements_creation_counter()
     -> Result<(), Box<dyn std::error::Error>> {
         let service = create_mock_service();
