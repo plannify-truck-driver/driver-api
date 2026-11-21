@@ -12,7 +12,7 @@ jobs:
   check:
     uses: plannify-truck-driver/github-actions/.github/workflows/check-rust.yml@main
     secrets:
-      submodule_ssh_key: ${{ secrets.SUBMODULE_DEPLOY_KEY }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       submodules: true
       install_protoc: true
