@@ -17,9 +17,10 @@ use axum::{
 use chrono::NaiveDate;
 use plannify_driver_api_core::domain::workday::{
     entities::{
-        CreateWorkdayRequest, GetWorkdayDocumentsByYearResponse, GetWorkdaysByMonthParams,
-        GetWorkdaysByPeriodParams, GetWorkdaysGarbageParams, UpcomingWorkdayDocument,
-        UpdateWorkdayRequest, Workday, WorkdayCreationLimit, WorkdayGarbage,
+        CreateWorkdayParams, CreateWorkdayRequest, GetWorkdayDocumentsByYearResponse,
+        GetWorkdaysByMonthParams, GetWorkdaysByPeriodParams, GetWorkdaysGarbageParams,
+        UpcomingWorkdayDocument, UpdateWorkdayRequest, Workday, WorkdayCreationLimit,
+        WorkdayGarbage,
     },
     port::WorkdayService,
 };
@@ -171,6 +172,7 @@ pub async fn get_all_workdays_period(
     tag = "workdays",
     description = "Create a new workday",
     request_body = CreateWorkdayRequest,
+    params(CreateWorkdayParams),
     security(
         ("bearer_auth" = [])
     ),
@@ -179,18 +181,19 @@ pub async fn get_all_workdays_period(
         (status = 401, description = "Unauthorized", body = ErrorBody),
         (status = 403, description = "A document has already been generated for this month", body = ErrorBody),
         (status = 403, description = "The workday quota for the current window has been exceeded", body = ErrorBody),
-        (status = 409, description = "Workday already exists", body = ErrorBody),
+        (status = 409, description = "Workday already exists, or exists in the garbage (retry with force=true to restore and overwrite it)", body = ErrorBody),
         (status = 500, description = "Internal server error", body = ErrorBody)
     )
 )]
 pub async fn create_workday(
+    ValidatedQuery(query): ValidatedQuery<CreateWorkdayParams>,
     State(state): State<AppState>,
     Extension(user_identity): Extension<UserIdentity>,
     ValidatedJson(request): ValidatedJson<CreateWorkdayRequest>,
 ) -> Result<Response<Workday>, ApiError> {
     let workday = state
         .service
-        .create_workday(user_identity.user_id, request)
+        .create_workday(user_identity.user_id, request, query.force)
         .await?;
 
     Ok(Response::created(workday.to_workday()))

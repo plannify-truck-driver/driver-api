@@ -69,7 +69,7 @@ mod tests {
 
         // Written through the service: the cache is invalidated.
         service
-            .create_workday(driver_id, old_workday("2020-03-10"))
+            .create_workday(driver_id, old_workday("2020-03-10"), false)
             .await?;
         assert_eq!(
             service.get_upcoming_workday_documents(driver_id).await?,
@@ -315,6 +315,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect("create_workday returned an error");
@@ -370,6 +371,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect_err("create_workday should have returned an error");
@@ -401,6 +403,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect("create_workday returned an error");
@@ -450,6 +453,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect_err("create_workday should have returned an error");
@@ -890,6 +894,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("00:30:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect_err("create_workday should have returned an error");

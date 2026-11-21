@@ -208,6 +208,71 @@ async fn test_create_workday_duplicate_garbage(ctx: &mut context::TestContext) {
 #[test_context(context::TestContext)]
 #[tokio::test]
 #[serial]
+async fn test_create_workday_force_garbage(ctx: &mut context::TestContext) {
+    let date = chrono::NaiveDate::from_ymd_opt(2026, 1, 15).unwrap();
+    let res = ctx
+        .authenticated_router
+        .post("/workdays?force=true")
+        .json(&json!({
+            "date": "2026-01-15",
+            "start_time": "08:00:00",
+            "end_time": null,
+            "rest_time": "00:30:00",
+            "overnight_rest": false
+        }))
+        .await;
+
+    res.assert_status(StatusCode::CREATED);
+    verify_workday_content(
+        res.json(),
+        Workday {
+            date,
+            start_time: chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
+            end_time: None,
+            rest_time: chrono::NaiveTime::from_hms_opt(0, 30, 0).unwrap(),
+            overnight_rest: false,
+        },
+    );
+
+    // Out of the garbage: now visible.
+    ctx.authenticated_router
+        .get("/workdays/2026-01-15")
+        .await
+        .assert_status(StatusCode::OK);
+
+    // Restore the dataset (config/test-dataset.sql).
+    let repo = &ctx.repositories.workday_database_repository;
+    repo.update_workday(
+        ctx.authenticated_user_id,
+        plannify_driver_api_core::domain::workday::entities::UpdateWorkdayRequest {
+            date,
+            start_time: chrono::NaiveTime::from_hms_opt(7, 34, 0).unwrap(),
+            end_time: chrono::NaiveTime::from_hms_opt(19, 3, 0),
+            rest_time: chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+            overnight_rest: true,
+        },
+    )
+    .await
+    .unwrap();
+    repo.create_workday_garbage(
+        ctx.authenticated_user_id,
+        date,
+        chrono::NaiveDate::from_ymd_opt(2026, 3, 11).unwrap(),
+        Some(
+            chrono::NaiveDateTime::new(
+                chrono::NaiveDate::from_ymd_opt(2026, 2, 10).unwrap(),
+                chrono::NaiveTime::from_hms_opt(11, 30, 0).unwrap(),
+            )
+            .and_utc(),
+        ),
+    )
+    .await
+    .unwrap();
+}
+
+#[test_context(context::TestContext)]
+#[tokio::test]
+#[serial]
 async fn test_create_workday_document_already_generated(ctx: &mut context::TestContext) {
     // 2026-02 has a generated document in the test dataset
     let res = ctx

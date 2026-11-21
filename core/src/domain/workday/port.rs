@@ -402,6 +402,7 @@ pub trait WorkdayService: Send + Sync {
         &self,
         driver_id: Uuid,
         create_workday_request: CreateWorkdayRequest,
+        force: bool,
     ) -> impl Future<Output = Result<WorkdayRow, WorkdayError>> + Send;
 
     fn get_workday_creation_limit(

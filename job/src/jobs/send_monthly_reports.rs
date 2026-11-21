@@ -472,6 +472,7 @@ mod tests {
             &self,
             _: Uuid,
             _: CreateWorkdayRequest,
+            _: bool,
         ) -> Result<WorkdayRow, WorkdayError> {
             unreachable!()
         }
