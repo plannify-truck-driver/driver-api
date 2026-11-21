@@ -209,6 +209,7 @@ where
         &self,
         driver_id: Uuid,
         create_workday_request: CreateWorkdayRequest,
+        force: bool,
     ) -> Result<WorkdayRow, WorkdayError> {
         let date = create_workday_request.date;
         let documents = self
@@ -246,11 +247,34 @@ where
                         .await,
                     Ok(None)
                 );
-                return Err(if in_garbage {
-                    WorkdayError::WorkdayGarbageAlreadyExists
-                } else {
-                    WorkdayError::WorkdayAlreadyExists
-                });
+                if !force {
+                    return Err(if in_garbage {
+                        WorkdayError::WorkdayGarbageAlreadyExists
+                    } else {
+                        WorkdayError::WorkdayAlreadyExists
+                    });
+                }
+
+                // Forced: restore it from the garbage if needed, then overwrite it.
+                // ponytail: two queries, not one transaction. If the update fails,
+                // the workday is restored with its old values (no data loss).
+                if in_garbage {
+                    self.workday_database_repository
+                        .delete_workday_garbage(driver_id, date)
+                        .await?;
+                }
+                self.workday_database_repository
+                    .update_workday(
+                        driver_id,
+                        UpdateWorkdayRequest {
+                            date,
+                            start_time: create_workday_request.start_time,
+                            end_time: create_workday_request.end_time,
+                            rest_time: create_workday_request.rest_time,
+                            overnight_rest: create_workday_request.overnight_rest,
+                        },
+                    )
+                    .await?
             }
             Err(_) => return Err(WorkdayError::Internal),
         };

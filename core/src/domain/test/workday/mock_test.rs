@@ -69,7 +69,7 @@ mod tests {
 
         // Written through the service: the cache is invalidated.
         service
-            .create_workday(driver_id, old_workday("2020-03-10"))
+            .create_workday(driver_id, old_workday("2020-03-10"), false)
             .await?;
         assert_eq!(
             service.get_upcoming_workday_documents(driver_id).await?,
@@ -315,6 +315,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect("create_workday returned an error");
@@ -370,6 +371,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect_err("create_workday should have returned an error");
@@ -379,6 +381,33 @@ mod tests {
             WorkdayError::WorkdayAlreadyExists,
             "Expected duplicate workday request error"
         );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_create_workday_force_overwrites_existing()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let service = create_mock_service();
+        let driver_id = Uuid::new_v4();
+        service
+            .workday_database_repository
+            .create_workday(driver_id, old_workday("2020-01-10"))
+            .await?;
+
+        let mut request = old_workday("2020-01-10");
+        request.start_time = chrono::NaiveTime::from_hms_opt(6, 0, 0).unwrap();
+        request.overnight_rest = true;
+        let workday = service.create_workday(driver_id, request, true).await?;
+
+        assert_eq!(workday.start_time, request.start_time);
+        assert!(workday.overnight_rest);
+        let stored = service
+            .workday_database_repository
+            .get_workday_by_date(driver_id, request.date)
+            .await?
+            .expect("workday must still exist");
+        assert_eq!(stored.start_time, request.start_time);
 
         Ok(())
     }
@@ -401,6 +430,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect("create_workday returned an error");
@@ -450,6 +480,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("01:00:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect_err("create_workday should have returned an error");
@@ -890,6 +921,7 @@ mod tests {
                     rest_time: chrono::NaiveTime::parse_from_str("00:30:00", "%H:%M:%S").unwrap(),
                     overnight_rest: false,
                 },
+                false,
             )
             .await
             .expect_err("create_workday should have returned an error");

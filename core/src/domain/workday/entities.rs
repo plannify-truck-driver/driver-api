@@ -80,6 +80,14 @@ pub struct GetWorkdaysGarbageParams {
     pub limit: u32,
 }
 
+#[derive(Deserialize, Validate, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct CreateWorkdayParams {
+    /// Overwrite an existing workday of the same date, restoring it from the garbage if needed.
+    #[serde(default)]
+    pub force: bool,
+}
+
 #[derive(Debug, Deserialize, Clone, Copy, Validate, ToSchema)]
 pub struct CreateWorkdayRequest {
     #[validate(custom(
