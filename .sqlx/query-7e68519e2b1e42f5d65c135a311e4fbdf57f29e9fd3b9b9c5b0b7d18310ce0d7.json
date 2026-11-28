@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE driver_mails\n            SET status = $2, sent_at = $3\n            WHERE pk_driver_mail_id = $1\n            RETURNING pk_driver_mail_id, fk_driver_id, fk_employee_id, fk_mail_type_id, email_used, status as \"status: MailStatus\", description, content, created_at, sent_at\n            ",
+  "query": "\n            SELECT pk_driver_mail_id, fk_driver_id, fk_administrator_id, fk_mail_type_id,\n                   email_used, status as \"status: MailStatus\", description, content, created_at, sent_at\n            FROM driver_mails\n            WHERE fk_driver_id = $1\n            ORDER BY created_at DESC\n            LIMIT $2 OFFSET $3\n            ",
   "describe": {
     "columns": [
       {
@@ -15,7 +15,7 @@
       },
       {
         "ordinal": 2,
-        "name": "fk_employee_id",
+        "name": "fk_administrator_id",
         "type_info": "Uuid"
       },
       {
@@ -68,19 +68,8 @@
     "parameters": {
       "Left": [
         "Uuid",
-        {
-          "Custom": {
-            "name": "mail_status",
-            "kind": {
-              "Enum": [
-                "PENDING",
-                "SUCCESS",
-                "FAILED"
-              ]
-            }
-          }
-        },
-        "Timestamptz"
+        "Int8",
+        "Int8"
       ]
     },
     "nullable": [
@@ -96,5 +85,5 @@
       true
     ]
   },
-  "hash": "13df362f585a9e12d56bec40771235a8b56dea58b02f134697a1f1aabc9dd4bd"
+  "hash": "7e68519e2b1e42f5d65c135a311e4fbdf57f29e9fd3b9b9c5b0b7d18310ce0d7"
 }

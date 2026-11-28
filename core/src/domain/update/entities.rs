@@ -14,7 +14,7 @@ pub struct UpdateRow {
     pub description: String,
     pub entity_type: EntityType,
     pub mandatory_completion_date: Option<DateTime<Utc>>,
-    pub fk_created_employee_id: Uuid,
+    pub fk_created_administrator_id: Uuid,
     pub created_at: DateTime<Utc>,
 }
 

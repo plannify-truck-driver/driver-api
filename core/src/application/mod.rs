@@ -9,6 +9,7 @@ use crate::{
     PostgresHealthRepository, Service, ServiceConfig,
     domain::common::CoreError,
     infrastructure::{
+        administrator::repositories::postgres::PostgresAdministratorRepository,
         document::repositories::grpc::GrpcDocumentRepository,
         driver::repositories::{
             postgres::PostgresDriverRepository, redis::RedisDriverCacheRepository,
@@ -17,7 +18,6 @@ use crate::{
             postgres::PostgresDriverInformationRepository,
             redis::RedisDriverInformationCacheRepository,
         },
-        employee::repositories::postgres::PostgresEmployeeRepository,
         mail::repositories::{
             postgres::PostgresMailRepository, redis::RedisMailCacheRepository,
             smtp::SmtpMailRepository,
@@ -58,7 +58,7 @@ pub struct DriverRepositories {
     pub health_repository: PostgresHealthRepository,
     pub driver_database_repository: PostgresDriverRepository,
     pub driver_cache_repository: RedisDriverCacheRepository,
-    pub employee_repository: PostgresEmployeeRepository,
+    pub administrator_repository: PostgresAdministratorRepository,
     pub workday_database_repository: PostgresWorkdayRepository,
     pub workday_cache_repository: RedisWorkdayRepository,
     pub mail_smtp_repository: SmtpMailRepository,
@@ -143,7 +143,7 @@ pub async fn create_repositories(
     );
     let driver_database_repository = PostgresDriverRepository::new(pg_pool.clone());
     let driver_cache_repository = RedisDriverCacheRepository::new(redis_manager.clone());
-    let employee_repository = PostgresEmployeeRepository::new(pg_pool.clone());
+    let administrator_repository = PostgresAdministratorRepository::new(pg_pool.clone());
     let workday_database_repository = PostgresWorkdayRepository::new(pg_pool.clone());
     let workday_cache_repository = RedisWorkdayRepository::new(redis_manager.clone());
     let mail_smtp_repository = SmtpMailRepository::new(
@@ -178,7 +178,7 @@ pub async fn create_repositories(
         health_repository,
         driver_database_repository,
         driver_cache_repository,
-        employee_repository,
+        administrator_repository,
         workday_database_repository,
         workday_cache_repository,
         mail_smtp_repository,

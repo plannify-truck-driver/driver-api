@@ -743,7 +743,7 @@ mod tests {
             let mail = DriverMailRow {
                 pk_driver_mail_id: Uuid::new_v4(),
                 fk_driver_id: driver.pk_driver_id,
-                fk_employee_id: None,
+                fk_administrator_id: None,
                 fk_mail_type_id: mail_type.as_id(),
                 description,
                 content,
@@ -863,7 +863,6 @@ mod tests {
             email: "test@example.be".to_string(),
             password_hash: "hash".to_string(),
             phone_number: None,
-            is_searchable: true,
             allow_request_professional_agreement: false,
             language: "fr".to_string(),
             rest_json: None,

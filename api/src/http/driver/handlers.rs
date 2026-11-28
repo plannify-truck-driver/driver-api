@@ -173,7 +173,6 @@ pub async fn get_driver_info(
         gender: driver.gender,
         email: driver.email,
         phone_number: driver.phone_number,
-        is_searchable: driver.is_searchable,
         allow_request_professional_agreement: driver.allow_request_professional_agreement,
         created_at: driver.created_at,
         verified_at: driver.verified_at,

@@ -40,46 +40,41 @@
       },
       {
         "ordinal": 7,
-        "name": "is_searchable",
-        "type_info": "Bool"
-      },
-      {
-        "ordinal": 8,
         "name": "allow_request_professional_agreement",
         "type_info": "Bool"
       },
       {
-        "ordinal": 9,
+        "ordinal": 8,
         "name": "language",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 10,
+        "ordinal": 9,
         "name": "rest_json",
         "type_info": "Jsonb"
       },
       {
-        "ordinal": 11,
+        "ordinal": 10,
         "name": "mail_preferences",
         "type_info": "Int4"
       },
       {
-        "ordinal": 12,
+        "ordinal": 11,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 13,
+        "ordinal": 12,
         "name": "verified_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 14,
+        "ordinal": 13,
         "name": "last_login_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 15,
+        "ordinal": 14,
         "name": "deactivated_at",
         "type_info": "Timestamptz"
       }
@@ -95,7 +90,6 @@
       false,
       false,
       true,
-      false,
       false,
       false,
       true,
