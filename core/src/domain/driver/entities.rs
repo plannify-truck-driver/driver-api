@@ -21,7 +21,6 @@ pub struct DriverRow {
     pub email: String,
     pub password_hash: String,
     pub phone_number: Option<String>,
-    pub is_searchable: bool,
     pub allow_request_professional_agreement: bool,
     pub language: String,
     pub rest_json: Option<Value>,
@@ -130,7 +129,6 @@ pub struct GetDriverResponse {
     pub gender: Option<String>,
     pub email: String,
     pub phone_number: Option<String>,
-    pub is_searchable: bool,
     pub allow_request_professional_agreement: bool,
     pub created_at: DateTime<Utc>,
     pub verified_at: Option<DateTime<Utc>>,
@@ -142,7 +140,7 @@ pub struct GetDriverResponse {
 #[sqlx(type_name = "entity_type")]
 pub enum EntityType {
     DRIVER,
-    EMPLOYEE,
+    ADMINISTRATOR,
 }
 
 impl FromStr for EntityType {
@@ -150,7 +148,7 @@ impl FromStr for EntityType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "DRIVER" => Ok(EntityType::DRIVER),
-            "EMPLOYEE" => Ok(EntityType::EMPLOYEE),
+            "ADMINISTRATOR" => Ok(EntityType::ADMINISTRATOR),
             _ => Err(()),
         }
     }
@@ -161,7 +159,7 @@ pub struct DriverLimitationRow {
     pub pk_maximum_entity_limit_id: i32,
     pub entity_type: EntityType,
     pub maximum_limit: i32,
-    pub fk_created_employee_id: Uuid,
+    pub fk_created_administrator_id: Uuid,
     pub start_at: DateTime<Utc>,
     pub end_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -186,7 +184,7 @@ impl DriverLimitationRow {
 pub struct DriverSuspensionRow {
     pub pk_driver_suspension_id: i32,
     pub fk_driver_id: Uuid,
-    pub fk_created_employee_id: Uuid,
+    pub fk_created_administrator_id: Uuid,
     pub can_access_restricted_space: bool,
     pub driver_message: Option<String>,
     pub title: String,

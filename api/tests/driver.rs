@@ -2,6 +2,7 @@ use api::http::common::api_error::ErrorBody;
 use api::http::common::middleware::auth::entities::AccessClaims;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
 use plannify_driver_api_core::domain::{
+    administrator::port::AdministratorRepository,
     driver::{
         entities::{
             CreateDriverResponse, DriverLimitationRow, DriverRestPeriod, EntityType,
@@ -9,7 +10,6 @@ use plannify_driver_api_core::domain::{
         },
         port::{DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository},
     },
-    employee::port::EmployeeRepository,
 };
 use reqwest::StatusCode;
 use serde_json::json;
@@ -1302,13 +1302,13 @@ async fn test_deactivate_then_reactivate_full_cycle(ctx: &mut context::TestConte
 
 // ── GET /limitation ─────────────────────────────────────────────────────────
 
-fn active_limitation(employee_id: Uuid, maximum_limit: i32) -> DriverLimitationRow {
+fn active_limitation(administrator_id: Uuid, maximum_limit: i32) -> DriverLimitationRow {
     let now = chrono::Utc::now();
     DriverLimitationRow {
         pk_maximum_entity_limit_id: 0,
         entity_type: EntityType::DRIVER,
         maximum_limit,
-        fk_created_employee_id: employee_id,
+        fk_created_administrator_id: administrator_id,
         start_at: now - chrono::Duration::hours(1),
         end_at: None,
         created_at: now,
@@ -1345,15 +1345,15 @@ async fn test_get_current_limitation_no_active_limitation(ctx: &mut context::Tes
 #[tokio::test]
 #[serial]
 async fn test_get_current_limitation_active_open_ended(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap()
         .unwrap();
 
-    let row = active_limitation(employee.pk_employee_id, 1);
+    let row = active_limitation(administrator.pk_administrator_id, 1);
     let created = ctx
         .repositories
         .driver_database_repository
@@ -1382,10 +1382,10 @@ async fn test_get_current_limitation_active_open_ended(ctx: &mut context::TestCo
 #[tokio::test]
 #[serial]
 async fn test_get_current_limitation_active_with_end_date(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap()
         .unwrap();
@@ -1395,7 +1395,7 @@ async fn test_get_current_limitation_active_with_end_date(ctx: &mut context::Tes
         pk_maximum_entity_limit_id: 0,
         entity_type: EntityType::DRIVER,
         maximum_limit: 1,
-        fk_created_employee_id: employee.pk_employee_id,
+        fk_created_administrator_id: administrator.pk_administrator_id,
         start_at: now - chrono::Duration::hours(1),
         end_at: Some(now + chrono::Duration::days(30)),
         created_at: now,
@@ -1425,10 +1425,10 @@ async fn test_get_current_limitation_active_with_end_date(ctx: &mut context::Tes
 #[tokio::test]
 #[serial]
 async fn test_get_current_limitation_expired_not_returned(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap()
         .unwrap();
@@ -1438,7 +1438,7 @@ async fn test_get_current_limitation_expired_not_returned(ctx: &mut context::Tes
         pk_maximum_entity_limit_id: 0,
         entity_type: EntityType::DRIVER,
         maximum_limit: 10,
-        fk_created_employee_id: employee.pk_employee_id,
+        fk_created_administrator_id: administrator.pk_administrator_id,
         start_at: now - chrono::Duration::days(30),
         end_at: Some(now - chrono::Duration::days(1)),
         created_at: now,
@@ -1466,10 +1466,10 @@ async fn test_get_current_limitation_expired_not_returned(ctx: &mut context::Tes
 #[tokio::test]
 #[serial]
 async fn test_get_current_limitation_future_not_returned(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap()
         .unwrap();
@@ -1479,7 +1479,7 @@ async fn test_get_current_limitation_future_not_returned(ctx: &mut context::Test
         pk_maximum_entity_limit_id: 0,
         entity_type: EntityType::DRIVER,
         maximum_limit: 10,
-        fk_created_employee_id: employee.pk_employee_id,
+        fk_created_administrator_id: administrator.pk_administrator_id,
         start_at: now + chrono::Duration::days(1),
         end_at: Some(now + chrono::Duration::days(30)),
         created_at: now,
@@ -1510,15 +1510,15 @@ async fn test_get_current_limitation_future_not_returned(ctx: &mut context::Test
 #[tokio::test]
 #[serial]
 async fn test_get_current_limitation_result_is_cached(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap()
         .unwrap();
 
-    let row = active_limitation(employee.pk_employee_id, 1);
+    let row = active_limitation(administrator.pk_administrator_id, 1);
     let created = ctx
         .repositories
         .driver_database_repository
@@ -1563,15 +1563,15 @@ async fn test_get_current_limitation_result_is_cached(ctx: &mut context::TestCon
 #[tokio::test]
 #[serial]
 async fn test_get_current_limitation_with_more_limits(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap()
         .unwrap();
 
-    let row = active_limitation(employee.pk_employee_id, 100);
+    let row = active_limitation(administrator.pk_administrator_id, 100);
     let created = ctx
         .repositories
         .driver_database_repository

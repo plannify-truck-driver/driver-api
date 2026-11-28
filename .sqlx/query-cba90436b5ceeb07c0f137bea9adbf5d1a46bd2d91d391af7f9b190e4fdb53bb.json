@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT pk_maximum_entity_limit_id, entity_type as \"entity_type: _\", maximum_limit, fk_created_employee_id, start_at, end_at, created_at\n            FROM maximum_entity_limits\n            WHERE entity_type::text = 'DRIVER'\n            AND start_at <= $1\n            AND (end_at IS NULL OR end_at > $1)\n            ORDER BY start_at DESC\n            LIMIT 1\n            ",
+  "query": "\n            INSERT INTO maximum_entity_limits (entity_type, maximum_limit, fk_created_administrator_id, start_at, end_at, created_at)\n            VALUES ($1::entity_type, $2, $3, $4, $5, $6)\n            RETURNING pk_maximum_entity_limit_id, entity_type as \"entity_type: EntityType\", maximum_limit, fk_created_administrator_id, start_at, end_at, created_at\n            ",
   "describe": {
     "columns": [
       {
@@ -10,14 +10,14 @@
       },
       {
         "ordinal": 1,
-        "name": "entity_type: _",
+        "name": "entity_type: EntityType",
         "type_info": {
           "Custom": {
             "name": "entity_type",
             "kind": {
               "Enum": [
                 "DRIVER",
-                "EMPLOYEE"
+                "ADMINISTRATOR"
               ]
             }
           }
@@ -30,7 +30,7 @@
       },
       {
         "ordinal": 3,
-        "name": "fk_created_employee_id",
+        "name": "fk_created_administrator_id",
         "type_info": "Uuid"
       },
       {
@@ -51,6 +51,21 @@
     ],
     "parameters": {
       "Left": [
+        {
+          "Custom": {
+            "name": "entity_type",
+            "kind": {
+              "Enum": [
+                "DRIVER",
+                "ADMINISTRATOR"
+              ]
+            }
+          }
+        },
+        "Int4",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
         "Timestamptz"
       ]
     },
@@ -64,5 +79,5 @@
       false
     ]
   },
-  "hash": "aa683a312b2e682e2d7ec9cfb9571ceb1e96943f30bbbe6eb9ff9d3befbda7ea"
+  "hash": "cba90436b5ceeb07c0f137bea9adbf5d1a46bd2d91d391af7f9b190e4fdb53bb"
 }

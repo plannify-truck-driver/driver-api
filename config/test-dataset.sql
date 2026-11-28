@@ -1,6 +1,10 @@
-INSERT INTO "drivers" ("pk_driver_id", "firstname", "lastname", "gender", "email", "password_hash", "phone_number", "is_searchable", "allow_request_professional_agreement", "language", "rest_json", "mail_preferences", "created_at", "verified_at", "last_login_at", "deactivated_at") VALUES
-('123e4567-e89b-12d3-a456-426614174000', 'Test', 'Test', NULL, 'test.user@example.be', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 't', 'f', 'fr', '[{"end": "00:59:59", "rest": "01:00:00", "start": "00:00:00"}, {"end": "23:59:59", "rest": "01:00:00", "start": "01:00:00"}]', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, NULL),
-('123e4567-e89b-12d3-a456-426614174001', 'Test-bis', 'Test', NULL, 'test-bis.user@example.be', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 't', 'f', 'fr', NULL, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, NULL);
+-- Fake administrator of the tests (creator of the limitations and updates of the tests)
+INSERT INTO "administrators" ("pk_administrator_id", "firstname", "lastname", "personal_email", "login_password_hash", "language") VALUES
+('a0000000-0000-4000-8000-000000000001', 'Test', 'Administrator', 'test.administrator@example.com', 'not-a-password-hash', 'en');
+
+INSERT INTO "drivers" ("pk_driver_id", "firstname", "lastname", "gender", "email", "password_hash", "phone_number", "allow_request_professional_agreement", "language", "rest_json", "mail_preferences", "created_at", "verified_at", "last_login_at", "deactivated_at") VALUES
+('123e4567-e89b-12d3-a456-426614174000', 'Test', 'Test', NULL, 'test.user@example.be', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 'f', 'fr', '[{"end": "00:59:59", "rest": "01:00:00", "start": "00:00:00"}, {"end": "23:59:59", "rest": "01:00:00", "start": "01:00:00"}]', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, NULL),
+('123e4567-e89b-12d3-a456-426614174001', 'Test-bis', 'Test', NULL, 'test-bis.user@example.be', '$argon2id$v=19$m=19456,t=2,p=1$GvJ0zPtHLrLN0ubKYXtqdw$dAqS9mMzUO55YVmiWPESW60AagJ5px+803z3nuEmH48', NULL, 'f', 'fr', NULL, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, NULL);
 
 INSERT INTO "workdays" ("date", "fk_driver_id", "start_time", "end_time", "rest_time", "overnight_rest") VALUES
 ('2024-01-01', '123e4567-e89b-12d3-a456-426614174000', '08:00:00', '19:00:00', '00:00:00', 't'),
@@ -31,7 +35,7 @@ INSERT INTO "workday_documents" ("fk_driver_id", "month", "year", "fk_document_i
 ('123e4567-e89b-12d3-a456-426614174000', 1, 2027, '123e4567-e89b-12d3-a456-426614174101'),
 ('123e4567-e89b-12d3-a456-426614174000', 1, 2031, '123e4567-e89b-12d3-a456-426614174102');
 
-INSERT INTO "driver_mails" ("pk_driver_mail_id", "fk_driver_id", "fk_employee_id", "fk_mail_type_id", "email_used", "status", "description", "content", "created_at", "sent_at") VALUES
+INSERT INTO "driver_mails" ("pk_driver_mail_id", "fk_driver_id", "fk_administrator_id", "fk_mail_type_id", "email_used", "status", "description", "content", "created_at", "sent_at") VALUES
 ('223e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174000', NULL, 1, 'test.user@example.be', 'SUCCESS', 'Account verification email', NULL, '2026-01-01 10:00:00+00', '2026-01-01 10:00:05+00'),
 ('223e4567-e89b-12d3-a456-426614174001', '123e4567-e89b-12d3-a456-426614174000', NULL, 4, 'test.user@example.be', 'PENDING', 'Monthly report email', NULL, '2026-02-01 10:00:00+00', NULL),
 ('223e4567-e89b-12d3-a456-426614174002', '123e4567-e89b-12d3-a456-426614174001', NULL, 1, 'test-bis.user@example.be', 'SUCCESS', 'Account verification email', NULL, '2026-01-01 10:00:00+00', '2026-01-01 10:00:05+00');

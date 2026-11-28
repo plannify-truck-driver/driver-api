@@ -50,9 +50,9 @@ impl MailDatabaseRepository for PostgresMailRepository {
         sqlx::query_as!(
             DriverMailRow,
             r#"
-            INSERT INTO driver_mails (fk_driver_id, fk_employee_id, fk_mail_type_id, email_used, status, description, content, created_at)
+            INSERT INTO driver_mails (fk_driver_id, fk_administrator_id, fk_mail_type_id, email_used, status, description, content, created_at)
             VALUES ($1, NULL, $2, $3, $4, $5, $6, NOW())
-            RETURNING pk_driver_mail_id, fk_driver_id, fk_employee_id, fk_mail_type_id, email_used, status as "status: MailStatus", description, content, created_at, sent_at
+            RETURNING pk_driver_mail_id, fk_driver_id, fk_administrator_id, fk_mail_type_id, email_used, status as "status: MailStatus", description, content, created_at, sent_at
             "#,
             driver.pk_driver_id,
             mail_type.as_id(),
@@ -99,7 +99,7 @@ impl MailDatabaseRepository for PostgresMailRepository {
             UPDATE driver_mails
             SET status = $2, sent_at = $3
             WHERE pk_driver_mail_id = $1
-            RETURNING pk_driver_mail_id, fk_driver_id, fk_employee_id, fk_mail_type_id, email_used, status as "status: MailStatus", description, content, created_at, sent_at
+            RETURNING pk_driver_mail_id, fk_driver_id, fk_administrator_id, fk_mail_type_id, email_used, status as "status: MailStatus", description, content, created_at, sent_at
             "#,
             mail_id,
             status as MailStatus,
@@ -152,7 +152,7 @@ impl MailDatabaseRepository for PostgresMailRepository {
         let mails = sqlx::query_as!(
             DriverMailRow,
             r#"
-            SELECT pk_driver_mail_id, fk_driver_id, fk_employee_id, fk_mail_type_id,
+            SELECT pk_driver_mail_id, fk_driver_id, fk_administrator_id, fk_mail_type_id,
                    email_used, status as "status: MailStatus", description, content, created_at, sent_at
             FROM driver_mails
             WHERE fk_driver_id = $1
@@ -268,7 +268,7 @@ impl MailDatabaseRepository for PostgresMailRepository {
         sqlx::query_as!(
             DriverMailRow,
             r#"
-            SELECT pk_driver_mail_id, fk_driver_id, fk_employee_id, fk_mail_type_id,
+            SELECT pk_driver_mail_id, fk_driver_id, fk_administrator_id, fk_mail_type_id,
                    email_used, status as "status: MailStatus", description, content, created_at, sent_at
             FROM driver_mails
             WHERE pk_driver_mail_id = $1

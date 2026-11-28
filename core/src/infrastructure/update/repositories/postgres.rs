@@ -57,7 +57,7 @@ impl UpdateDatabaseRepository for PostgresUpdateRepository {
         let rows = sqlx::query_as!(
             UpdateRow,
             r#"
-            SELECT pk_update_id, version, description, entity_type as "entity_type: _", mandatory_completion_date, fk_created_employee_id, created_at
+            SELECT pk_update_id, version, description, entity_type as "entity_type: _", mandatory_completion_date, fk_created_administrator_id, created_at
             FROM updates
             WHERE created_at > $1
             AND entity_type = 'DRIVER'

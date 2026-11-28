@@ -293,7 +293,6 @@ impl DriverDatabaseRepository for MockDriverDatabaseRepository {
             email: create_request.email,
             password_hash: create_request.password,
             phone_number: None,
-            is_searchable: false,
             allow_request_professional_agreement: false,
             language: create_request.language.to_string(),
             rest_json: None,
