@@ -347,7 +347,7 @@ impl MailDatabaseRepository for MockMailDatabaseRepository {
         let mail = DriverMailRow {
             pk_driver_mail_id: Uuid::new_v4(),
             fk_driver_id: driver.pk_driver_id,
-            fk_employee_id: None,
+            fk_administrator_id: None,
             fk_mail_type_id: mail_type.as_id(),
             description,
             content,
@@ -375,7 +375,7 @@ impl MailDatabaseRepository for MockMailDatabaseRepository {
                 let updated_mail = DriverMailRow {
                     pk_driver_mail_id: mail.pk_driver_mail_id,
                     fk_driver_id: mail.fk_driver_id,
-                    fk_employee_id: mail.fk_employee_id,
+                    fk_administrator_id: mail.fk_administrator_id,
                     fk_mail_type_id: mail.fk_mail_type_id,
                     email_used: mail.email_used.clone(),
                     description: mail.description.clone(),

@@ -56,7 +56,7 @@ impl FromStr for MailStatus {
 pub struct DriverMailRow {
     pub pk_driver_mail_id: Uuid,
     pub fk_driver_id: Uuid,
-    pub fk_employee_id: Option<Uuid>,
+    pub fk_administrator_id: Option<Uuid>,
     pub fk_mail_type_id: i32,
     pub email_used: String,
     pub status: MailStatus,

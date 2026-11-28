@@ -2499,7 +2499,6 @@
           "firstname",
           "lastname",
           "email",
-          "is_searchable",
           "allow_request_professional_agreement",
           "created_at"
         ],
@@ -2529,9 +2528,6 @@
               "string",
               "null"
             ]
-          },
-          "is_searchable": {
-            "type": "boolean"
           },
           "last_login_at": {
             "type": [

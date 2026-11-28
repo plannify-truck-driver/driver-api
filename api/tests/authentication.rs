@@ -1,10 +1,10 @@
 use api::http::common::api_error::ErrorBody;
 use plannify_driver_api_core::domain::{
+    administrator::port::AdministratorRepository,
     driver::{
         entities::{CreateDriverResponse, DriverLimitationRow, DriverSuspensionRow, EntityType},
         port::{DriverCacheKeyType, DriverCacheRepository, DriverDatabaseRepository},
     },
-    employee::port::EmployeeRepository,
 };
 use reqwest::StatusCode;
 use serde_json::json;
@@ -175,23 +175,23 @@ async fn test_signup_already_exists(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_signup_with_entity_limitations(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap();
 
-    if employee.is_none() {
-        panic!("No employee found in the database");
+    if administrator.is_none() {
+        panic!("No administrator found in the database");
     }
-    let employee = employee.unwrap();
+    let administrator = administrator.unwrap();
 
     let limitation = DriverLimitationRow {
         pk_maximum_entity_limit_id: 100,
         entity_type: EntityType::DRIVER,
         maximum_limit: 0,
-        fk_created_employee_id: employee.pk_employee_id,
+        fk_created_administrator_id: administrator.pk_administrator_id,
         start_at: chrono::Utc::now(),
         end_at: None,
         created_at: chrono::Utc::now(),
@@ -238,24 +238,24 @@ async fn test_signup_with_entity_limitations(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_signup_with_entity_limitations_outbound(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap();
 
-    if employee.is_none() {
-        panic!("No employee found in the database");
+    if administrator.is_none() {
+        panic!("No administrator found in the database");
     }
-    let employee = employee.unwrap();
+    let administrator = administrator.unwrap();
 
     let now = chrono::Utc::now();
     let limitation_before = DriverLimitationRow {
         pk_maximum_entity_limit_id: 1,
         entity_type: EntityType::DRIVER,
         maximum_limit: 0,
-        fk_created_employee_id: employee.pk_employee_id,
+        fk_created_administrator_id: administrator.pk_administrator_id,
         start_at: now - chrono::Duration::days(30),
         end_at: Some(now - chrono::Duration::days(1)),
         created_at: now,
@@ -264,7 +264,7 @@ async fn test_signup_with_entity_limitations_outbound(ctx: &mut context::TestCon
         pk_maximum_entity_limit_id: 2,
         entity_type: EntityType::DRIVER,
         maximum_limit: 0,
-        fk_created_employee_id: employee.pk_employee_id,
+        fk_created_administrator_id: administrator.pk_administrator_id,
         start_at: now + chrono::Duration::days(1),
         end_at: Some(now + chrono::Duration::days(30)),
         created_at: now,
@@ -316,23 +316,23 @@ async fn test_signup_with_entity_limitations_outbound(ctx: &mut context::TestCon
 #[tokio::test]
 #[serial]
 async fn test_signup_with_entity_limitations_other_entity(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap();
 
-    if employee.is_none() {
-        panic!("No employee found in the database");
+    if administrator.is_none() {
+        panic!("No administrator found in the database");
     }
-    let employee = employee.unwrap();
+    let administrator = administrator.unwrap();
 
     let limitation = DriverLimitationRow {
         pk_maximum_entity_limit_id: 0,
-        entity_type: EntityType::EMPLOYEE,
+        entity_type: EntityType::ADMINISTRATOR,
         maximum_limit: 0,
-        fk_created_employee_id: employee.pk_employee_id,
+        fk_created_administrator_id: administrator.pk_administrator_id,
         start_at: chrono::Utc::now(),
         end_at: None,
         created_at: chrono::Utc::now(),
@@ -433,17 +433,17 @@ async fn test_login_with_wrong_password(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_login_with_suspension(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap();
 
-    if employee.is_none() {
-        panic!("No employee found in the database");
+    if administrator.is_none() {
+        panic!("No administrator found in the database");
     }
-    let employee = employee.unwrap();
+    let administrator = administrator.unwrap();
 
     let suspension = ctx
         .repositories
@@ -451,7 +451,7 @@ async fn test_login_with_suspension(ctx: &mut context::TestContext) {
         .create_driver_suspension(DriverSuspensionRow {
             pk_driver_suspension_id: 0,
             fk_driver_id: ctx.authenticated_user_id,
-            fk_created_employee_id: employee.pk_employee_id,
+            fk_created_administrator_id: administrator.pk_administrator_id,
             driver_message: Some("Test suspension".to_string()),
             title: "Test Suspension".to_string(),
             description: Some("This is a test suspension".to_string()),
@@ -487,17 +487,17 @@ async fn test_login_with_suspension(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_login_with_suspension_outbound(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap();
 
-    if employee.is_none() {
-        panic!("No employee found in the database");
+    if administrator.is_none() {
+        panic!("No administrator found in the database");
     }
-    let employee = employee.unwrap();
+    let administrator = administrator.unwrap();
 
     let suspension = ctx
         .repositories
@@ -505,7 +505,7 @@ async fn test_login_with_suspension_outbound(ctx: &mut context::TestContext) {
         .create_driver_suspension(DriverSuspensionRow {
             pk_driver_suspension_id: 0,
             fk_driver_id: ctx.authenticated_user_id,
-            fk_created_employee_id: employee.pk_employee_id,
+            fk_created_administrator_id: administrator.pk_administrator_id,
             driver_message: Some("Test suspension".to_string()),
             title: "Test Suspension".to_string(),
             description: Some("This is a test suspension".to_string()),
@@ -541,17 +541,17 @@ async fn test_login_with_suspension_outbound(ctx: &mut context::TestContext) {
 #[tokio::test]
 #[serial]
 async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut context::TestContext) {
-    let employee = ctx
+    let administrator = ctx
         .repositories
-        .employee_repository
-        .get_first_employee()
+        .administrator_repository
+        .get_first_administrator()
         .await
         .unwrap();
 
-    if employee.is_none() {
-        panic!("No employee found in the database");
+    if administrator.is_none() {
+        panic!("No administrator found in the database");
     }
-    let employee = employee.unwrap();
+    let administrator = administrator.unwrap();
 
     let suspension = ctx
         .repositories
@@ -559,7 +559,7 @@ async fn test_login_with_suspension_can_access_restricted_space(ctx: &mut contex
         .create_driver_suspension(DriverSuspensionRow {
             pk_driver_suspension_id: 0,
             fk_driver_id: ctx.authenticated_user_id,
-            fk_created_employee_id: employee.pk_employee_id,
+            fk_created_administrator_id: administrator.pk_administrator_id,
             driver_message: Some("Test suspension".to_string()),
             title: "Test Suspension".to_string(),
             description: Some("This is a test suspension".to_string()),

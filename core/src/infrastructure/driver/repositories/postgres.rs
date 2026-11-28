@@ -164,15 +164,14 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
                 email = $4,
                 password_hash = $5,
                 phone_number = $6,
-                is_searchable = $7,
-                allow_request_professional_agreement = $8,
-                language = $9,
-                rest_json = $10,
-                mail_preferences = $11,
-                verified_at = $12,
-                last_login_at = $13,
-                deactivated_at = $14
-            WHERE pk_driver_id = $15
+                allow_request_professional_agreement = $7,
+                language = $8,
+                rest_json = $9,
+                mail_preferences = $10,
+                verified_at = $11,
+                last_login_at = $12,
+                deactivated_at = $13
+            WHERE pk_driver_id = $14
             RETURNING *
             "#,
             driver.firstname,
@@ -181,7 +180,6 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
             driver.email,
             driver.password_hash,
             driver.phone_number,
-            driver.is_searchable,
             driver.allow_request_professional_agreement,
             driver.language,
             driver.rest_json,
@@ -267,7 +265,7 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         sqlx::query_as!(
             DriverLimitationRow,
             r#"
-            SELECT pk_maximum_entity_limit_id, entity_type as "entity_type: _", maximum_limit, fk_created_employee_id, start_at, end_at, created_at
+            SELECT pk_maximum_entity_limit_id, entity_type as "entity_type: _", maximum_limit, fk_created_administrator_id, start_at, end_at, created_at
             FROM maximum_entity_limits
             WHERE entity_type::text = 'DRIVER'
             AND start_at <= $1
@@ -302,13 +300,13 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         sqlx::query_as!(
             DriverLimitationRow,
             r#"
-            INSERT INTO maximum_entity_limits (entity_type, maximum_limit, fk_created_employee_id, start_at, end_at, created_at)
+            INSERT INTO maximum_entity_limits (entity_type, maximum_limit, fk_created_administrator_id, start_at, end_at, created_at)
             VALUES ($1::entity_type, $2, $3, $4, $5, $6)
-            RETURNING pk_maximum_entity_limit_id, entity_type as "entity_type: EntityType", maximum_limit, fk_created_employee_id, start_at, end_at, created_at
+            RETURNING pk_maximum_entity_limit_id, entity_type as "entity_type: EntityType", maximum_limit, fk_created_administrator_id, start_at, end_at, created_at
             "#,
             limitation.entity_type as EntityType,
             limitation.maximum_limit,
-            limitation.fk_created_employee_id,
+            limitation.fk_created_administrator_id,
             limitation.start_at,
             limitation.end_at,
             limitation.created_at,
@@ -377,7 +375,7 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         sqlx::query_as!(
             DriverSuspensionRow,
             r#"
-            SELECT pk_driver_suspension_id, fk_driver_id, fk_created_employee_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at
+            SELECT pk_driver_suspension_id, fk_driver_id, fk_created_administrator_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at
             FROM driver_suspensions
             WHERE fk_driver_id = $1
             AND start_at <= $2
@@ -411,12 +409,12 @@ impl DriverDatabaseRepository for PostgresDriverRepository {
         sqlx::query_as!(
             DriverSuspensionRow,
             r#"
-            INSERT INTO driver_suspensions (fk_driver_id, fk_created_employee_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at)
+            INSERT INTO driver_suspensions (fk_driver_id, fk_created_administrator_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING pk_driver_suspension_id, fk_driver_id, fk_created_employee_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at
+            RETURNING pk_driver_suspension_id, fk_driver_id, fk_created_administrator_id, can_access_restricted_space, driver_message, title, description, start_at, end_at, created_at
             "#,
             suspension.fk_driver_id,
-            suspension.fk_created_employee_id,
+            suspension.fk_created_administrator_id,
             suspension.can_access_restricted_space,
             suspension.driver_message,
             suspension.title,
